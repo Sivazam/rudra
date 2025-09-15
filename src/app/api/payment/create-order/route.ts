@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/mongodb';
-import { Order } from '@/lib/models/Order';
+import { Order } from '@/lib/models';
 
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_YourTestKey';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'YourTestSecret';

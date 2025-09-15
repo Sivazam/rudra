@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import connectDB from '@/lib/mongodb';
-import { Order } from '@/lib/models/Order';
+import { Order } from '@/lib/models';
 
 const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || 'YourWebhookSecret';
 

@@ -2,10 +2,6 @@ import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rudra-store';
 
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
-}
-
 let cached = global.mongoose;
 
 if (!cached) {
@@ -13,6 +9,12 @@ if (!cached) {
 }
 
 async function connectDB() {
+  // If MongoDB URI is not set or is localhost, assume we're not using MongoDB
+  if (!MONGODB_URI || MONGODB_URI.includes('localhost') && process.env.NODE_ENV !== 'test') {
+    console.log('MongoDB not configured or not available - skipping MongoDB connection');
+    return null;
+  }
+
   if (cached.conn) {
     return cached.conn;
   }
@@ -30,8 +32,10 @@ async function connectDB() {
   try {
     cached.conn = await cached.promise;
   } catch (e) {
+    console.error('MongoDB connection failed:', e);
     cached.promise = null;
-    throw e;
+    // Don't throw the error, just return null so the app can continue
+    return null;
   }
 
   return cached.conn;

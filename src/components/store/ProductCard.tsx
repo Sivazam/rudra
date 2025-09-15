@@ -18,6 +18,7 @@ interface Product {
   reviews: number;
   image: string;
   badge?: string;
+  hasVariants?: boolean;
 }
 
 interface ProductCardProps {
@@ -32,6 +33,16 @@ const getMockVariants = (productId: string) => [
   { label: 'Rare', price: 5999, sku: `RAR-${productId}`, discount: 20, inventory: 5 },
 ];
 
+// Default variant for products without variants
+const getDefaultVariant = (product: Product) => ({
+  label: 'Default',
+  price: product.price,
+  sku: `DEF-${product.id}`,
+  discount: 0,
+  inventory: 100,
+  isDefault: true
+});
+
 export function ProductCard({ product }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showVariantSelector, setShowVariantSelector] = useState(false);
@@ -44,7 +55,23 @@ export function ProductCard({ product }: ProductCardProps) {
   const quantityInCart = cartItem?.quantity || 0;
 
   const handleAddToCart = () => {
-    setShowVariantSelector(true);
+    if (product.hasVariants === false) {
+      // Direct add to cart for products without variants
+      setIsAdding(true);
+      setTimeout(() => {
+        addItem({
+          productId: product.id,
+          name: product.name,
+          deity: product.deity,
+          image: product.image,
+          variant: getDefaultVariant(product)
+        });
+        setIsAdding(false);
+      }, 500);
+    } else {
+      // Show variant selector for products with variants
+      setShowVariantSelector(true);
+    }
   };
 
   const handleVariantSelect = (variant: any) => {
@@ -174,7 +201,7 @@ export function ProductCard({ product }: ProductCardProps) {
               disabled={isAdding}
               className="w-full bg-orange-600 hover:bg-orange-700 text-white mt-3"
             >
-              {isAdding ? 'Adding...' : 'ADD'}
+              {isAdding ? 'Adding...' : (product.hasVariants === false ? 'ADD TO CART' : 'SELECT VARIANT')}
             </Button>
           ) : (
             <div className="flex items-center justify-center space-x-2 mt-3">
@@ -200,15 +227,16 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </div>
       
-      {/* Variant Selector Modal */}
-      <VariantSelector
-        isOpen={showVariantSelector}
-        onClose={() => setShowVariantSelector(false)}
-        variants={getMockVariants(product.id)}
-        productName={product.name}
-        productImage={product.image}
-        onVariantSelect={handleVariantSelect}
-      />
+      {/* Variant Selector Modal - Only show for products with variants */}
+      {product.hasVariants !== false && (
+        <VariantSelector
+          isOpen={showVariantSelector}
+          onClose={() => setShowVariantSelector(false)}
+          variants={getMockVariants(product.id)}
+          productName={product.name}
+          onVariantSelect={handleVariantSelect}
+        />
+      )}
     </>
   );
 }

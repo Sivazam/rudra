@@ -85,10 +85,12 @@ interface ProductSEOProps extends SEOProps {
   };
 }
 
-export function ProductSEO({ product, ...seoProps }: ProductSEOProps) {
+export function ProductSEO({ product, title, ...seoProps }: ProductSEOProps) {
+  const productTitle = title || `${product.name} - ${product.deity}`;
+  
   return (
     <SEO
-      title={`${product.name} - ${product.deity}`}
+      title={productTitle}
       description={`${product.description} Origin: ${product.origin}. Price: ₹${product.price.toLocaleString()}. Authentic spiritual product from Rudra Store.`}
       keywords={`${product.name}, ${product.deity}, Rudraksha, spiritual product, ${product.origin}, meditation`}
       ogImage={product.images[0]}
@@ -109,10 +111,12 @@ interface CategorySEOProps extends SEOProps {
   };
 }
 
-export function CategorySEO({ category, ...seoProps }: CategorySEOProps) {
+export function CategorySEO({ category, title, ...seoProps }: CategorySEOProps) {
+  const categoryTitle = title || `${category.name} - Spiritual Products`;
+  
   return (
     <SEO
-      title={`${category.name} - Spiritual Products`}
+      title={categoryTitle}
       description={category.description || `Shop authentic ${category.name.toLowerCase()} and spiritual products at Rudra Store. Premium quality items for your spiritual journey.`}
       keywords={`${category.name}, spiritual products, Rudraksha, meditation, yoga, spiritual items`}
       ogUrl={`/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}`}

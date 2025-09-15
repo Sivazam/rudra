@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import { Product } from '@/lib/models/Product';
-import { Variant } from '@/lib/models/Variant';
+import { Product, Variant } from '@/lib/models';
 
 export async function GET(
   request: NextRequest,

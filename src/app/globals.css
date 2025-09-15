@@ -41,6 +41,16 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  
+  /* Custom brand colors */
+  --color-saffron: #A36922;
+  --color-cream: #FCF5E5;
+  --color-accent-red: #8B0000;
+  
+  /* Custom utilities */
+  --animate-slide-in-right: slideInRight 0.3s ease-out;
+  --animate-fade-in: fadeIn 0.3s ease-out;
+  --animate-slide-up: slideUp 0.3s ease-out;
 }
 
 :root {
@@ -121,34 +131,34 @@
   }
 }
 
-/* Custom utility classes for brand styling */
+/* Custom utility classes using regular CSS */
 @layer utilities {
   .bg-saffron {
-    background-color: #A36922;
+    background-color: var(--color-saffron);
   }
   
   .bg-cream {
-    background-color: #FCF5E5;
+    background-color: var(--color-cream);
   }
   
   .bg-accent-red {
-    background-color: #8B0000;
+    background-color: var(--color-accent-red);
   }
   
   .text-saffron {
-    color: #A36922;
+    color: var(--color-saffron);
   }
   
   .text-cream {
-    color: #FCF5E5;
+    color: var(--color-cream);
   }
   
   .text-accent-red {
-    color: #8B0000;
+    color: var(--color-accent-red);
   }
   
   .border-saffron {
-    border-color: #A36922;
+    border-color: var(--color-saffron);
   }
   
   .hover\:bg-saffron:hover {
@@ -156,11 +166,11 @@
   }
   
   .hover\:text-saffron:hover {
-    color: #A36922;
+    color: var(--color-saffron);
   }
   
   .focus\:ring-saffron:focus {
-    --tw-ring-color: #A36922;
+    --tw-ring-color: var(--color-saffron);
   }
 }
 
@@ -172,12 +182,12 @@
   }
   
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: #FCF5E5;
+    background: var(--color-cream);
     border-radius: 3px;
   }
   
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #A36922;
+    background: var(--color-saffron);
     border-radius: 3px;
   }
   
@@ -217,15 +227,15 @@
 }
 
 .animate-slide-in-right {
-  animation: slideInRight 0.3s ease-out;
+  animation: var(--animate-slide-in-right);
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
+  animation: var(--animate-fade-in);
 }
 
 .animate-slide-up {
-  animation: slideUp 0.3s ease-out;
+  animation: var(--animate-slide-up);
 }
 
 /* Product card hover effects */

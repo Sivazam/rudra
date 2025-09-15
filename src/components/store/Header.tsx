@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu, Search, Heart, ShoppingCart, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,12 @@ interface HeaderProps {
 
 export function Header({ onSearch }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const { getTotalItems, openCart } = useCartStore();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <>
@@ -112,7 +117,7 @@ export function Header({ onSearch }: HeaderProps) {
               onClick={openCart}
             >
               <ShoppingCart className="h-6 w-6" />
-              {getTotalItems() > 0 && (
+              {isMounted && getTotalItems() > 0 && (
                 <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {getTotalItems()}
                 </span>

@@ -132,6 +132,38 @@ const mockProducts = [
     reviews: 445,
     image: '/products/2-mukhi.jpg',
     badge: 'Divine'
+  },
+  // Products without variants
+  {
+    id: '13',
+    name: 'Sacred Red Thread Mala',
+    deity: 'Protection',
+    price: 299,
+    rating: 4.5,
+    reviews: 156,
+    image: '/products/red-thread.jpg',
+    hasVariants: false
+  },
+  {
+    id: '14',
+    name: 'Natural Sandalwood Mala',
+    deity: 'Meditation',
+    price: 799,
+    originalPrice: 999,
+    rating: 4.8,
+    reviews: 203,
+    image: '/products/sandalwood.jpg',
+    hasVariants: false
+  },
+  {
+    id: '15',
+    name: 'Tulsi Mala',
+    deity: 'Purity',
+    price: 399,
+    rating: 4.6,
+    reviews: 178,
+    image: '/products/tulsi.jpg',
+    hasVariants: false
   }
 ];
 

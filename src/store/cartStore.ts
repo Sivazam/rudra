@@ -25,6 +25,7 @@ interface CartStore {
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
+  getDiscount: () => number;
   toggleCart: () => void;
   openCart: () => void;
   closeCart: () => void;
@@ -83,6 +84,13 @@ export const useCartStore = create<CartStore>()(
         return get().items.reduce((total, item) => {
           const price = item.variant.price - (item.variant.price * item.variant.discount) / 100;
           return total + price * item.quantity;
+        }, 0);
+      },
+
+      getDiscount: () => {
+        return get().items.reduce((total, item) => {
+          const discountAmount = (item.variant.price * item.variant.discount) / 100;
+          return total + discountAmount * item.quantity;
         }, 0);
       },
 
