@@ -85,6 +85,7 @@ export function ProductCard({ product }: ProductCardProps) {
     setTimeout(() => {
       addItem({
         productId: product.id,
+        variantId: variant.sku,
         name: product.name,
         deity: product.deity,
         image: product.image,

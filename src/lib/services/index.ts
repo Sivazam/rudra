@@ -3,6 +3,7 @@ import productService, { IProduct, IProductMetadata } from './productService';
 import categoryService, { ICategory } from './categoryService';
 import variantService, { IVariant } from './variantService';
 import discountService, { IDiscount } from './discountService';
+import userService, { IUser } from './userService';
 
 export {
   // Order Service
@@ -27,6 +28,10 @@ export {
   // Discount Service
   discountService,
   type IDiscount,
+  
+  // User Service
+  userService,
+  type IUser,
 };
 
 // Default exports
@@ -36,6 +41,7 @@ const services = {
   categoryService,
   variantService,
   discountService,
+  userService,
 };
 
 export default services;

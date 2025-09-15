@@ -1,26 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import jwt from 'jsonwebtoken';
-import { orderService, type IOrderItem, type ICustomerInfo } from '@/lib/services';
+import { orderService, userService, type IOrderItem, type ICustomerInfo } from '@/lib/services';
 
 // Razorpay Configuration
-const RAZORPAY_KEY_ID = 'rzp_test_RHpVquZ5e0nUkX';
-const RAZORPAY_KEY_SECRET = 'C0qZuu2HhC7cLYUKBxlKI2at';
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_RHpVquZ5e0nUkX';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'C0qZuu2HhC7cLYUKBxlKI2at';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
+    // Check authentication (optional for guest checkout)
     const token = request.cookies.get('auth-token')?.value;
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      );
+    let userId: string;
+    
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        userId = decoded.phoneNumber;
+      } catch (error) {
+        // Invalid token, treat as guest
+        userId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      }
+    } else {
+      // Guest checkout
+      userId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const userId = decoded.phoneNumber;
+    // Create or update user if phone number is provided
+    if (shippingAddress.phone) {
+      try {
+        // For authenticated users, use their phone number as userId
+        // For guest users, create user record with the provided phone number
+        const userPhoneNumber = userId.startsWith('guest_') ? shippingAddress.phone : userId;
+        
+        await userService.createOrUpdateUser({
+          phoneNumber: userPhoneNumber,
+          name: shippingAddress.name,
+          email: customerInfo?.email || '',
+          address: shippingAddress.address,
+          city: shippingAddress.city || '',
+          state: shippingAddress.state || '',
+          pincode: shippingAddress.pincode || ''
+        });
+        
+        // Update userId to use phone number for consistency
+        if (userId.startsWith('guest_')) {
+          userId = userPhoneNumber;
+        }
+      } catch (error) {
+        console.error('Error creating/updating user:', error);
+        // Don't fail the order creation if user creation fails
+      }
+    }
 
     // Get cart data from request body
     const { items, shippingAddress, customerInfo } = await request.json();

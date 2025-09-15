@@ -178,9 +178,15 @@ export function SlideInCart() {
               
               {/* Checkout Button */}
               <div className="space-y-2">
-                <Button className="w-full" style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}>
-                  Proceed to Checkout
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                <Button 
+                  className="w-full" 
+                  style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
+                  asChild
+                >
+                  <Link href="/checkout">
+                    Proceed to Checkout
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Link>
                 </Button>
                 <Button variant="outline" className="w-full" style={{ borderColor: '#846549', color: '#846549' }} asChild>
                   <Link href="/cart">View Full Cart</Link>

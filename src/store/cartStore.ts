@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware';
 interface CartItem {
   id: string;
   productId: string;
+  variantId: string;
   name: string;
   deity: string;
   image: string;
@@ -53,7 +54,7 @@ export const useCartStore = create<CartStore>()(
           });
         } else {
           set({
-            items: [...currentItems, { ...item, id: Date.now().toString(), quantity: 1 }],
+            items: [...currentItems, { ...item, id: Date.now().toString(), quantity: 1, variantId: item.variant.sku }],
           });
         }
       },

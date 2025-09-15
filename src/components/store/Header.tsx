@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Menu, Search, Heart, ShoppingCart, User } from 'lucide-react';
+import { Menu, Search, Heart, ShoppingCart, User, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useCartStore } from '@/store/cartStore';
 import { SlideInCart } from './SlideInCart';
 import Link from 'next/link';
+import { isUserAuthenticated, getCurrentUser } from '@/lib/auth';
 
 interface HeaderProps {
   onSearch: (query: string) => void;
@@ -16,10 +17,13 @@ interface HeaderProps {
 export function Header({ onSearch }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isAuth, setIsAuth] = useState(false);
   const { getTotalItems, openCart } = useCartStore();
 
   useEffect(() => {
     setIsMounted(true);
+    // Check authentication status
+    setIsAuth(isUserAuthenticated());
   }, []);
 
   return (
@@ -51,6 +55,11 @@ export function Header({ onSearch }: HeaderProps) {
                 <Link href="/auth/login" className="block py-2 hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
                   Login
                 </Link>
+                {isAuth && (
+                  <Link href="/my-orders" className="block py-2 hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
+                    My Orders
+                  </Link>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
@@ -74,6 +83,12 @@ export function Header({ onSearch }: HeaderProps) {
             <Link href="/contact" className="hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
               Contact
             </Link>
+            {isAuth && (
+              <Link href="/my-orders" className="hover:opacity-80 transition-colors flex items-center space-x-1" style={{ color: '#846549' }}>
+                <Package className="h-4 w-4" />
+                <span>My Orders</span>
+              </Link>
+            )}
           </nav>
 
           {/* Search and Actions */}

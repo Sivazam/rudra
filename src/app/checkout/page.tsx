@@ -11,6 +11,9 @@ import { Separator } from '@/components/ui/separator';
 import { useCartStore } from '@/store/cartStore';
 import { loadRazorpayScript, initializeRazorpay } from '@/lib/razorpay';
 import { ArrowLeft, Shield, Truck, Package } from 'lucide-react';
+import { MainLayout } from '@/components/store/MainLayout';
+import { isUserAuthenticated } from '@/lib/auth';
+import Link from 'next/link';
 
 interface ShippingAddress {
   name: string;
@@ -26,6 +29,7 @@ export default function CheckoutPage() {
   const { items, getTotalPrice, clearCart } = useCartStore();
   const [loading, setLoading] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
     name: '',
     phone: '',
@@ -37,20 +41,47 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     loadRazorpayScript().then(setRazorpayLoaded);
-  }, []);
+    
+    // Check if user is authenticated
+    const authStatus = isUserAuthenticated();
+    setIsAuthenticated(authStatus);
+    
+    // If not authenticated, redirect to login
+    if (!authStatus) {
+      // Store current URL to redirect back after login
+      sessionStorage.setItem('redirectUrl', '/checkout');
+      router.push('/auth/login');
+    }
+  }, [router]);
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
-          <p className="text-gray-600 mb-4">Add some products to checkout</p>
-          <Button onClick={() => router.push('/')}>
-            Continue Shopping
-          </Button>
+      <MainLayout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
+            <p className="text-gray-600 mb-4">Add some products to checkout</p>
+            <Button onClick={() => router.push('/')}>
+              Continue Shopping
+            </Button>
+          </div>
         </div>
-      </div>
+      </MainLayout>
+    );
+  }
+
+  // Show loading state while checking authentication
+  if (!isAuthenticated && typeof window !== 'undefined') {
+    return (
+      <MainLayout>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <Package className="h-16 w-16 text-gray-400 mx-auto mb-4 animate-pulse" />
+            <p className="text-gray-600">Checking authentication...</p>
+          </div>
+        </div>
+      </MainLayout>
     );
   }
 
@@ -93,14 +124,27 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           items,
           shippingAddress,
+          customerInfo: {
+            email: '', // Optional field
+            phone: shippingAddress.phone
+          }
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create order');
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        throw new Error(errorData.error || 'Failed to create order');
       }
 
-      const { orderId, amount, currency, keyId } = await response.json();
+      const apiResponse = await response.json();
+      
+      if (!apiResponse.success) {
+        console.error('API Error:', apiResponse);
+        throw new Error(apiResponse.error || 'Failed to create order');
+      }
+
+      const { orderId, amount, currency, keyId } = apiResponse.data;
 
       // Initialize Razorpay payment
       const options = {
@@ -159,7 +203,7 @@ export default function CheckoutPage() {
   const total = subtotal + shipping;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <MainLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <Button
@@ -348,6 +392,6 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }

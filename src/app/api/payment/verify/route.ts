@@ -4,22 +4,13 @@ import jwt from 'jsonwebtoken';
 import { orderService } from '@/lib/services';
 
 // Razorpay Configuration
-const RAZORPAY_KEY_SECRET = 'C0qZuu2HhC7cLYUKBxlKI2at';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'C0qZuu2HhC7cLYUKBxlKI2at';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
-    const token = request.cookies.get('auth-token')?.value;
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const userId = decoded.phoneNumber;
+    // Authentication is optional for payment verification
+    // The order should already exist in the database from the create-order call
 
     // Get payment details from request body
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature, dbOrderId } = await request.json();
@@ -54,9 +45,6 @@ export async function POST(request: NextRequest) {
 
     // Get the updated order
     const order = await orderService.getOrderByRazorpayOrderId(razorpayOrderId);
-
-    // Clear user cart after successful payment
-    // This would typically be handled by a cart management system
 
     return NextResponse.json({
       success: true,
