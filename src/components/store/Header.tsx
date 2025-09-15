@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Menu, Search, Heart, User } from 'lucide-react';
+import { Menu, Search, Heart, ShoppingCart, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { CartDrawer } from '@/components/cart/CartDrawer';
+import { useCartStore } from '@/store/cartStore';
+import { SlideInCart } from './SlideInCart';
 import Link from 'next/link';
 
 interface HeaderProps {
@@ -14,9 +15,11 @@ interface HeaderProps {
 
 export function Header({ onSearch }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { getTotalItems, openCart } = useCartStore();
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
+    <>
+      <header className="bg-white shadow-sm sticky top-0 z-40">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Mobile Menu */}
@@ -102,7 +105,19 @@ export function Header({ onSearch }: HeaderProps) {
             </Button>
 
             {/* Cart */}
-            <CartDrawer />
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="relative" 
+              onClick={openCart}
+            >
+              <ShoppingCart className="h-6 w-6" />
+              {getTotalItems() > 0 && (
+                <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {getTotalItems()}
+                </span>
+              )}
+            </Button>
 
             {/* User Account */}
             <Button variant="ghost" size="icon">
@@ -128,5 +143,9 @@ export function Header({ onSearch }: HeaderProps) {
         )}
       </div>
     </header>
+    
+    {/* Slide-in Cart */}
+    <SlideInCart />
+    </>
   );
 }
