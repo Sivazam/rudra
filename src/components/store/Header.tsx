@@ -36,19 +36,19 @@ export function Header({ onSearch }: HeaderProps) {
             </SheetTrigger>
             <SheetContent side="left" className="w-64">
               <nav className="space-y-4 mt-6">
-                <Link href="/" className="block text-lg font-semibold text-orange-600">
+                <Link href="/" className="block text-lg font-semibold" style={{ color: 'rgba(156,86,26,255)' }}>
                   Rudra Store
                 </Link>
-                <Link href="/categories" className="block py-2 text-gray-700 hover:text-orange-600">
+                <Link href="/categories" className="block py-2 hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
                   Categories
                 </Link>
-                <Link href="/about" className="block py-2 text-gray-700 hover:text-orange-600">
+                <Link href="/about" className="block py-2 hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
                   About Us
                 </Link>
-                <Link href="/contact" className="block py-2 text-gray-700 hover:text-orange-600">
+                <Link href="/contact" className="block py-2 hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
                   Contact
                 </Link>
-                <Link href="/auth/login" className="block py-2 text-gray-700 hover:text-orange-600">
+                <Link href="/auth/login" className="block py-2 hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
                   Login
                 </Link>
               </nav>
@@ -57,21 +57,21 @@ export function Header({ onSearch }: HeaderProps) {
 
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-orange-600 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(156,86,26,255)' }}>
               <span className="text-white font-bold text-lg">R</span>
             </div>
-            <span className="text-xl font-bold text-gray-900 hidden sm:block">Rudra Store</span>
+            <span className="text-xl font-bold hidden sm:block" style={{ color: '#755e3e' }}>Rudra Store</span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/categories" className="text-gray-700 hover:text-orange-600 transition-colors">
+            <Link href="/categories" className="hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
               Categories
             </Link>
-            <Link href="/about" className="text-gray-700 hover:text-orange-600 transition-colors">
+            <Link href="/about" className="hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
               About Us
             </Link>
-            <Link href="/contact" className="text-gray-700 hover:text-orange-600 transition-colors">
+            <Link href="/contact" className="hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
               Contact
             </Link>
           </nav>
@@ -104,7 +104,7 @@ export function Header({ onSearch }: HeaderProps) {
             {/* Wishlist */}
             <Button variant="ghost" size="icon" className="relative">
               <Heart className="h-6 w-6" />
-              <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" style={{ backgroundColor: 'rgba(156,86,26,255)' }}>
                 3
               </span>
             </Button>
@@ -118,7 +118,7 @@ export function Header({ onSearch }: HeaderProps) {
             >
               <ShoppingCart className="h-6 w-6" />
               {isMounted && getTotalItems() > 0 && (
-                <span className="absolute -top-1 -right-1 bg-orange-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" style={{ backgroundColor: 'rgba(156,86,26,255)' }}>
                   {getTotalItems()}
                 </span>
               )}

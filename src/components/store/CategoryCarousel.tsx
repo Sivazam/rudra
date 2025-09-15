@@ -1,13 +1,12 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 
 interface Category {
   id: string;
   name: string;
-  icon: string;
+  image: string;
 }
 
 interface CategoryCarouselProps {
@@ -17,83 +16,64 @@ interface CategoryCarouselProps {
 }
 
 export function CategoryCarousel({ categories, selectedCategory, onCategorySelect }: CategoryCarouselProps) {
-  const [scrollPosition, setScrollPosition] = useState(0);
-
-  const scroll = (direction: 'left' | 'right') => {
-    const container = document.getElementById('category-carousel');
-    if (container) {
-      const scrollAmount = 200;
-      const newPosition = direction === 'left' 
-        ? Math.max(0, scrollPosition - scrollAmount)
-        : scrollPosition + scrollAmount;
-      
-      container.scrollTo({
-        left: newPosition,
-        behavior: 'smooth'
-      });
-      setScrollPosition(newPosition);
-    }
-  };
-
   return (
-    <div className="relative mb-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold text-gray-900">Categories</h2>
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => scroll('left')}
-            disabled={scrollPosition === 0}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => scroll('right')}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+    <div className="mb-8">
+      <h2 className="text-2xl font-bold mb-6" style={{ color: '#755e3e' }}>Categories</h2>
       
       <div 
-        id="category-carousel"
-        className="flex space-x-4 overflow-x-auto scrollbar-hide pb-4"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        className="category-scroll"
+        style={{ 
+          display: 'flex',
+          flexDirection: 'row',
+          gap: '1rem',
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          paddingBottom: '1rem'
+        }}
       >
-        {/* All Categories Option */}
-        <button
-          onClick={() => onCategorySelect('all')}
-          className={`flex flex-col items-center space-y-2 min-w-[100px] p-4 rounded-lg transition-all ${
-            selectedCategory === 'all' 
-              ? 'bg-orange-100 border-2 border-orange-600' 
-              : 'bg-white border border-gray-200 hover:border-orange-400'
-          }`}
-        >
-          <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-            <span className="text-orange-600 font-bold text-lg">All</span>
-          </div>
-          <span className="text-sm font-medium text-gray-700">All</span>
-        </button>
-        
         {categories.map((category) => (
           <button
             key={category.id}
             onClick={() => onCategorySelect(category.name)}
-            className={`flex flex-col items-center space-y-2 min-w-[100px] p-4 rounded-lg transition-all ${
-              selectedCategory === category.name 
-                ? 'bg-orange-100 border-2 border-orange-600' 
-                : 'bg-white border border-gray-200 hover:border-orange-400'
-            }`}
+            className="category-button"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.5rem',
+              flexShrink: '0',
+              padding: '0.75rem',
+              borderRadius: '0.5rem',
+              backgroundColor: selectedCategory === category.name ? '#ffeee0' : 'transparent',
+              border: selectedCategory === category.name ? `2px solid #9c542a` : 'none',
+              minWidth: '70px',
+              transition: 'background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease'
+            }}
           >
-            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-              <span className="text-orange-600 font-bold text-lg">
-                {category.name.charAt(0)}
-              </span>
+            <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-gray-100">
+              <img
+                src={category.image}
+                alt={category.name}
+                className="w-8 h-8 object-cover"
+                onError={(e) => {
+                  // Fallback to first letter if image fails to load
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.parentElement!.innerHTML = `
+                    <span class="font-bold text-sm" style="color: ${selectedCategory === category.name ? '#9c542a' : '#666666'}">
+                      ${category.name.charAt(0)}
+                    </span>
+                  `;
+                }}
+              />
             </div>
-            <span className="text-sm font-medium text-gray-700">{category.name}</span>
+            <span className="text-xs font-medium" style={{ 
+              color: selectedCategory === category.name ? '#9c542a' : '#000000' 
+            }}>
+              {category.name}
+            </span>
           </button>
         ))}
       </div>

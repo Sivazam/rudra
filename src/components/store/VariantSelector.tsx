@@ -19,6 +19,7 @@ interface VariantSelectorProps {
   onClose: () => void;
   variants: Variant[];
   productName: string;
+  productImage?: string;
   onVariantSelect: (variant: Variant) => void;
 }
 
@@ -27,6 +28,7 @@ export function VariantSelector({
   onClose, 
   variants, 
   productName, 
+  productImage,
   onVariantSelect 
 }: VariantSelectorProps) {
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
@@ -70,6 +72,19 @@ export function VariantSelector({
         </DrawerHeader>
         
         <div className="flex-1 overflow-hidden flex flex-col">
+          {/* Product Image */}
+          {productImage && (
+            <div className="px-6 py-4">
+              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                <img
+                  src={productImage}
+                  alt={productName}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
+          
           {/* Variant Options */}
           <div className="flex-1 overflow-y-auto px-6">
             <div className="space-y-4">
@@ -97,11 +112,15 @@ export function VariantSelector({
                             ? 'border-gray-200 bg-gray-50 cursor-not-allowed'
                             : 'border-gray-200 hover:border-orange-400'
                         }`}
+                        style={{
+                          borderColor: isSelected ? 'rgba(156,86,26,255)' : isOutOfStock ? '#d1d5db' : '#d1d5db',
+                          backgroundColor: isSelected ? '#fef3c7' : isOutOfStock ? '#f9fafb' : 'white'
+                        }}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="flex items-center space-x-2">
-                              <span className={`font-medium ${isOutOfStock ? 'text-gray-400' : ''}`}>
+                              <span className={`font-medium ${isOutOfStock ? 'text-gray-400' : ''}`} style={{ color: isOutOfStock ? '#9ca3af' : '#755e3e' }}>
                                 {variant.label}
                               </span>
                               {variant.isDefault && (
@@ -112,7 +131,7 @@ export function VariantSelector({
                               )}
                             </div>
                             <div className="flex items-center space-x-2 mt-1">
-                              <span className={`text-lg font-bold ${isOutOfStock ? 'text-gray-400' : 'text-orange-600'}`}>
+                              <span className={`text-lg font-bold ${isOutOfStock ? 'text-gray-400' : ''}`} style={{ color: isOutOfStock ? '#9ca3af' : '#755e3e' }}>
                                 {pricing.current}
                               </span>
                               {pricing.original && (
@@ -126,18 +145,15 @@ export function VariantSelector({
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-gray-600 mt-1">
+                            <p className="text-sm mt-1" style={{ color: '#846549' }}>
                               SKU: {variant.sku} | Stock: {variant.inventory}
                             </p>
                           </div>
                           
-                          <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 ml-4 ${
-                            isSelected 
-                              ? 'border-orange-600 bg-orange-600' 
-                              : isOutOfStock
-                              ? 'border-gray-300 bg-gray-200'
-                              : 'border-gray-300'
-                          }`}>
+                          <div className="w-5 h-5 rounded-full border-2 flex-shrink-0 ml-4" style={{
+                            borderColor: isSelected ? 'rgba(156,86,26,255)' : isOutOfStock ? '#d1d5db' : '#d1d5db',
+                            backgroundColor: isSelected ? 'rgba(156,86,26,255)' : isOutOfStock ? '#e5e7eb' : 'white'
+                          }}>
                             {isSelected && (
                               <div className="w-full h-full flex items-center justify-center">
                                 <div className="w-2 h-2 bg-white rounded-full"></div>
@@ -166,7 +182,8 @@ export function VariantSelector({
               <Button 
                 onClick={handleAddToCart}
                 disabled={!selectedVariant || selectedVariant.inventory === 0}
-                className="flex-1 bg-orange-600 hover:bg-orange-700"
+                className="flex-1"
+                style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
               >
                 Add to Cart
               </Button>

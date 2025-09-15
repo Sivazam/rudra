@@ -238,6 +238,33 @@
   animation: var(--animate-slide-up);
 }
 
+/* Smooth scrolling for category carousel */
+.category-scroll {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  white-space: nowrap;
+}
+
+.category-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Remove transition shake from category buttons */
+.category-button {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transform: none;
+  will-change: background-color, border-color, color;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.category-button:active {
+  transform: none;
+}
+
 /* Product card hover effects */
 .product-card {
   transition: all 0.3s ease;

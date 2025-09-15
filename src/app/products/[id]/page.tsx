@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Star, Heart, Share2, Shield, Check, ArrowRight } from 'lucide-react';
+import { Star, Heart, Share2, Shield, Check, ArrowRight, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCartStore } from '@/store/cartStore';
 import { VariantSelector } from '@/components/store/VariantSelector';
 
@@ -77,31 +78,21 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showVariantSelector, setShowVariantSelector] = useState(false);
+  const [showRepeatDialog, setShowRepeatDialog] = useState(false);
   
   const { addItem, items } = useCartStore();
 
-  // Check if this product is already in cart
-  const cartItem = items.find(item => item.productId === mockProduct.id);
+  // Check if this product is already in cart - sum quantities of ALL variants
+  const cartItemsForProduct = items.filter(item => item.productId === mockProduct.id);
+  const totalQuantityInCart = cartItemsForProduct.reduce((sum, item) => sum + item.quantity, 0);
+  
+  // For increment operations, we still need the specific cart item
+  const cartItem = cartItemsForProduct[0]; // Get first item for increment operations
   const quantityInCart = cartItem?.quantity || 0;
 
   const handleAddToCart = () => {
-    if (!selectedVariant) {
-      setShowVariantSelector(true);
-      return;
-    }
-
-    addItem({
-      productId: mockProduct.id,
-      name: mockProduct.name,
-      deity: mockProduct.deity,
-      image: mockProduct.images[0],
-      variant: {
-        label: selectedVariant.label,
-        price: selectedVariant.price,
-        sku: selectedVariant.sku,
-        discount: selectedVariant.discount
-      }
-    });
+    // Always show variant selector for better UX
+    setShowVariantSelector(true);
   };
 
   const handleBuyNow = () => {
@@ -112,6 +103,32 @@ export default function ProductDetailPage() {
   const handleVariantSelect = (variant: any) => {
     setSelectedVariant(variant);
     setShowVariantSelector(false);
+    
+    // Add to cart after variant selection
+    addItem({
+      productId: mockProduct.id,
+      name: mockProduct.name,
+      deity: mockProduct.deity,
+      image: mockProduct.images[0],
+      variant: {
+        label: variant.label,
+        price: variant.price,
+        sku: variant.sku,
+        discount: variant.discount
+      }
+    });
+  };
+
+  const handleRepeat = () => {
+    if (cartItem) {
+      useCartStore.getState().updateQuantity(cartItem.id, quantityInCart + 1);
+      setShowRepeatDialog(false);
+    }
+  };
+
+  const handleSelectDifferentVariant = () => {
+    setShowRepeatDialog(false);
+    setShowVariantSelector(true);
   };
 
   const formatPrice = (price: number, discount: number = 0) => {
@@ -126,15 +143,15 @@ export default function ProductDetailPage() {
   const currentPricing = formatPrice(selectedVariant?.price || mockProduct.price, selectedVariant?.discount || 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-amber-50">
+    <div className="min-h-screen" style={{ backgroundColor: '#f4f0eb' }}>
       {/* Breadcrumb */}
       <div className="container mx-auto px-4 py-4">
         <nav className="flex items-center space-x-2 text-sm">
-          <a href="/" className="text-orange-600 hover:text-orange-700">Home</a>
+          <a href="/" className="hover:opacity-80 transition-colors" style={{ color: 'rgba(156,86,26,255)' }}>Home</a>
           <span>/</span>
-          <a href="/categories" className="text-orange-600 hover:text-orange-700">Rudraksha</a>
+          <a href="/categories" className="hover:opacity-80 transition-colors" style={{ color: 'rgba(156,86,26,255)' }}>Rudraksha</a>
           <span>/</span>
-          <span className="text-gray-600">{mockProduct.name}</span>
+          <span style={{ color: '#846549' }}>{mockProduct.name}</span>
         </nav>
       </div>
 
@@ -179,10 +196,10 @@ export default function ProductDetailPage() {
             <div>
               <div className="flex items-start justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                  <h1 className="text-3xl font-bold mb-2" style={{ color: '#755e3e' }}>
                     {mockProduct.name} {mockProduct.subtitle}
                   </h1>
-                  <p className="text-lg text-gray-600 mb-4">{mockProduct.deity}</p>
+                  <p className="text-lg mb-4" style={{ color: '#846549' }}>{mockProduct.deity}</p>
                 </div>
                 <Button
                   variant="ghost"
@@ -190,7 +207,7 @@ export default function ProductDetailPage() {
                   onClick={() => setIsWishlisted(!isWishlisted)}
                   className="hidden sm:flex"
                 >
-                  <Heart className={`h-6 w-6 ${isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} />
+                  <Heart className={`h-6 w-6 ${isWishlisted ? 'fill-current' : 'text-gray-400'}`} style={{ color: isWishlisted ? '#f20600' : undefined }} />
                 </Button>
               </div>
               
@@ -202,25 +219,26 @@ export default function ProductDetailPage() {
                       key={i}
                       className={`h-5 w-5 ${
                         i < Math.floor(mockProduct.rating)
-                          ? 'fill-yellow-400 text-yellow-400'
+                          ? 'fill-current'
                           : 'text-gray-300'
                       }`}
+                      style={{ color: i < Math.floor(mockProduct.rating) ? 'rgba(160,82,16,255)' : undefined }}
                     />
                   ))}
                 </div>
-                <span className="text-lg font-medium">{mockProduct.rating}</span>
-                <span className="text-gray-600">({mockProduct.reviews} reviews)</span>
+                <span className="text-lg font-medium" style={{ color: '#755e3e' }}>{mockProduct.rating}</span>
+                <span style={{ color: '#846549' }}>({mockProduct.reviews} reviews)</span>
               </div>
             </div>
 
             {/* Price */}
             <div className="space-y-2">
               <div className="flex items-baseline space-x-3">
-                <span className="text-4xl font-bold text-orange-600">
+                <span className="text-4xl font-bold" style={{ color: '#755e3e' }}>
                   {currentPricing.current}
                 </span>
                 {currentPricing.original && (
-                  <span className="text-xl text-gray-500 line-through">
+                  <span className="text-xl line-through" style={{ color: '#846549' }}>
                     {currentPricing.original}
                   </span>
                 )}
@@ -230,12 +248,12 @@ export default function ProductDetailPage() {
                   </Badge>
                 )}
               </div>
-              <p className="text-sm text-gray-600">Origin: {mockProduct.origin}</p>
+              <p className="text-sm" style={{ color: '#846549' }}>Origin: {mockProduct.origin}</p>
             </div>
 
             {/* Variant Selection */}
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold">Select Variant</h3>
+              <h3 className="text-lg font-semibold" style={{ color: '#755e3e' }}>Select Variant</h3>
               <RadioGroup
                 value={selectedVariant?.label || ''}
                 onValueChange={(value) => {
@@ -258,22 +276,22 @@ export default function ProductDetailPage() {
                         className="flex flex-col p-4 border-2 rounded-lg cursor-pointer transition-all peer-data-[state=checked]:border-orange-600 peer-data-[state=checked]:bg-orange-50 hover:border-orange-400"
                       >
                         <div className="flex justify-between items-start mb-2">
-                          <span className="font-medium">{variant.label}</span>
+                          <span className="font-medium" style={{ color: '#755e3e' }}>{variant.label}</span>
                           {variant.isDefault && (
                             <Badge variant="secondary" className="text-xs">Default</Badge>
                           )}
                         </div>
                         <div className="text-right">
                           {variant.discount > 0 && (
-                            <span className="text-xs text-gray-500 line-through block">
+                            <span className="text-xs line-through block" style={{ color: '#846549' }}>
                               {pricing.original}
                             </span>
                           )}
-                          <span className="font-bold text-orange-600">
+                          <span className="font-bold" style={{ color: '#755e3e' }}>
                             {pricing.current}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">Stock: {variant.inventory}</p>
+                        <p className="text-xs mt-1" style={{ color: '#846549' }}>Stock: {variant.inventory}</p>
                       </Label>
                     </div>
                   );
@@ -283,12 +301,12 @@ export default function ProductDetailPage() {
 
             {/* Specifications */}
             <div>
-              <h3 className="text-lg font-semibold mb-3">Product Specifications</h3>
+              <h3 className="text-lg font-semibold mb-3" style={{ color: '#755e3e' }}>Product Specifications</h3>
               <div className="grid grid-cols-2 gap-3">
                 {mockProduct.specifications.map((spec, index) => (
-                  <div key={index} className="flex items-center space-x-2 p-3 bg-white rounded-lg border">
-                    <Check className="h-5 w-5 text-green-600 flex-shrink-0" />
-                    <span className="text-sm">{spec}</span>
+                  <div key={index} className="flex items-center space-x-2 p-3 bg-white rounded-lg border" style={{ borderColor: '#846549' }}>
+                    <Check className="h-5 w-5 flex-shrink-0" style={{ color: 'rgba(160,82,16,255)' }} />
+                    <span className="text-sm" style={{ color: '#846549' }}>{spec}</span>
                   </div>
                 ))}
               </div>
@@ -296,13 +314,16 @@ export default function ProductDetailPage() {
 
             {/* Action Buttons */}
             <div className="space-y-3">
-              {quantityInCart === 0 ? (
+              {totalQuantityInCart === 0 ? (
                 <div className="flex space-x-3">
                   <Button
                     onClick={handleAddToCart}
-                    className="flex-1 bg-orange-600 hover:bg-orange-700"
+                    variant="outline"
+                    className="flex-1"
                     size="lg"
+                    style={{ borderColor: '#846549', color: '#846549' }}
                   >
+                    <ShoppingCart className="h-4 w-4 mr-2" />
                     Add to Cart
                   </Button>
                   <Button
@@ -310,25 +331,30 @@ export default function ProductDetailPage() {
                     variant="outline"
                     className="flex-1"
                     size="lg"
+                    style={{ borderColor: '#846549', color: '#846549' }}
                   >
                     Buy Now
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
               ) : (
-                <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
-                  <span className="font-medium text-orange-800">
-                    {quantityInCart} item{quantityInCart > 1 ? 's' : ''} in cart
+                <div className="flex items-center justify-between p-4 rounded-lg" style={{ backgroundColor: '#fef3c7' }}>
+                  <span className="font-medium" style={{ color: '#755e3e' }}>
+                    {totalQuantityInCart} item{totalQuantityInCart > 1 ? 's' : ''} in cart
                   </span>
                   <div className="flex space-x-2">
                     <Button
                       variant="outline"
+                      onClick={() => setShowRepeatDialog(true)}
+                      style={{ borderColor: '#846549', color: '#846549' }}
+                    >
+                      Add More
+                    </Button>
+                    <Button 
                       onClick={() => useCartStore.getState().openCart()}
+                      style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
                     >
                       View Cart
-                    </Button>
-                    <Button onClick={handleBuyNow}>
-                      Buy Now
                     </Button>
                   </div>
                 </div>
@@ -336,12 +362,12 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Additional Actions */}
-            <div className="flex items-center space-x-4 pt-4 border-t">
-              <Button variant="ghost" className="text-orange-600">
+            <div className="flex items-center space-x-4 pt-4 border-t" style={{ borderColor: '#846549' }}>
+              <Button variant="ghost" style={{ color: 'rgba(156,86,26,255)' }}>
                 <Share2 className="h-4 w-4 mr-2" />
                 Share
               </Button>
-              <Button variant="ghost" className="text-orange-600">
+              <Button variant="ghost" style={{ color: 'rgba(156,86,26,255)' }}>
                 <Shield className="h-4 w-4 mr-2" />
                 Authenticity Guarantee
               </Button>
@@ -439,6 +465,29 @@ export default function ProductDetailPage() {
         productImage={mockProduct.images[0]}
         onVariantSelect={handleVariantSelect}
       />
+
+      {/* Repeat or Select Different Variant Dialog */}
+      <Dialog open={showRepeatDialog} onOpenChange={setShowRepeatDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choose an option</DialogTitle>
+            <DialogDescription>
+              You already have this item in your cart. Would you like to add more of the same variant or select a different variant?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex space-x-2">
+            <Button variant="outline" onClick={() => setShowRepeatDialog(false)} style={{ borderColor: '#846549', color: '#846549' }}>
+              Cancel
+            </Button>
+            <Button onClick={handleSelectDifferentVariant} variant="outline" style={{ borderColor: '#846549', color: '#846549' }}>
+              Select Different Variant
+            </Button>
+            <Button onClick={handleRepeat} style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}>
+              Add Same Variant
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

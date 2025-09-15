@@ -168,32 +168,33 @@ const mockProducts = [
 ];
 
 const mockCategories = [
-  { id: '1', name: 'Rudraksha', icon: '/icons/rudraksha.png' },
-  { id: '2', name: 'Malas', icon: '/icons/malas.png' },
-  { id: '3', name: 'Bracelets', icon: '/icons/bracelets.png' },
-  { id: '4', name: 'Pendants', icon: '/icons/pendants.png' },
-  { id: '5', name: 'Yantras', icon: '/icons/yantras.png' },
-  { id: '6', name: 'Idols', icon: '/icons/idols.png' },
+  { id: '1', name: 'Rudraksha', image: '/categories/rudraksha.png' },
+  { id: '2', name: 'Malas', image: '/categories/malas.png' },
+  { id: '3', name: 'Bracelets', image: '/categories/bracelets.png' },
+  { id: '4', name: 'Pendants', image: '/categories/pendants.png' },
+  { id: '5', name: 'Yantras', image: '/categories/yantras.png' },
+  { id: '6', name: 'Idols', image: '/categories/idols.png' },
+  { id: '7', name: 'Gemstones', image: '/categories/gemstones.png' },
+  { id: '8', name: 'Puja Items', image: '/categories/puja-items.png' },
 ];
 
 export default function Home() {
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('Rudraksha');
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredProducts = mockProducts.filter(product => {
-    const matchesCategory = selectedCategory === 'all' || 
-      product.name.toLowerCase().includes(selectedCategory.toLowerCase());
+    const matchesCategory = selectedCategory === 'Rudraksha' || product.name.toLowerCase().includes(selectedCategory.toLowerCase());
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.deity.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-amber-50">
+    <div className="min-h-screen" style={{ backgroundColor: '#f4f0eb' }}>
       <Header onSearch={setSearchQuery} />
       
       {/* Banner */}
-      <div className="bg-gradient-to-r from-orange-600 to-amber-600 text-white py-4 px-6 text-center">
+      <div className="py-4 px-6 text-center" style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}>
         <h2 className="text-lg md:text-xl font-semibold">handmade RUDRAKSHA MALA</h2>
         <p className="text-sm opacity-90">Authentic Spiritual Products</p>
       </div>
