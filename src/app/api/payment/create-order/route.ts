@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import jwt from 'jsonwebtoken';
-import connectDB from '@/lib/mongodb';
-import { Order } from '@/lib/models';
+import { orderService, type IOrderItem, type ICustomerInfo } from '@/lib/services';
 
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_YourTestKey';
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'YourTestSecret';
+// Razorpay Configuration
+const RAZORPAY_KEY_ID = 'rzp_test_RHpVquZ5e0nUkX';
+const RAZORPAY_KEY_SECRET = 'C0qZuu2HhC7cLYUKBxlKI2at';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export async function POST(request: NextRequest) {
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const token = request.cookies.get('auth-token')?.value;
     if (!token) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { success: false, error: 'Authentication required' },
         { status: 401 }
       );
     }
@@ -22,24 +22,33 @@ export async function POST(request: NextRequest) {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
     const userId = decoded.phoneNumber;
 
-    // Connect to database
-    await connectDB();
-
     // Get cart data from request body
-    const { items, shippingAddress } = await request.json();
+    const { items, shippingAddress, customerInfo } = await request.json();
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
-        { error: 'Invalid cart data' },
+        { success: false, error: 'Invalid cart data' },
+        { status: 400 }
+      );
+    }
+
+    // Validate shipping address
+    if (!shippingAddress || !shippingAddress.name || !shippingAddress.phone || !shippingAddress.address) {
+      return NextResponse.json(
+        { success: false, error: 'Complete shipping address is required' },
         { status: 400 }
       );
     }
 
     // Calculate total amount
-    const total = items.reduce((sum, item) => {
+    const subtotal = items.reduce((sum, item) => {
       const price = item.variant.price - (item.variant.price * item.variant.discount) / 100;
       return sum + (price * item.quantity);
     }, 0);
+
+    // Add shipping cost (free shipping for orders above 999)
+    const shippingCost = subtotal >= 999 ? 0 : 99;
+    const total = subtotal + shippingCost;
 
     // Create Razorpay order
     const razorpay = new Razorpay({
@@ -50,39 +59,70 @@ export async function POST(request: NextRequest) {
     const options = {
       amount: Math.round(total * 100), // Convert to paise
       currency: 'INR',
-      receipt: `order_${Date.now()}`,
+      receipt: `order_${Date.now()}_${userId}`,
       payment_capture: 1,
+      notes: {
+        customer_name: shippingAddress.name,
+        customer_phone: shippingAddress.phone,
+        customer_email: customerInfo?.email || '',
+        order_type: 'spiritual_products'
+      }
     };
 
     const razorpayOrder = await razorpay.orders.create(options);
 
-    // Create order in database
-    const order = new Order({
+    // Prepare order data for Firebase
+    const orderItems: IOrderItem[] = items.map(item => ({
+      productId: item.productId,
+      variantId: item.variantId,
+      name: item.name,
+      quantity: item.quantity,
+      price: item.variant.price,
+      discount: item.variant.discount,
+      totalPrice: (item.variant.price - (item.variant.price * item.variant.discount) / 100) * item.quantity
+    }));
+
+    const customerData: ICustomerInfo = {
+      name: shippingAddress.name,
+      phone: shippingAddress.phone,
+      email: customerInfo?.email || '',
+      address: shippingAddress.address,
+      city: shippingAddress.city || '',
+      state: shippingAddress.state || '',
+      pincode: shippingAddress.pincode || ''
+    };
+
+    // Create order in Firebase
+    const orderId = await orderService.createOrder({
       userId,
-      items: items.map(item => ({
-        variantId: item.variantId,
-        quantity: item.quantity,
-        price: item.variant.price,
-        discount: item.variant.discount,
-      })),
+      customerInfo: customerData,
+      items: orderItems,
+      subtotal,
+      shippingCost,
       total,
       razorpayOrderId: razorpayOrder.id,
       status: 'pending',
-      shippingAddress,
+      paymentStatus: 'pending',
+      orderDate: new Date()
     });
 
-    await order.save();
-
     return NextResponse.json({
-      orderId: razorpayOrder.id,
-      amount: razorpayOrder.amount,
-      currency: razorpayOrder.currency,
-      keyId: RAZORPAY_KEY_ID,
+      success: true,
+      data: {
+        orderId: razorpayOrder.id,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        keyId: RAZORPAY_KEY_ID,
+        dbOrderId: orderId,
+        subtotal,
+        shippingCost,
+        total
+      }
     });
   } catch (error) {
     console.error('Error creating Razorpay order:', error);
     return NextResponse.json(
-      { error: 'Failed to create order' },
+      { success: false, error: 'Failed to create order' },
       { status: 500 }
     );
   }

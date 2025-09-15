@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import { Product, Variant } from '@/lib/models';
+import { productService, variantService, categoryService } from '@/lib/services';
 
 export async function GET(request: NextRequest) {
   try {
-    await connectDB();
-    
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const search = searchParams.get('search');
@@ -13,68 +10,66 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '12');
     const sort = searchParams.get('sort') || 'createdAt';
 
-    // Build query
-    let query: any = { status: 'active' };
-    
+    let products: any[] = [];
+
+    // Get products based on filters
     if (category) {
-      query.category = category;
-    }
-    
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { deity: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
-      ];
+      products = await productService.getProductsByCategory(category);
+    } else if (search) {
+      products = await productService.searchProducts(search);
+    } else {
+      products = await productService.getAllProducts(true);
     }
 
-    // Build sort object
-    let sortObj: any = {};
+    // Apply sorting
     switch (sort) {
       case 'price-low':
-        sortObj['variants.price'] = 1;
+        products.sort((a, b) => {
+          const aPrice = a.variants?.[0]?.price || 0;
+          const bPrice = b.variants?.[0]?.price || 0;
+          return aPrice - bPrice;
+        });
         break;
       case 'price-high':
-        sortObj['variants.price'] = -1;
+        products.sort((a, b) => {
+          const aPrice = a.variants?.[0]?.price || 0;
+          const bPrice = b.variants?.[0]?.price || 0;
+          return bPrice - aPrice;
+        });
         break;
       case 'rating':
-        sortObj['rating'] = -1;
+        // Note: Rating field not implemented yet, sort by newest as fallback
+        products.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         break;
       case 'newest':
       default:
-        sortObj['createdAt'] = -1;
+        products.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
-
-    const skip = (page - 1) * limit;
-
-    // Get products with populated variants
-    const products = await Product.find(query)
-      .populate('category', 'name slug iconUrl')
-      .sort(sortObj)
-      .skip(skip)
-      .limit(limit)
-      .lean();
 
     // Get variants for each product
     const productsWithVariants = await Promise.all(
       products.map(async (product) => {
-        const variants = await Variant.find({ 
-          productId: product._id,
-          inventory: { $gt: 0 }
-        }).sort({ isDefault: -1, price: 1 }).lean();
+        const variants = await variantService.getVariantsByProductId(product.id);
+        const availableVariants = variants.filter(v => v.inventory > 0);
 
         return {
           ...product,
-          variants,
-          defaultVariant: variants.find(v => v.isDefault) || variants[0]
+          variants: availableVariants,
+          defaultVariant: availableVariants.find(v => v.isDefault) || availableVariants[0]
         };
       })
     );
 
-    const total = await Product.countDocuments(query);
+    // Apply pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedProducts = productsWithVariants.slice(startIndex, endIndex);
+
+    const total = products.length;
 
     return NextResponse.json({
-      products: productsWithVariants,
+      success: true,
+      products: paginatedProducts,
       pagination: {
         page,
         limit,
@@ -85,7 +80,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching products:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch products' },
+      { success: false, error: 'Failed to fetch products' },
       { status: 500 }
     );
   }

@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import { Category } from '@/lib/models';
+import { categoryService } from '@/lib/services';
 
 export async function GET() {
   try {
-    await connectDB();
-    
-    const categories = await Category.find({}).sort({ name: 1 }).lean();
+    const categories = await categoryService.getAllCategories();
 
-    return NextResponse.json({ categories });
+    return NextResponse.json({
+      success: true,
+      categories
+    });
   } catch (error) {
     console.error('Error fetching categories:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch categories' },
+      { success: false, error: 'Failed to fetch categories' },
       { status: 500 }
     );
   }
@@ -24,41 +24,37 @@ export async function POST(request: NextRequest) {
 
     if (!name || !slug || !iconUrl) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { success: false, error: 'Missing required fields' },
         { status: 400 }
       );
     }
-
-    await connectDB();
 
     // Check if category already exists
-    const existingCategory = await Category.findOne({ 
-      $or: [{ name }, { slug }] 
-    });
-
-    if (existingCategory) {
+    const existingCategoryByName = await categoryService.getCategoryBySlug(slug);
+    if (existingCategoryByName) {
       return NextResponse.json(
-        { error: 'Category already exists' },
+        { success: false, error: 'Category already exists' },
         { status: 400 }
       );
     }
 
-    const category = new Category({
+    const categoryId = await categoryService.createCategory({
       name,
       slug,
       iconUrl
     });
 
-    await category.save();
+    const newCategory = await categoryService.getCategoryById(categoryId);
 
-    return NextResponse.json(
-      { message: 'Category created successfully', category },
-      { status: 201 }
-    );
+    return NextResponse.json({
+      success: true,
+      message: 'Category created successfully',
+      category: newCategory
+    }, { status: 201 });
   } catch (error) {
     console.error('Error creating category:', error);
     return NextResponse.json(
-      { error: 'Failed to create category' },
+      { success: false, error: 'Failed to create category' },
       { status: 500 }
     );
   }

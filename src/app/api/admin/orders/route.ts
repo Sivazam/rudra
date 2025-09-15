@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import connectDB from '@/lib/mongodb';
-import { Order } from '@/lib/models';
+import { orderService } from '@/lib/services';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -24,35 +23,33 @@ export async function GET(request: NextRequest) {
     const admin = await verifyAdmin(request);
     if (!admin) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
-
-    await connectDB();
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const status = searchParams.get('status');
 
-    let query: any = {};
+    let orders = await orderService.getAllOrders();
+
+    // Filter by status if provided
     if (status) {
-      query.status = status;
+      orders = orders.filter(order => order.status === status);
     }
 
-    const skip = (page - 1) * limit;
+    // Apply pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedOrders = orders.slice(startIndex, endIndex);
 
-    const orders = await Order.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
-
-    const total = await Order.countDocuments(query);
+    const total = orders.length;
 
     return NextResponse.json({
-      orders,
+      success: true,
+      orders: paginatedOrders,
       pagination: {
         page,
         limit,
@@ -63,7 +60,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching admin orders:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch orders' },
+      { success: false, error: 'Failed to fetch orders' },
       { status: 500 }
     );
   }

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import jwt from 'jsonwebtoken';
-import connectDB from '@/lib/mongodb';
-import { Order } from '@/lib/models';
+import { orderService } from '@/lib/services';
 
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'YourTestSecret';
+// Razorpay Configuration
+const RAZORPAY_KEY_SECRET = 'C0qZuu2HhC7cLYUKBxlKI2at';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export async function POST(request: NextRequest) {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const token = request.cookies.get('auth-token')?.value;
     if (!token) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { success: false, error: 'Authentication required' },
         { status: 401 }
       );
     }
@@ -22,11 +22,11 @@ export async function POST(request: NextRequest) {
     const userId = decoded.phoneNumber;
 
     // Get payment details from request body
-    const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = await request.json();
+    const { razorpayOrderId, razorpayPaymentId, razorpaySignature, dbOrderId } = await request.json();
 
     if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
       return NextResponse.json(
-        { error: 'Missing payment details' },
+        { success: false, error: 'Missing payment details' },
         { status: 400 }
       );
     }
@@ -40,41 +40,41 @@ export async function POST(request: NextRequest) {
 
     if (!generatedSignature) {
       return NextResponse.json(
-        { error: 'Invalid payment signature' },
+        { success: false, error: 'Invalid payment signature' },
         { status: 400 }
       );
     }
 
-    // Connect to database
-    await connectDB();
-
-    // Update order status
-    const order = await Order.findOne({ 
-      razorpayOrderId, 
-      userId 
+    // Update order status in Firebase
+    await orderService.updatePaymentStatus(razorpayOrderId, {
+      razorpayPaymentId,
+      razorpaySignature,
+      status: 'paid'
     });
 
-    if (!order) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
-    }
+    // Get the updated order
+    const order = await orderService.getOrderByRazorpayOrderId(razorpayOrderId);
 
-    // Update order with payment details
-    order.razorpayPaymentId = razorpayPaymentId;
-    order.status = 'paid';
-    await order.save();
+    // Clear user cart after successful payment
+    // This would typically be handled by a cart management system
 
     return NextResponse.json({
       success: true,
-      orderId: order._id,
-      message: 'Payment verified successfully',
+      data: {
+        orderId: order?.id,
+        orderNumber: order?.orderNumber,
+        razorpayOrderId: order?.razorpayOrderId,
+        razorpayPaymentId: order?.razorpayPaymentId,
+        status: order?.status,
+        paymentStatus: order?.paymentStatus,
+        total: order?.total,
+        message: 'Payment verified successfully'
+      }
     });
   } catch (error) {
     console.error('Error verifying payment:', error);
     return NextResponse.json(
-      { error: 'Failed to verify payment' },
+      { success: false, error: 'Failed to verify payment' },
       { status: 500 }
     );
   }

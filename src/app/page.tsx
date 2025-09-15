@@ -5,8 +5,44 @@ import { Header } from '@/components/store/Header';
 import { CategoryCarousel } from '@/components/store/CategoryCarousel';
 import { ProductGrid } from '@/components/store/ProductGrid';
 import { ProductCard } from '@/components/store/ProductCard';
+import { BannerCarousel } from '@/components/store/BannerCarousel';
 
 // Mock data for now - will be replaced with API calls
+const mockBanners = [
+  {
+    id: '1',
+    title: 'Handmade Rudraksha Mala',
+    description: 'Authentic Spiritual Products',
+    imageUrl: '/banners/rudraksha-mala.jpg',
+    categoryLink: '/categories/rudraksha',
+    altText: 'Handmade Rudraksha Mala Banner'
+  },
+  {
+    id: '2',
+    title: 'Sacred Malas Collection',
+    description: 'Find Your Spiritual Path',
+    imageUrl: '/banners/malas-collection.jpg',
+    categoryLink: '/categories/malas',
+    altText: 'Sacred Malas Collection Banner'
+  },
+  {
+    id: '3',
+    title: 'Divine Bracelets',
+    description: 'Wear Your Faith',
+    imageUrl: '/banners/bracelets.jpg',
+    categoryLink: '/categories/bracelets',
+    altText: 'Divine Bracelets Banner'
+  },
+  {
+    id: '4',
+    title: 'Spiritual Pendants',
+    description: 'Carry Divinity With You',
+    imageUrl: '/banners/pendants.jpg',
+    categoryLink: '/categories/pendants',
+    altText: 'Spiritual Pendants Banner'
+  }
+];
+
 const mockProducts = [
   {
     id: '1',
@@ -190,16 +226,13 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f4f0eb' }}>
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f4f0eb' }}>
       <Header onSearch={setSearchQuery} />
       
-      {/* Banner */}
-      <div className="py-4 px-6 text-center" style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}>
-        <h2 className="text-lg md:text-xl font-semibold">handmade RUDRAKSHA MALA</h2>
-        <p className="text-sm opacity-90">Authentic Spiritual Products</p>
-      </div>
+      {/* Banner Carousel */}
+      <BannerCarousel banners={mockBanners} />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto px-4 py-8">
         {/* Category Carousel */}
         <CategoryCarousel 
           categories={mockCategories}
@@ -223,6 +256,61 @@ export default function Home() {
         {/* Product Grid */}
         <ProductGrid products={filteredProducts} />
       </main>
+      
+      {/* Footer */}
+      <footer className="bg-amber-800 text-white py-8 mt-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* Quick Links */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+              <ul className="space-y-2">
+                <li><a href="/categories/rudraksha" className="hover:text-amber-200 transition-colors">Rudraksha</a></li>
+                <li><a href="/categories/malas" className="hover:text-amber-200 transition-colors">Malas</a></li>
+                <li><a href="/categories/bracelets" className="hover:text-amber-200 transition-colors">Bracelets</a></li>
+                <li><a href="/categories/pendants" className="hover:text-amber-200 transition-colors">Pendants</a></li>
+              </ul>
+            </div>
+            
+            {/* Customer Service */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Customer Service</h3>
+              <ul className="space-y-2">
+                <li><a href="/contact" className="hover:text-amber-200 transition-colors">Contact Us</a></li>
+                <li><a href="/shipping" className="hover:text-amber-200 transition-colors">Shipping Info</a></li>
+                <li><a href="/returns" className="hover:text-amber-200 transition-colors">Returns</a></li>
+                <li><a href="/faq" className="hover:text-amber-200 transition-colors">FAQ</a></li>
+              </ul>
+            </div>
+            
+            {/* About */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">About</h3>
+              <ul className="space-y-2">
+                <li><a href="/about" className="hover:text-amber-200 transition-colors">Our Story</a></li>
+                <li><a href="/blog" className="hover:text-amber-200 transition-colors">Blog</a></li>
+                <li><a href="/authenticity" className="hover:text-amber-200 transition-colors">Authenticity</a></li>
+                <li><a href="/testimonials" className="hover:text-amber-200 transition-colors">Testimonials</a></li>
+              </ul>
+            </div>
+            
+            {/* Contact Info */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
+              <ul className="space-y-2 text-sm">
+                <li>Email: info@rudra.com</li>
+                <li>Phone: +91 123 456 7890</li>
+                <li>Address: 123 Spiritual Street</li>
+                <li>City, State 12345</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-amber-700 mt-8 pt-8 text-center">
+            <p className="text-sm">Build by Harte Labs</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

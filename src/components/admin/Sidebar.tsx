@@ -10,11 +10,13 @@ import {
   Layers, 
   Percent, 
   ShoppingCart,
+  Image,
   LogOut 
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { name: 'Banners', href: '/admin/banners', icon: Image },
   { name: 'Categories', href: '/admin/categories', icon: Tags },
   { name: 'Products', href: '/admin/products', icon: Package },
   { name: 'Variants', href: '/admin/variants', icon: Layers },
