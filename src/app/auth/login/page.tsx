@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Phone } from 'lucide-react';
+import { MainLayout } from '@/components/store/MainLayout';
 
 export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -54,50 +55,52 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-orange-100 rounded-full">
-              <Phone className="h-8 w-8 text-orange-600" />
+    <MainLayout>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-orange-100 rounded-full">
+                <Phone className="h-8 w-8 text-orange-600" />
+              </div>
             </div>
-          </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">Welcome to Rudra Store</CardTitle>
-          <CardDescription className="text-gray-600">
-            Enter your phone number to receive OTP
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSendOTP} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="Enter your phone number"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                className="text-center text-lg"
-                required
-              />
-            </div>
+            <CardTitle className="text-2xl font-bold text-gray-900">Welcome to Rudra Store</CardTitle>
+            <CardDescription className="text-gray-600">
+              Enter your phone number to receive OTP
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSendOTP} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="Enter your phone number"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="text-center text-lg"
+                  required
+                />
+              </div>
+              
+              {error && (
+                <div className="text-red-600 text-sm text-center">{error}</div>
+              )}
+              
+              <Button 
+                type="submit" 
+                className="w-full bg-orange-600 hover:bg-orange-700"
+                disabled={loading || phoneNumber.length < 10}
+              >
+                {loading ? 'Sending OTP...' : 'Send OTP'}
+              </Button>
+            </form>
             
-            {error && (
-              <div className="text-red-600 text-sm text-center">{error}</div>
-            )}
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-orange-600 hover:bg-orange-700"
-              disabled={loading || phoneNumber.length < 10}
-            >
-              {loading ? 'Sending OTP...' : 'Send OTP'}
-            </Button>
-          </form>
-          
-          <div id="recaptcha-container"></div>
-        </CardContent>
-      </Card>
-    </div>
+            <div id="recaptcha-container"></div>
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
   );
 }

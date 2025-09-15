@@ -1,14 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Menu, Search, Heart, ShoppingCart, User, Package } from 'lucide-react';
+import { Menu, Search, Heart, ShoppingCart, User, Package, LogOut, Phone, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useCartStore } from '@/store/cartStore';
 import { SlideInCart } from './SlideInCart';
 import Link from 'next/link';
 import { isUserAuthenticated, getCurrentUser } from '@/lib/auth';
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
   onSearch: (query: string) => void;
@@ -18,13 +21,50 @@ export function Header({ onSearch }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const { getTotalItems, openCart } = useCartStore();
+  const router = useRouter();
 
   useEffect(() => {
     setIsMounted(true);
-    // Check authentication status
-    setIsAuth(isUserAuthenticated());
+    
+    // Function to check authentication status and get current user
+    const checkAuth = () => {
+      const authStatus = isUserAuthenticated();
+      setIsAuth(authStatus);
+      if (authStatus) {
+        const user = getCurrentUser();
+        setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
+      }
+    };
+    
+    // Check authentication immediately
+    checkAuth();
+    
+    // Set up an interval to recheck authentication status
+    // This helps handle the case when user logs in/out from another tab
+    const interval = setInterval(checkAuth, 1000);
+    
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
   }, []);
+
+  const handleLogout = () => {
+    // Clear the auth token cookie
+    document.cookie = 'auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    setIsAuth(false);
+    setCurrentUser(null);
+    router.push('/');
+  };
+
+  const formatPhoneNumber = (phone: string) => {
+    if (phone.startsWith('+91')) {
+      return `+91 ${phone.slice(3, 8)} ${phone.slice(8)}`;
+    }
+    return phone;
+  };
 
   return (
     <>
@@ -56,9 +96,17 @@ export function Header({ onSearch }: HeaderProps) {
                   Login
                 </Link>
                 {isAuth && (
-                  <Link href="/my-orders" className="block py-2 hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
-                    My Orders
-                  </Link>
+                  <>
+                    <Link href="/my-orders" className="block py-2 hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
+                      My Orders
+                    </Link>
+                    <button 
+                      onClick={handleLogout}
+                      className="block py-2 hover:opacity-80 transition-colors text-left w-full text-red-600"
+                    >
+                      Logout
+                    </button>
+                  </>
                 )}
               </nav>
             </SheetContent>
@@ -140,9 +188,59 @@ export function Header({ onSearch }: HeaderProps) {
             </Button>
 
             {/* User Account */}
-            <Button variant="ghost" size="icon">
-              <User className="h-6 w-6" />
-            </Button>
+            {isAuth && currentUser ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-orange-100 text-orange-600">
+                        {currentUser.phoneNumber ? currentUser.phoneNumber.slice(-2) : 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="flex items-center justify-start gap-2 p-2">
+                    <div className="flex flex-col space-y-1 leading-none">
+                      <p className="font-medium">Account</p>
+                      <p className="w-[200px] truncate text-sm text-muted-foreground">
+                        {formatPhoneNumber(currentUser.phoneNumber)}
+                      </p>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/my-orders" className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      <span>My Orders</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/addresses" className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      <span>Addresses</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-red-600">
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link href="/auth/login">
+                <Button variant="ghost" size="icon">
+                  <User className="h-6 w-6" />
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 

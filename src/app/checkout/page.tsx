@@ -42,16 +42,28 @@ export default function CheckoutPage() {
   useEffect(() => {
     loadRazorpayScript().then(setRazorpayLoaded);
     
-    // Check if user is authenticated
-    const authStatus = isUserAuthenticated();
-    setIsAuthenticated(authStatus);
+    // Function to check authentication
+    const checkAuth = () => {
+      const authStatus = isUserAuthenticated();
+      setIsAuthenticated(authStatus);
+      
+      // If not authenticated, redirect to login
+      if (!authStatus) {
+        // Store current URL to redirect back after login
+        sessionStorage.setItem('redirectUrl', '/checkout');
+        router.push('/auth/login');
+      }
+    };
     
-    // If not authenticated, redirect to login
-    if (!authStatus) {
-      // Store current URL to redirect back after login
-      sessionStorage.setItem('redirectUrl', '/checkout');
-      router.push('/auth/login');
-    }
+    // Check authentication immediately
+    checkAuth();
+    
+    // Set up an interval to recheck authentication status
+    // This helps handle the case when user logs in from another tab
+    const interval = setInterval(checkAuth, 1000);
+    
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
   }, [router]);
 
   if (items.length === 0) {

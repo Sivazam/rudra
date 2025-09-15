@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, ArrowLeft } from 'lucide-react';
+import { MainLayout } from '@/components/store/MainLayout';
 
 export default function VerifyPage() {
   const [otp, setOtp] = useState('');
@@ -70,8 +71,16 @@ export default function VerifyPage() {
       if (response.ok) {
         // Clear session storage
         sessionStorage.removeItem('phoneNumber');
-        // Redirect to home page
-        router.push('/');
+        
+        // Check if there's a redirect URL
+        const redirectUrl = sessionStorage.getItem('redirectUrl');
+        if (redirectUrl) {
+          sessionStorage.removeItem('redirectUrl');
+          router.push(redirectUrl);
+        } else {
+          // Redirect to home page
+          router.push('/');
+        }
       } else {
         setError('Failed to verify OTP. Please try again.');
       }
@@ -108,67 +117,69 @@ export default function VerifyPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-orange-100 rounded-full">
-              <Shield className="h-8 w-8 text-orange-600" />
+    <MainLayout>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-orange-100 rounded-full">
+                <Shield className="h-8 w-8 text-orange-600" />
+              </div>
             </div>
-          </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">Verify OTP</CardTitle>
-          <CardDescription className="text-gray-600">
-            Enter the 6-digit code sent to {formatPhoneNumber(phoneNumber)}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleVerifyOTP} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="otp">Enter OTP</Label>
-              <Input
-                id="otp"
-                type="text"
-                placeholder="Enter 6-digit OTP"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                className="text-center text-lg tracking-widest"
-                maxLength={6}
-                required
-              />
+            <CardTitle className="text-2xl font-bold text-gray-900">Verify OTP</CardTitle>
+            <CardDescription className="text-gray-600">
+              Enter the 6-digit code sent to {formatPhoneNumber(phoneNumber)}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleVerifyOTP} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="otp">Enter OTP</Label>
+                <Input
+                  id="otp"
+                  type="text"
+                  placeholder="Enter 6-digit OTP"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="text-center text-lg tracking-widest"
+                  maxLength={6}
+                  required
+                />
+              </div>
+              
+              {error && (
+                <div className="text-red-600 text-sm text-center">{error}</div>
+              )}
+              
+              <Button 
+                type="submit" 
+                className="w-full bg-orange-600 hover:bg-orange-700"
+                disabled={loading || otp.length !== 6}
+              >
+                {loading ? 'Verifying...' : 'Verify OTP'}
+              </Button>
+            </form>
+            
+            <div className="mt-6 text-center space-y-2">
+              <button
+                onClick={handleResendOTP}
+                disabled={resendLoading || timer > 0}
+                className="text-sm text-orange-600 hover:text-orange-700 disabled:text-gray-400"
+              >
+                {resendLoading ? 'Resending...' : timer > 0 ? `Resend OTP in ${timer}s` : 'Resend OTP'}
+              </button>
+              
+              <button
+                onClick={() => router.push('/auth/login')}
+                className="flex items-center justify-center text-sm text-gray-600 hover:text-gray-700 w-full"
+              >
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Change phone number
+              </button>
             </div>
-            
-            {error && (
-              <div className="text-red-600 text-sm text-center">{error}</div>
-            )}
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-orange-600 hover:bg-orange-700"
-              disabled={loading || otp.length !== 6}
-            >
-              {loading ? 'Verifying...' : 'Verify OTP'}
-            </Button>
-          </form>
-          
-          <div className="mt-6 text-center space-y-2">
-            <button
-              onClick={handleResendOTP}
-              disabled={resendLoading || timer > 0}
-              className="text-sm text-orange-600 hover:text-orange-700 disabled:text-gray-400"
-            >
-              {resendLoading ? 'Resending...' : timer > 0 ? `Resend OTP in ${timer}s` : 'Resend OTP'}
-            </button>
-            
-            <button
-              onClick={() => router.push('/auth/login')}
-              className="flex items-center justify-center text-sm text-gray-600 hover:text-gray-700 w-full"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Change phone number
-            </button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
   );
 }
