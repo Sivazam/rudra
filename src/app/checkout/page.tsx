@@ -58,12 +58,17 @@ export default function CheckoutPage() {
     // Check authentication immediately
     checkAuth();
     
-    // Set up an interval to recheck authentication status
-    // This helps handle the case when user logs in from another tab
-    const interval = setInterval(checkAuth, 1000);
+    // Set up an event listener for storage changes to detect auth state changes
+    const handleStorageChange = () => {
+      checkAuth();
+    };
     
-    // Cleanup interval on component unmount
-    return () => clearInterval(interval);
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [router]);
 
   if (items.length === 0) {

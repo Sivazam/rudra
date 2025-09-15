@@ -33,18 +33,25 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
+    console.log('Sending OTP to phone number:', phoneNumber);
+
     try {
       setupRecaptcha();
       
       const appVerifier = window.recaptchaVerifier;
       const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
       
+      console.log('Formatted phone number:', formattedPhone);
+      
       const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
       window.confirmationResult = confirmationResult;
+      
+      console.log('OTP sent successfully');
       
       // Store phone number in session storage for verification page
       sessionStorage.setItem('phoneNumber', formattedPhone);
       
+      console.log('Redirecting to verification page');
       router.push('/auth/verify');
     } catch (error) {
       console.error('Error sending OTP:', error);

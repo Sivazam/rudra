@@ -21,7 +21,10 @@ export default function VerifyPage() {
 
   useEffect(() => {
     const storedPhone = sessionStorage.getItem('phoneNumber');
+    console.log('Retrieved phone from session storage:', storedPhone);
+    
     if (!storedPhone) {
+      console.log('No phone number found, redirecting to login');
       router.push('/auth/login');
       return;
     }
@@ -46,17 +49,25 @@ export default function VerifyPage() {
     setLoading(true);
     setError('');
 
+    console.log('Verifying OTP:', otp);
+    console.log('Phone number:', phoneNumber);
+
     try {
       const confirmationResult = window.confirmationResult;
       const result = await confirmationResult.confirm(otp);
       
+      console.log('Firebase confirmation result:', result);
+      
       // User signed in successfully
       const user = result.user;
+      console.log('Firebase user:', user);
       
       // Get ID token
       const idToken = await user.getIdToken();
+      console.log('Firebase ID token:', idToken);
       
       // Send token to backend to create session
+      console.log('Sending request to /api/auth/verify-otp');
       const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: {
@@ -68,21 +79,46 @@ export default function VerifyPage() {
         }),
       });
 
+      console.log('API response status:', response.status);
+      const responseData = await response.json();
+      console.log('API response data:', responseData);
+
       if (response.ok) {
+        console.log('OTP verification response:', responseData);
+        
+        // Store token in localStorage as fallback
+        if (responseData.token) {
+          console.log('Storing token in localStorage as fallback');
+          localStorage.setItem('auth-token', responseData.token);
+        }
+        
+        console.log('OTP verification successful');
+        
         // Clear session storage
         sessionStorage.removeItem('phoneNumber');
         
         // Check if there's a redirect URL
         const redirectUrl = sessionStorage.getItem('redirectUrl');
-        if (redirectUrl) {
-          sessionStorage.removeItem('redirectUrl');
-          router.push(redirectUrl);
-        } else {
-          // Redirect to home page
-          router.push('/');
-        }
+        console.log('Redirect URL from session storage:', redirectUrl);
+        
+        // Force a small delay to ensure cookies are set
+        setTimeout(() => {
+          // Dispatch custom event to notify components of auth state change
+          window.dispatchEvent(new Event('auth-state-changed'));
+          
+          if (redirectUrl) {
+            sessionStorage.removeItem('redirectUrl');
+            console.log('Redirecting to:', redirectUrl);
+            router.push(redirectUrl);
+          } else {
+            console.log('No redirect URL, going to home page');
+            // Redirect to home page
+            router.push('/');
+          }
+        }, 200); // Reduced from 500ms to 200ms for faster response
       } else {
-        setError('Failed to verify OTP. Please try again.');
+        console.error('API response not ok:', responseData);
+        setError(responseData.error || 'Failed to verify OTP. Please try again.');
       }
     } catch (error) {
       console.error('Error verifying OTP:', error);

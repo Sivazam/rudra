@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { X, Minus, Plus, ShoppingBag, Heart, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { isUserAuthenticated } from '@/lib/auth';
 
 export function SlideInCart() {
   const { 
@@ -18,6 +20,8 @@ export function SlideInCart() {
     getTotalPrice,
     clearCart 
   } = useCartStore();
+  
+  const router = useRouter();
 
   const formatPrice = (price: number, discount: number = 0) => {
     const discountedPrice = price - (price * discount) / 100;
@@ -25,6 +29,26 @@ export function SlideInCart() {
       current: `₹${discountedPrice.toLocaleString()}`,
       original: discount > 0 ? `₹${price.toLocaleString()}` : null,
     };
+  };
+
+  const handleProceedToCheckout = () => {
+    console.log('handleProceedToCheckout called');
+    console.log('isUserAuthenticated:', isUserAuthenticated());
+    
+    // Check if user is authenticated first (before closing cart)
+    if (!isUserAuthenticated()) {
+      console.log('User not authenticated, storing redirect URL and navigating to login');
+      // Store the checkout redirect URL
+      sessionStorage.setItem('redirectUrl', '/checkout');
+      // Close cart and navigate immediately
+      closeCart();
+      router.push('/auth/login');
+    } else {
+      console.log('User authenticated, navigating to checkout');
+      // Close cart and navigate immediately
+      closeCart();
+      router.push('/checkout');
+    }
   };
 
   if (!isOpen) return null;
@@ -181,12 +205,10 @@ export function SlideInCart() {
                 <Button 
                   className="w-full" 
                   style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
-                  asChild
+                  onClick={handleProceedToCheckout}
                 >
-                  <Link href="/checkout">
-                    Proceed to Checkout
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Link>
+                  Proceed to Checkout
+                  <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
                 <Button variant="outline" className="w-full" style={{ borderColor: '#846549', color: '#846549' }} asChild>
                   <Link href="/cart">View Full Cart</Link>

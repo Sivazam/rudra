@@ -43,17 +43,31 @@ export function Header({ onSearch }: HeaderProps) {
     // Check authentication immediately
     checkAuth();
     
-    // Set up an interval to recheck authentication status
-    // This helps handle the case when user logs in/out from another tab
-    const interval = setInterval(checkAuth, 1000);
+    // Set up event listeners for auth state changes
+    const handleStorageChange = () => {
+      checkAuth();
+    };
     
-    // Cleanup interval on component unmount
-    return () => clearInterval(interval);
+    const handleAuthStateChange = () => {
+      console.log('Auth state change event received');
+      checkAuth();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('auth-state-changed', handleAuthStateChange);
+    
+    // Cleanup event listeners on component unmount
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-state-changed', handleAuthStateChange);
+    };
   }, []);
 
   const handleLogout = () => {
     // Clear the auth token cookie
     document.cookie = 'auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    // Clear localStorage fallback
+    localStorage.removeItem('auth-token');
     setIsAuth(false);
     setCurrentUser(null);
     router.push('/');
