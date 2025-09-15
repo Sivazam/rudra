@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import Category from '@/lib/models/Category';
+import { Category } from '@/lib/models/Category';
 
 export async function GET() {
   try {
     await connectDB();
-
+    
     const categories = await Category.find({}).sort({ name: 1 }).lean();
 
     return NextResponse.json({ categories });
@@ -32,8 +32,8 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // Check if category already exists
-    const existingCategory = await Category.findOne({
-      $or: [{ name }, { slug }]
+    const existingCategory = await Category.findOne({ 
+      $or: [{ name }, { slug }] 
     });
 
     if (existingCategory) {
@@ -51,10 +51,10 @@ export async function POST(request: NextRequest) {
 
     await category.save();
 
-    return NextResponse.json({
-      message: 'Category created successfully',
-      category
-    });
+    return NextResponse.json(
+      { message: 'Category created successfully', category },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Error creating category:', error);
     return NextResponse.json(

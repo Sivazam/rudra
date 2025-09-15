@@ -1,8 +1,8 @@
 'use client';
 
-import { Header } from '@/components/store/Header';
-import { Button } from '@/components/ui/button';
 import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
 export default function Error({
   error,
@@ -17,30 +17,62 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-cream">
-      <Header onSearch={() => {}} />
-      
-      <main className="container mx-auto px-4 py-8">
-        <div className="text-center py-16">
-          <h1 className="text-6xl font-bold text-red-600 mb-4">500</h1>
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Something went wrong!</h2>
-          <p className="text-gray-600 mb-8 max-w-md mx-auto">
-            We're sorry, but something unexpected happened. Our team has been notified and we're working on it.
+    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-amber-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <div className="bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+              <AlertTriangle className="h-8 w-8 text-red-600" />
+            </div>
+          </div>
+          
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Something went wrong!
+          </h2>
+          
+          <p className="text-gray-600 mb-6">
+            We apologize for the inconvenience. Our spiritual journey encountered an unexpected obstacle.
           </p>
-          <div className="space-y-4">
+          
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mb-6 p-4 bg-gray-100 rounded-lg text-left">
+              <p className="text-sm font-mono text-gray-700 break-all">
+                {error.message}
+              </p>
+              {error.digest && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Error ID: {error.digest}
+                </p>
+              )}
+            </div>
+          )}
+          
+          <div className="space-y-3">
             <Button
               onClick={reset}
-              variant="outline"
-              className="mr-4"
+              className="w-full bg-orange-600 hover:bg-orange-700"
             >
-              Try again
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
             </Button>
-            <Button className="bg-orange-600 hover:bg-orange-700">
+            
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = '/'}
+              className="w-full"
+            >
+              <Home className="h-4 w-4 mr-2" />
               Go to Homepage
             </Button>
           </div>
+          
+          <div className="mt-6 p-4 bg-orange-50 rounded-lg">
+            <p className="text-sm text-orange-800">
+              If this problem persists, please contact our support team at support@rudrastore.com
+            </p>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/mongodb';
-import Product from '@/lib/models/Product';
-import Category from '@/lib/models/Category';
+import { Product } from '@/lib/models/Product';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-// Verify admin authentication
-async function verifyAuth(request: NextRequest) {
+async function verifyAdmin(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value;
-  
   if (!token) {
     return null;
   }
@@ -24,8 +21,8 @@ async function verifyAuth(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await verifyAuth(request);
-    if (!user) {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -78,8 +75,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await verifyAuth(request);
-    if (!user) {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -107,27 +104,6 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    // Check if product already exists
-    const existingProduct = await Product.findOne({
-      $or: [{ name }, { slug }]
-    });
-
-    if (existingProduct) {
-      return NextResponse.json(
-        { error: 'Product already exists' },
-        { status: 400 }
-      );
-    }
-
-    // Verify category exists
-    const categoryDoc = await Category.findById(category);
-    if (!categoryDoc) {
-      return NextResponse.json(
-        { error: 'Category not found' },
-        { status: 404 }
-      );
-    }
-
     const product = new Product({
       name,
       slug,
@@ -142,10 +118,10 @@ export async function POST(request: NextRequest) {
 
     await product.save();
 
-    return NextResponse.json({
-      message: 'Product created successfully',
-      product
-    });
+    return NextResponse.json(
+      { message: 'Product created successfully', product },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Error creating product:', error);
     return NextResponse.json(

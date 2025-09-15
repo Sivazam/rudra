@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
+import Razorpay from 'razorpay';
 import connectDB from '@/lib/mongodb';
-import Order from '@/lib/models/Order';
+import { Order } from '@/lib/models/Order';
+
+const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || 'YourWebhookSecret';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.text();
+    // Get webhook signature
     const signature = request.headers.get('x-razorpay-signature');
+    const body = await request.text();
 
     if (!signature) {
       return NextResponse.json(
@@ -16,56 +19,73 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify webhook signature
-    const secret = process.env.RAZORPAY_WEBHOOK_SECRET || 'YourWebhookSecret';
-    const generatedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(body)
-      .digest('hex');
+    const expectedSignature = Razorpay.validateWebhookSignature(
+      body,
+      signature,
+      RAZORPAY_WEBHOOK_SECRET
+    );
 
-    if (generatedSignature !== signature) {
+    if (!expectedSignature) {
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 400 }
       );
     }
 
-    const webhookEvent = JSON.parse(body);
+    // Parse webhook body
+    const webhookData = JSON.parse(body);
 
-    // Handle payment authorized event
-    if (webhookEvent.event === 'payment.authorized') {
-      const payment = webhookEvent.payload.payment.entity;
+    // Handle different webhook events
+    switch (webhookData.event) {
+      case 'payment.captured':
+        await handlePaymentCaptured(webhookData.payload.payment.entity);
+        break;
       
-      await connectDB();
+      case 'payment.failed':
+        await handlePaymentFailed(webhookData.payload.payment.entity);
+        break;
       
-      await Order.findOneAndUpdate(
-        { razorpayOrderId: payment.order_id },
-        {
-          razorpayPaymentId: payment.id,
-          status: payment.status === 'captured' ? 'paid' : 'pending',
-        }
-      );
+      default:
+        console.log(`Unhandled webhook event: ${webhookData.event}`);
     }
 
-    // Handle payment failed event
-    if (webhookEvent.event === 'payment.failed') {
-      const payment = webhookEvent.payload.payment.entity;
-      
-      await connectDB();
-      
-      await Order.findOneAndUpdate(
-        { razorpayOrderId: payment.order_id },
-        {
-          status: 'failed',
-        }
-      );
-    }
-
-    return NextResponse.json({ status: 'ok' });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error handling Razorpay webhook:', error);
+    console.error('Error processing webhook:', error);
     return NextResponse.json(
-      { error: 'Webhook handling failed' },
+      { error: 'Failed to process webhook' },
       { status: 500 }
     );
+  }
+}
+
+async function handlePaymentCaptured(payment: any) {
+  await connectDB();
+  
+  const order = await Order.findOne({ 
+    razorpayOrderId: payment.order_id 
+  });
+
+  if (order && order.status !== 'paid') {
+    order.razorpayPaymentId = payment.id;
+    order.status = 'paid';
+    await order.save();
+    
+    console.log(`Payment captured for order: ${order._id}`);
+  }
+}
+
+async function handlePaymentFailed(payment: any) {
+  await connectDB();
+  
+  const order = await Order.findOne({ 
+    razorpayOrderId: payment.order_id 
+  });
+
+  if (order && order.status !== 'failed') {
+    order.status = 'failed';
+    await order.save();
+    
+    console.log(`Payment failed for order: ${order._id}`);
   }
 }

@@ -1,49 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
+import Razorpay from 'razorpay';
+import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/mongodb';
-import Order from '@/lib/models/Order';
+import { Order } from '@/lib/models/Order';
+
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'YourTestSecret';
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export async function POST(request: NextRequest) {
   try {
-    const {
-      razorpayOrderId,
-      razorpayPaymentId,
-      razorpaySignature,
-    } = await request.json();
+    // Verify authentication
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const userId = decoded.phoneNumber;
+
+    // Get payment details from request body
+    const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = await request.json();
 
     if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing payment details' },
         { status: 400 }
       );
     }
 
     // Verify signature
-    const secret = process.env.RAZORPAY_KEY_SECRET || 'YourSecretHere';
-    const generatedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(`${razorpayOrderId}|${razorpayPaymentId}`)
-      .digest('hex');
+    const generatedSignature = Razorpay.validateWebhookSignature(
+      `${razorpayOrderId}|${razorpayPaymentId}`,
+      razorpaySignature,
+      RAZORPAY_KEY_SECRET
+    );
 
-    if (generatedSignature !== razorpaySignature) {
+    if (!generatedSignature) {
       return NextResponse.json(
-        { error: 'Invalid signature' },
+        { error: 'Invalid payment signature' },
         { status: 400 }
       );
     }
 
-    // Connect to MongoDB
+    // Connect to database
     await connectDB();
 
     // Update order status
-    const order = await Order.findOneAndUpdate(
-      { razorpayOrderId },
-      {
-        razorpayPaymentId,
-        status: 'paid',
-      },
-      { new: true }
-    );
+    const order = await Order.findOne({ 
+      razorpayOrderId, 
+      userId 
+    });
 
     if (!order) {
       return NextResponse.json(
@@ -52,9 +61,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Update order with payment details
+    order.razorpayPaymentId = razorpayPaymentId;
+    order.status = 'paid';
+    await order.save();
+
     return NextResponse.json({
+      success: true,
+      orderId: order._id,
       message: 'Payment verified successfully',
-      order,
     });
   } catch (error) {
     console.error('Error verifying payment:', error);

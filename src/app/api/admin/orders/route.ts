@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/mongodb';
-import Order from '@/lib/models/Order';
-import Variant from '@/lib/models/Variant';
-import Product from '@/lib/models/Product';
+import { Order } from '@/lib/models/Order';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-// Verify admin authentication
-async function verifyAuth(request: NextRequest) {
+async function verifyAdmin(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value;
-  
   if (!token) {
     return null;
   }
@@ -25,8 +21,8 @@ async function verifyAuth(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await verifyAuth(request);
-    if (!user) {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -41,7 +37,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
 
     let query: any = {};
-    if (status && status !== 'all') {
+    if (status) {
       query.status = status;
     }
 
@@ -53,33 +49,10 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .lean();
 
-    // Populate product details for each order item
-    const populatedOrders = await Promise.all(
-      orders.map(async (order) => {
-        const populatedItems = await Promise.all(
-          order.items.map(async (item) => {
-            const variant = await Variant.findById(item.variantId).lean();
-            const product = variant ? await Product.findById(variant.productId).lean() : null;
-            
-            return {
-              ...item,
-              variant,
-              product
-            };
-          })
-        );
-
-        return {
-          ...order,
-          items: populatedItems
-        };
-      })
-    );
-
     const total = await Order.countDocuments(query);
 
     return NextResponse.json({
-      orders: populatedOrders,
+      orders,
       pagination: {
         page,
         limit,
@@ -91,53 +64,6 @@ export async function GET(request: NextRequest) {
     console.error('Error fetching admin orders:', error);
     return NextResponse.json(
       { error: 'Failed to fetch orders' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PUT(request: NextRequest) {
-  try {
-    const user = await verifyAuth(request);
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const { id, status } = await request.json();
-
-    if (!id || !status) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
-
-    await connectDB();
-
-    const order = await Order.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    );
-
-    if (!order) {
-      return NextResponse.json(
-        { error: 'Order not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      message: 'Order status updated successfully',
-      order
-    });
-  } catch (error) {
-    console.error('Error updating order status:', error);
-    return NextResponse.json(
-      { error: 'Failed to update order status' },
       { status: 500 }
     );
   }

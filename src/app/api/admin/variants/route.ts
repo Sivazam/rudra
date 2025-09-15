@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/mongodb';
-import { Category } from '@/lib/models/Category';
+import { Variant } from '@/lib/models/Variant';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -31,13 +31,24 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
-    const categories = await Category.find({}).sort({ name: 1 }).lean();
+    const { searchParams } = new URL(request.url);
+    const productId = searchParams.get('productId');
 
-    return NextResponse.json({ categories });
+    let query = {};
+    if (productId) {
+      query = { productId };
+    }
+
+    const variants = await Variant.find(query)
+      .populate('productId', 'name')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return NextResponse.json({ variants });
   } catch (error) {
-    console.error('Error fetching admin categories:', error);
+    console.error('Error fetching admin variants:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch categories' },
+      { error: 'Failed to fetch variants' },
       { status: 500 }
     );
   }
@@ -53,9 +64,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { name, slug, iconUrl } = await request.json();
+    const {
+      productId,
+      label,
+      price,
+      sku,
+      inventory,
+      discount,
+      isDefault
+    } = await request.json();
 
-    if (!name || !slug || !iconUrl) {
+    if (!productId || !label || !price || !sku || inventory === undefined) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -64,22 +83,34 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    const category = new Category({
-      name,
-      slug,
-      iconUrl
+    // If this is set as default, remove default from other variants of this product
+    if (isDefault) {
+      await Variant.updateMany(
+        { productId },
+        { isDefault: false }
+      );
+    }
+
+    const variant = new Variant({
+      productId,
+      label,
+      price,
+      sku,
+      inventory,
+      discount: discount || 0,
+      isDefault: isDefault || false
     });
 
-    await category.save();
+    await variant.save();
 
     return NextResponse.json(
-      { message: 'Category created successfully', category },
+      { message: 'Variant created successfully', variant },
       { status: 201 }
     );
   } catch (error) {
-    console.error('Error creating category:', error);
+    console.error('Error creating variant:', error);
     return NextResponse.json(
-      { error: 'Failed to create category' },
+      { error: 'Failed to create variant' },
       { status: 500 }
     );
   }
