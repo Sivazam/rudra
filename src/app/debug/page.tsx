@@ -10,14 +10,21 @@ export default function AuthDebugPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [token, setToken] = useState<string | null>(null);
   const [cookies, setCookies] = useState<string>('');
+  const [localStorageToken, setLocalStorageToken] = useState<string>('');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    // This ensures we only run client-side code
+    setIsClient(true);
+  }, []);
 
   const checkAuth = () => {
     console.log('=== Manual Auth Check ===');
     const authed = isUserAuthenticated();
     const user = getCurrentUser();
     const authToken = getAuthToken();
-    const docCookies = document.cookie;
-    const localToken = localStorage.getItem('auth-token');
+    const docCookies = isClient ? document.cookie : 'Not available on server';
+    const localToken = isClient ? localStorage.getItem('auth-token') : 'Not available on server';
 
     console.log('Auth Status:', authed);
     console.log('Current User:', user);
@@ -29,17 +36,33 @@ export default function AuthDebugPage() {
     setCurrentUser(user);
     setToken(authToken);
     setCookies(docCookies);
+    setLocalStorageToken(localToken);
   };
 
   useEffect(() => {
-    checkAuth();
-  }, []);
+    if (isClient) {
+      checkAuth();
+    }
+  }, [isClient]);
 
   const clearAuth = () => {
-    document.cookie = 'auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    localStorage.removeItem('auth-token');
-    checkAuth();
+    if (isClient) {
+      document.cookie = 'auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      localStorage.removeItem('auth-token');
+      checkAuth();
+    }
   };
+
+  if (!isClient) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading debug page...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -79,7 +102,7 @@ export default function AuthDebugPage() {
             <div>
               <strong>LocalStorage:</strong>
               <pre className="mt-2 p-2 bg-gray-100 rounded text-sm max-h-32 overflow-y-auto">
-                {localStorage.getItem('auth-token') ? 'Auth token found in localStorage' : 'No auth token in localStorage'}
+                {localStorageToken ? 'Auth token found in localStorage' : 'No auth token in localStorage'}
               </pre>
             </div>
             
