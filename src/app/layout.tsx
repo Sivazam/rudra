@@ -1,6 +1,6 @@
 import "@/app/globals.css";
 import type { Metadata } from "next";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/ui/shadcn/sonner";
 import { publicUrl } from "@/env.mjs";
 import { IntlClientProvider } from "@/i18n/client";
 import { getLocale, getMessages, getTranslations } from "@/i18n/server";
