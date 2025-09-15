@@ -91,8 +91,19 @@ export default function ProductDetailPage() {
   const quantityInCart = cartItem?.quantity || 0;
 
   const handleAddToCart = () => {
-    // Always show variant selector for better UX
-    setShowVariantSelector(true);
+    // Check if product has multiple variants
+    const availableVariants = mockProduct.variants.filter(v => v.inventory > 0);
+    
+    if (availableVariants.length === 1) {
+      // If only one variant available, add it directly to cart
+      handleVariantSelect(availableVariants[0]);
+    } else if (availableVariants.length > 1) {
+      // If multiple variants available, show variant selector
+      setShowVariantSelector(true);
+    } else {
+      // No variants available, show variant selector to display out of stock state
+      setShowVariantSelector(true);
+    }
   };
 
   const handleBuyNow = () => {

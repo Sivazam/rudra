@@ -61,8 +61,21 @@ export function ProductCard({ product }: ProductCardProps) {
   const quantityInCart = cartItem?.quantity || 0;
 
   const handleAddToCart = () => {
-    // Always show variant selector for all products
-    setShowVariantSelector(true);
+    // Check if product has multiple variants
+    const variants = product.hasVariants === false ? [getDefaultVariant(product)] : getMockVariants(product.id);
+    const availableVariants = variants.filter(v => v.inventory > 0);
+    
+    if (availableVariants.length === 1) {
+      // If only one variant available, add it directly to cart
+      handleVariantSelect(availableVariants[0]);
+    } else if (availableVariants.length > 1) {
+      // If multiple variants available, show variant selector
+      setShowVariantSelector(true);
+    } else {
+      // No variants available, show error or handle accordingly
+      // For now, we'll still show the variant selector to display the out of stock state
+      setShowVariantSelector(true);
+    }
   };
 
   const handleVariantSelect = (variant: any) => {
