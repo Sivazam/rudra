@@ -1,30 +1,56 @@
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { decrypt, updateSession } from "./lib/auth";
+import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
 
-const ProtectedPaths = ["/orders"];
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-export async function middleware(request: NextRequest) {
-	const { pathname } = request.nextUrl;
-	const isProtectedPath = ProtectedPaths.some((p) => pathname.startsWith(p));
+export function middleware(request: NextRequest) {
+  const token = request.cookies.get('auth-token')?.value;
+  const { pathname } = request.nextUrl;
 
-	if (!isProtectedPath) {
-		return NextResponse.next();
-	}
+  // Protected routes
+  const protectedRoutes = ['/admin'];
+  const authRoutes = ['/auth/login', '/auth/verify'];
 
-	const session = request.cookies.get("session")?.value;
-	if (!session) {
-		return NextResponse.redirect(new URL("/login", request.url));
-	}
+  // Check if the path is protected
+  const isProtectedRoute = protectedRoutes.some(route => 
+    pathname.startsWith(route)
+  );
 
-	const data = await decrypt(session);
-	if (!data || data.expires < Date.now()) {
-		return NextResponse.redirect(new URL("/login", request.url));
-	}
+  // Check if the path is auth route
+  const isAuthRoute = authRoutes.some(route => 
+    pathname.startsWith(route)
+  );
 
-	return updateSession(request);
+  // If accessing protected route without token, redirect to login
+  if (isProtectedRoute && !token) {
+    return NextResponse.redirect(new URL('/auth/login', request.url));
+  }
+
+  // If accessing auth route with token, redirect to home
+  if (isAuthRoute && token) {
+    try {
+      jwt.verify(token, JWT_SECRET);
+      return NextResponse.redirect(new URL('/', request.url));
+    } catch (error) {
+      // Token is invalid, allow access to auth routes
+    }
+  }
+
+  // Verify token for protected routes
+  if (isProtectedRoute && token) {
+    try {
+      jwt.verify(token, JWT_SECRET);
+    } catch (error) {
+      // Token is invalid, redirect to login
+      return NextResponse.redirect(new URL('/auth/login', request.url));
+    }
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
-	matcher: ["/orders"],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+  ],
 };

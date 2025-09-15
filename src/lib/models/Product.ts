@@ -1,89 +1,74 @@
-import mongoose, { type Document, Schema } from "mongoose";
-import type { ICategory } from "./Category";
+import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IProduct extends Document {
-	name: string;
-	slug: string;
-	category: mongoose.Types.ObjectId | ICategory;
-	description: string;
-	spiritualMeaning: string;
-	deity: string;
-	images: string[];
-	featured: boolean;
-	isActive: boolean;
-	metaTitle?: string;
-	metaDescription?: string;
-	createdAt: Date;
-	updatedAt: Date;
+export interface IProductMetadata {
+  origin: string;
+  material: string;
 }
 
-const ProductSchema = new Schema<IProduct>(
-	{
-		name: {
-			type: String,
-			required: true,
-			trim: true,
-		},
-		slug: {
-			type: String,
-			required: true,
-			unique: true,
-			lowercase: true,
-		},
-		category: {
-			type: Schema.Types.ObjectId,
-			ref: "Category",
-			required: true,
-		},
-		description: {
-			type: String,
-			required: true,
-		},
-		spiritualMeaning: {
-			type: String,
-			required: true,
-		},
-		deity: {
-			type: String,
-			required: true,
-		},
-		images: [
-			{
-				type: String,
-				required: true,
-			},
-		],
-		featured: {
-			type: Boolean,
-			default: false,
-		},
-		isActive: {
-			type: Boolean,
-			default: true,
-		},
-		metaTitle: {
-			type: String,
-			required: false,
-		},
-		metaDescription: {
-			type: String,
-			required: false,
-		},
-	},
-	{
-		timestamps: true,
-	},
-);
+export interface IProduct extends Document {
+  name: string;
+  slug: string;
+  category: mongoose.Types.ObjectId;
+  description: string;
+  spiritualMeaning: string;
+  deity: string;
+  images: string[];
+  metadata: IProductMetadata;
+  status: 'active' | 'inactive';
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-// Pre-save middleware to generate slug from name
-ProductSchema.pre("save", function (next) {
-	if (!this.slug && this.name) {
-		this.slug = this.name
-			.toLowerCase()
-			.replace(/[^a-z0-9]+/g, "-")
-			.replace(/(^-|-$)/g, "");
-	}
-	next();
+const productSchema = new Schema<IProduct>({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true
+  },
+  category: {
+    type: Schema.Types.ObjectId,
+    ref: 'Category',
+    required: true
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  spiritualMeaning: {
+    type: String,
+    required: true
+  },
+  deity: {
+    type: String,
+    required: true
+  },
+  images: [{
+    type: String,
+    required: true
+  }],
+  metadata: {
+    origin: {
+      type: String,
+      required: true
+    },
+    material: {
+      type: String,
+      required: true
+    }
+  },
+  status: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: 'active'
+  }
+}, {
+  timestamps: true
 });
 
-export default mongoose.models.Product || mongoose.model<IProduct>("Product", ProductSchema);
+export default mongoose.models.Product || mongoose.model<IProduct>('Product', productSchema);

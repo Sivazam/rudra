@@ -1,247 +1,213 @@
-# Sanathan Rudraksha - Spiritual Beads E-commerce Store
+# 🕉️ Rudra Store - Spiritual Products E-commerce Platform
 
-A production-ready Next.js 15 e-commerce application tailored for spiritual beads (Rudraksha, Malas, Bracelets, Gemstones, Yantras) with Firebase mobile OTP authentication, custom admin dashboard, and Razorpay payment integration.
+A modern, production-ready e-commerce platform for spiritual products, specializing in authentic Rudraksha beads, malas, and spiritual accessories. Built with Next.js 15, TypeScript, and modern web technologies.
 
-## 🚀 Features
+## ✨ Features
 
-### Frontend Features
-- **Responsive Design**: Mobile-first design with Tailwind CSS
-- **Product Catalog**: Grid layout with product cards, ratings, and pricing
-- **Category Navigation**: Easy navigation between Rudraksha, Malas, Bracelets, Gemstones, and Yantras
-- **Shopping Cart**: Add to cart functionality with persistent storage
-- **Search & Filter**: Product search and category filtering
-- **User Authentication**: Firebase mobile OTP-based login
-- **Payment Integration**: Razorpay test-mode payments
+### 🛍️ Customer Experience
+- **Product Catalog**: Browse and search through authentic spiritual products
+- **Product Details**: Detailed product information with specifications and guides
+- **Shopping Cart**: Persistent cart with Zustand state management
+- **Secure Checkout**: Razorpay integration for secure payments
+- **Mobile Responsive**: Optimized for all devices
+- **Authentication**: Firebase OTP-based login system
 
-### Admin Features
-- **Admin Dashboard**: Comprehensive admin panel with statistics
-- **Product Management**: CRUD operations for products with variants
+### 🎨 Design & UI
+- **Beautiful Design**: Saffron and cream color scheme matching spiritual aesthetics
+- **Product Grid**: Responsive grid layout with filtering and sorting
+- **Category Navigation**: Easy category-based browsing
+- **Product Variants**: Support for multiple product variants (Regular, Medium, Ultra, Rare)
+- **Image Gallery**: Multiple product images with thumbnail navigation
+
+### 🛡️ Security & Performance
+- **Secure Authentication**: Firebase OTP with session management
+- **Payment Security**: Razorpay secure payment processing
+- **API Protection**: Admin routes protected with authentication
+- **SEO Optimized**: Meta tags, sitemap, and robots.txt
+- **Error Handling**: Comprehensive error pages and validation
+
+### 📊 Admin Dashboard
+- **Product Management**: CRUD operations for products
 - **Category Management**: Manage product categories
+- **Variant Management**: Handle product variants and pricing
 - **Order Management**: View and manage customer orders
 - **Discount Management**: Create and manage discount codes
-- **Inventory Management**: Track stock levels and low-stock alerts
-- **User Management**: View customer information
 
-### Technical Features
-- **Next.js 15**: Latest Next.js with App Router
-- **TypeScript**: Full TypeScript support
-- **MongoDB**: Database with Mongoose ODM
-- **Firebase Authentication**: Mobile OTP authentication
-- **Razorpay**: Payment gateway integration
-- **Tailwind CSS**: Modern styling with brand colors
-- **Responsive Design**: Works on all devices
+## 🚀 Technology Stack
 
-## 🛠️ Tech Stack
+### 🎯 Core Framework
+- **⚡ Next.js 15** - React framework with App Router
+- **📘 TypeScript 5** - Type-safe JavaScript development
+- **🎨 Tailwind CSS 4** - Utility-first CSS framework
 
-- **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript 5
-- **Database**: MongoDB with Mongoose
-- **Authentication**: Firebase (Mobile OTP)
-- **Payments**: Razorpay (Test Mode)
-- **Styling**: Tailwind CSS 4
-- **UI Components**: Radix UI with shadcn/ui
-- **Icons**: Lucide React
-- **State Management**: React Context, Zustand
+### 🔐 Authentication & Database
+- **🔥 Firebase** - OTP-based authentication
+- **🗄️ MongoDB** - NoSQL database with Mongoose ODM
+- **🍪 JWT** - Secure session management
 
-## 🎨 Brand Colors
+### 💳 Payment & State Management
+- **💳 Razorpay** - Payment gateway integration
+- **🐻 Zustand** - Lightweight state management
+- **🔄 React Query** - Server state management
 
-- **Primary**: `#A36922` (Saffron Brown)
-- **Secondary**: `#FCF5E5` (Light Cream)
-- **Accent**: `#8B0000` (Dark Red)
+### 🧩 UI Components
+- **🧩 shadcn/ui** - High-quality accessible components
+- **🎯 Lucide React** - Beautiful icon library
+- **🎨 Framer Motion** - Smooth animations
 
-## 📦 Installation
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 20+ 
-- MongoDB instance
-- Firebase project
-- Razorpay account
+- Node.js 18+ installed
+- MongoDB instance running
+- Firebase project configured
+- Razorpay account for payments
 
-### 1. Clone & Setup
+### Installation
+
+1. **Clone the repository**
 ```bash
-git clone https://github.com/yournextstore/yournextstore.git spiritual-beads-store
-cd spiritual-beads-store
+git clone <repository-url>
+cd rudra-store
+```
+
+2. **Install dependencies**
+```bash
 npm install
 ```
 
-### 2. Environment Configuration
-Copy the environment template and fill in your credentials:
-
+3. **Environment Setup**
 ```bash
+# Copy environment variables
 cp .env.example .env.local
+
+# Edit .env.local with your configuration
+# Add your Firebase credentials, MongoDB URI, and Razorpay keys
 ```
 
-Configure the following environment variables:
-
-#### MongoDB
-```env
-MONGODB_URI=mongodb://localhost:27017/spiritual-beads-store
+4. **Database Setup**
+```bash
+# Push database schema (if using Prisma - optional as we use Mongoose)
+npm run db:push
 ```
 
-#### Firebase
-1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-2. Enable Phone Authentication
-3. Add a web app to your project
-4. Download service account key from Project Settings → Service Accounts
-
-```env
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-
-# Firebase Admin
-FIREBASE_TYPE=service_account
-FIREBASE_PROJECT_ID=your_project_id
-FIREBASE_PRIVATE_KEY_ID=your_private_key_id
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nyour_private_key\n-----END PRIVATE KEY-----"
-FIREBASE_CLIENT_EMAIL=your_client_email
-FIREBASE_CLIENT_ID=your_client_id
-# ... other Firebase admin config
-```
-
-#### Razorpay
-1. Create a Razorpay account at [Razorpay Dashboard](https://dashboard.razorpay.com/)
-2. Get your test API keys
-
-```env
-RAZORPAY_KEY_ID=your_test_key_id
-RAZORPAY_KEY_SECRET=your_test_key_secret
-RAZORPAY_WEBHOOK_SECRET=your_webhook_secret
-```
-
-### 3. Database Setup
-The application will automatically create the necessary collections when you first run it. No manual database setup is required.
-
-### 4. Run the Development Server
+5. **Start Development Server**
 ```bash
 npm run dev
 ```
 
-Visit [http://localhost:3000](http://localhost:3000) to view the application.
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-## 🏗️ Project Structure
+### Environment Variables
+
+Create a `.env.local` file with the following variables:
+
+```env
+# Firebase Configuration
+FIREBASE_API_KEY=your-firebase-api-key
+FIREBASE_AUTH_DOMAIN=your-auth-domain
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_STORAGE_BUCKET=your-storage-bucket
+FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+FIREBASE_APP_ID=your-app-id
+
+# MongoDB Configuration
+MONGODB_URI=mongodb://localhost:27017/rudra-store
+
+# Razorpay Configuration
+RAZORPAY_KEY_ID=your-razorpay-key-id
+RAZORPAY_KEY_SECRET=your-razorpay-key-secret
+RAZORPAY_WEBHOOK_SECRET=your-webhook-secret
+
+# JWT Configuration
+JWT_SECRET=your-jwt-secret
+
+# Application Configuration
+NODE_ENV=development
+```
+
+## 📁 Project Structure
 
 ```
 src/
-├── app/                          # Next.js App Router
-│   ├── (store)/                  # Store pages
-│   │   ├── page.tsx             # Homepage
-│   │   ├── products/            # Product pages
-│   │   └── category/            # Category pages
-│   ├── admin/                   # Admin dashboard
-│   │   ├── layout.tsx           # Admin layout
-│   │   ├── page.tsx             # Admin dashboard
-│   │   ├── categories/          # Category management
-│   │   └── middleware.ts        # Admin auth middleware
-│   ├── auth/                    # Authentication pages
-│   │   ├── login/page.tsx       # Mobile OTP login
-│   │   └── verify/page.tsx      # OTP verification
-│   └── api/                     # API routes
-│       ├── admin/               # Admin APIs
-│       ├── checkout/            # Payment APIs
-│       ├── session/             # Session management
-│       └── webhooks/            # Webhook handlers
-├── components/                  # UI components
-├── lib/                         # Utility libraries
-│   ├── models/                  # Database models
-│   ├── firebase.ts              # Firebase config
-│   ├── db.ts                    # Database connection
-│   └── utils.ts                 # Utility functions
-└── ui/                          # Shadcn UI components
+├── app/                    # Next.js App Router
+│   ├── admin/             # Admin dashboard pages
+│   ├── api/               # API routes
+│   ├── auth/              # Authentication pages
+│   ├── checkout/          # Checkout process
+│   ├── products/          # Product pages
+│   └── globals.css        # Global styles
+├── components/            # React components
+│   ├── admin/            # Admin dashboard components
+│   ├── cart/             # Shopping cart components
+│   ├── store/            # Store frontend components
+│   └── ui/               # shadcn/ui components
+├── lib/                  # Utility libraries
+│   ├── models/           # Mongoose models
+│   ├── firebase.ts       # Firebase configuration
+│   ├── mongodb.ts        # MongoDB connection
+│   └── utils.ts          # Utility functions
+├── store/                # Zustand stores
+│   └── cart.ts           # Shopping cart store
+└── middleware.ts         # Route protection middleware
 ```
 
-## 🔧 Admin Setup
+## 🛡️ Security Features
 
-### Creating an Admin User
-1. First, create a regular user through the Firebase authentication
-2. In Firebase Console, go to Authentication → Users
-3. Find the user and add custom claims:
-   ```javascript
-   // In Firebase Console or using admin SDK
-   admin.auth().setCustomUserClaims(uid, { admin: true });
-   ```
+### Authentication
+- Firebase OTP-based authentication
+- Secure HTTP-only session cookies
+- JWT token validation
+- Protected admin routes
 
-### Admin Dashboard Features
-- **Dashboard**: Overview of sales, orders, and inventory
-- **Categories**: Manage product categories
-- **Products**: Add/edit products with variants
-- **Orders**: View and manage customer orders
-- **Discounts**: Create promotional discount codes
-- **Customers**: View customer information
+### Payment Security
+- Razorpay secure payment processing
+- Webhook signature verification
+- Order status tracking
+- Secure transaction handling
 
-## 💳 Payment Setup
+### Data Protection
+- Input validation and sanitization
+- MongoDB query protection
+- XSS prevention
+- CSRF protection
 
-### Razorpay Test Mode
-The application is configured to use Razorpay in test mode by default. Test cards can be found in the [Razorpay documentation](https://razorpay.com/docs/payment-gateway/test-card-details/).
+## 🎨 Design System
 
-### Webhook Configuration
-1. In Razorpay Dashboard, go to Settings → Webhooks
-2. Add a webhook endpoint: `https://yourdomain.com/api/webhooks/razorpay`
-3. Use your `RAZORPAY_WEBHOOK_SECRET` from environment variables
-4. Enable events: `payment.captured`, `payment.failed`
+### Color Palette
+- **Primary**: Saffron (#A36922)
+- **Background**: Cream (#FCF5E5)
+- **Accent**: Red (#8B0000)
+- **Text**: Dark gray (#1f2937)
 
-## 📱 Mobile OTP Authentication
+### Typography
+- Clean, readable fonts
+- Proper hierarchy and spacing
+- Mobile-optimized sizing
 
-### How It Works
-1. User enters mobile number
-2. Firebase sends OTP via SMS
-3. User enters OTP for verification
-4. Session cookie is created for authenticated access
-
-### Firebase Configuration
-1. Enable Phone Authentication in Firebase Console
-2. Configure phone number providers (India supported by default)
-3. Set up reCAPTCHA verification
+### Components
+- Consistent design patterns
+- Accessible and semantic HTML
+- Responsive and adaptive layouts
 
 ## 🚀 Deployment
 
-### Vercel (Recommended)
-1. Push your code to GitHub
-2. Connect your repository to Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy
-
-### Other Platforms
-The application can be deployed to any platform that supports Next.js:
-- Netlify
-- AWS Amplify
-- Digital Ocean App Platform
-- Railway
-
-## 🧪 Testing
-
-### Running Tests
+### Build for Production
 ```bash
-npm test
+npm run build
 ```
 
-### End-to-End Testing
-For testing admin flows and checkout process, you can use Cypress or Playwright.
+### Start Production Server
+```bash
+npm start
+```
 
-## 📝 API Documentation
-
-### Store APIs
-- `GET /api/products` - Get products with filtering
-- `GET /api/categories` - Get categories
-- `POST /api/checkout` - Create Razorpay order
-- `POST /api/cart` - Cart operations
-
-### Admin APIs
-- `GET /api/admin/categories` - Manage categories
-- `GET /api/admin/products` - Manage products
-- `GET /api/admin/orders` - Manage orders
-- `GET /api/admin/discounts` - Manage discounts
-
-## 🔒 Security Features
-
-- **Admin Authentication**: Firebase session verification
-- **Input Validation**: Zod schema validation
-- **CSRF Protection**: Next.js built-in CSRF protection
-- **Secure Cookies**: HttpOnly, Secure, SameSite cookies
-- **Environment Variables**: Sensitive data in environment variables
+### Environment Setup for Production
+1. Set all environment variables in production
+2. Configure Firebase for production
+3. Set up Razorpay production keys
+4. Configure MongoDB production instance
+5. Set up proper domain and SSL
 
 ## 🤝 Contributing
 
@@ -253,23 +219,18 @@ For testing admin flows and checkout process, you can use Cypress or Playwright.
 
 ## 📄 License
 
-This project is licensed under the AGPL-3.0 License - see the [LICENSE](LICENSE-AGPL.md) file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🆘 Support
+## 🙏 About Rudra Store
 
-For support and questions:
-- Create an issue in the GitHub repository
-- Check the [documentation](https://github.com/yournextstore/yournextstore)
-- Review the Firebase and Razorpay documentation
+Rudra Store is dedicated to providing authentic spiritual products to seekers worldwide. We specialize in:
+- Original Nepali Rudraksha beads
+- Handcrafted malas and bracelets
+- Spiritual accessories and idols
+- Puja items and meditation tools
 
-## 🙏 Acknowledgments
-
-- [Your Next Store](https://github.com/yournextstore/yournextstore) - Base e-commerce template
-- [Firebase](https://firebase.google.com/) - Authentication services
-- [Razorpay](https://razorpay.com/) - Payment gateway
-- [Tailwind CSS](https://tailwindcss.com/) - Styling framework
-- [Next.js](https://nextjs.org/) - React framework
+Our mission is to make genuine spiritual products accessible to everyone while maintaining the highest standards of quality and authenticity.
 
 ---
 
-**Sanathan Rudraksha** - Bringing spiritual products to the digital world with modern technology.
+Built with ❤️ for the spiritual community. May peace and prosperity be with you all. 🕉️

@@ -1,87 +1,103 @@
-"use client";
+'use client';
 
-import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { auth } from "@/lib/firebase";
-import { Button } from "@/ui/shadcn/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/shadcn/card";
-import { Input } from "@/ui/shadcn/input";
-import { Label } from "@/ui/shadcn/label";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Phone } from 'lucide-react';
 
 export default function LoginPage() {
-	const [phoneNumber, setPhoneNumber] = useState("");
-	const [loading, setLoading] = useState(false);
-	const [error, setError] = useState("");
-	const router = useRouter();
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const router = useRouter();
 
-	const setupRecaptcha = () => {
-		if (!window.recaptchaVerifier) {
-			window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-				size: "invisible",
-				callback: (response: any) => {
-					// reCAPTCHA solved, allow signInWithPhoneNumber.
-				},
-			});
-		}
-	};
+  const setupRecaptcha = () => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+        callback: () => {
+          // reCAPTCHA solved, allow signInWithPhoneNumber.
+        }
+      });
+    }
+  };
 
-	const handleSendOTP = async (e: React.FormEvent) => {
-		e.preventDefault();
-		setLoading(true);
-		setError("");
+  const handleSendOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-		try {
-			setupRecaptcha();
+    try {
+      setupRecaptcha();
+      
+      const appVerifier = window.recaptchaVerifier;
+      const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+91${phoneNumber}`;
+      
+      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+      window.confirmationResult = confirmationResult;
+      
+      // Store phone number in session storage for verification page
+      sessionStorage.setItem('phoneNumber', formattedPhone);
+      
+      router.push('/auth/verify');
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      setError('Failed to send OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-			const appVerifier = window.recaptchaVerifier;
-			const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-
-			// Store confirmation result in sessionStorage for verification page
-			sessionStorage.setItem("confirmationResult", JSON.stringify(confirmationResult));
-
-			// Redirect to verification page
-			router.push("/auth/verify");
-		} catch (error: any) {
-			setError(error.message);
-			console.error("Error sending OTP:", error);
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	return (
-		<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50 p-4">
-			<Card className="w-full max-w-md">
-				<CardHeader className="text-center">
-					<CardTitle className="text-2xl font-bold text-orange-800">Sanathan Rudraksha</CardTitle>
-					<CardDescription className="text-orange-600">Sign in with your mobile number</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<form onSubmit={handleSendOTP} className="space-y-4">
-						<div className="space-y-2">
-							<Label htmlFor="phone">Mobile Number</Label>
-							<Input
-								id="phone"
-								type="tel"
-								placeholder="+91XXXXXXXXXX"
-								value={phoneNumber}
-								onChange={(e) => setPhoneNumber(e.target.value)}
-								required
-								className="border-orange-200 focus:border-orange-400"
-							/>
-						</div>
-
-						{error && <div className="text-red-600 text-sm bg-red-50 p-2 rounded">{error}</div>}
-
-						<Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700" disabled={loading}>
-							{loading ? "Sending OTP..." : "Send OTP"}
-						</Button>
-					</form>
-
-					<div id="recaptcha-container"></div>
-				</CardContent>
-			</Card>
-		</div>
-	);
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-amber-50 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <div className="p-3 bg-orange-100 rounded-full">
+              <Phone className="h-8 w-8 text-orange-600" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-bold text-gray-900">Welcome to Rudra Store</CardTitle>
+          <CardDescription className="text-gray-600">
+            Enter your phone number to receive OTP
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSendOTP} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone Number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="Enter your phone number"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="text-center text-lg"
+                required
+              />
+            </div>
+            
+            {error && (
+              <div className="text-red-600 text-sm text-center">{error}</div>
+            )}
+            
+            <Button 
+              type="submit" 
+              className="w-full bg-orange-600 hover:bg-orange-700"
+              disabled={loading || phoneNumber.length < 10}
+            >
+              {loading ? 'Sending OTP...' : 'Send OTP'}
+            </Button>
+          </form>
+          
+          <div id="recaptcha-container"></div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

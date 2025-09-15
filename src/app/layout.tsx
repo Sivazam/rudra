@@ -1,33 +1,63 @@
-import "@/app/globals.css";
 import type { Metadata } from "next";
-import { Toaster } from "@/ui/shadcn/sonner";
-import { publicUrl } from "@/env.mjs";
-import { IntlClientProvider } from "@/i18n/client";
-import { getLocale, getMessages, getTranslations } from "@/i18n/server";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
 
-export const generateMetadata = async (): Promise<Metadata> => {
-        const t = await getTranslations("Global.metadata");
-        return {
-                title: t("title"),
-                description: t("description"),
-                metadataBase: new URL(publicUrl),
-        };
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "Rudra Store - Authentic Spiritual Products",
+  description: "Premium quality Rudraksha beads, malas, and spiritual products. Authentic Nepali Rudraksha with lab certification. Free shipping across India.",
+  keywords: ["Rudraksha", "Spiritual Products", "Nepali Rudraksha", "Rudraksha Mala", "Spiritual Beads", "Meditation", "Yoga Accessories", "Hindu Spiritual Items"],
+  authors: [{ name: "Rudra Store" }],
+  openGraph: {
+    title: "Rudra Store - Authentic Spiritual Products",
+    description: "Premium quality Rudraksha beads and spiritual products. Authentic Nepali Rudraksha with lab certification.",
+    url: "https://rudrastore.com",
+    siteName: "Rudra Store",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Rudra Store - Authentic Spiritual Products",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Rudra Store - Authentic Spiritual Products",
+    description: "Premium quality Rudraksha beads and spiritual products.",
+    images: ["/twitter-image.jpg"],
+  },
+  other: {
+    "twitter:site": "@rudrastore",
+    "twitter:creator": "@rudrastore",
+  },
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-        const locale = await getLocale();
-        const messages = await getMessages();
-
-        return (
-                <html lang={locale} className="h-full antialiased">
-                        <body className="flex min-h-full flex-col">
-                                <IntlClientProvider messages={messages} locale={locale}>
-                                        <div className="flex min-h-full flex-1 flex-col bg-white" vaul-drawer-wrapper="">
-                                                {children}
-                                        </div>
-                                        <Toaster position="top-center" offset={10} />
-                                </IntlClientProvider>
-                        </body>
-                </html>
-        );
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+      >
+        {children}
+        <Toaster />
+      </body>
+    </html>
+  );
 }

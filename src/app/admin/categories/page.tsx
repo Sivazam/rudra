@@ -1,255 +1,222 @@
-"use client";
+'use client';
 
-import { Edit, Image, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Badge } from "@/ui/shadcn/badge";
-import { Button } from "@/ui/shadcn/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/shadcn/card";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/ui/shadcn/dialog";
-import { Input } from "@/ui/shadcn/input";
-import { Label } from "@/ui/shadcn/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/ui/shadcn/table";
-import { Textarea } from "@/ui/shadcn/textarea";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Edit, Trash2, Upload } from 'lucide-react';
 
 interface Category {
-	_id: string;
-	name: string;
-	slug: string;
-	description?: string;
-	iconUrl?: string;
-	isActive: boolean;
-	createdAt: string;
-	updatedAt: string;
+  _id: string;
+  name: string;
+  slug: string;
+  iconUrl: string;
 }
 
 export default function CategoriesPage() {
-	const [categories, setCategories] = useState<Category[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [isDialogOpen, setIsDialogOpen] = useState(false);
-	const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-	const [formData, setFormData] = useState({
-		name: "",
-		description: "",
-		iconUrl: "",
-	});
+  const [categories, setCategories] = useState<Category[]>([
+    { _id: '1', name: 'Rudraksha', slug: 'rudraksha', iconUrl: '/icons/rudraksha.png' },
+    { _id: '2', name: 'Malas', slug: 'malas', iconUrl: '/icons/malas.png' },
+    { _id: '3', name: 'Bracelets', slug: 'bracelets', iconUrl: '/icons/bracelets.png' },
+  ]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    slug: '',
+    iconUrl: ''
+  });
 
-	useEffect(() => {
-		fetchCategories();
-	}, []);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (editingCategory) {
+      // Update existing category
+      setCategories(categories.map(cat => 
+        cat._id === editingCategory._id 
+          ? { ...cat, ...formData }
+          : cat
+      ));
+    } else {
+      // Add new category
+      const newCategory: Category = {
+        _id: Date.now().toString(),
+        ...formData
+      };
+      setCategories([...categories, newCategory]);
+    }
+    
+    setIsDialogOpen(false);
+    setEditingCategory(null);
+    setFormData({ name: '', slug: '', iconUrl: '' });
+  };
 
-	const fetchCategories = async () => {
-		try {
-			const response = await fetch("/api/admin/categories");
-			if (response.ok) {
-				const data = await response.json();
-				setCategories(data);
-			}
-		} catch (error) {
-			console.error("Error fetching categories:", error);
-		} finally {
-			setLoading(false);
-		}
-	};
+  const handleEdit = (category: Category) => {
+    setEditingCategory(category);
+    setFormData({
+      name: category.name,
+      slug: category.slug,
+      iconUrl: category.iconUrl
+    });
+    setIsDialogOpen(true);
+  };
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault();
+  const handleDelete = (id: string) => {
+    setCategories(categories.filter(cat => cat._id !== id));
+  };
 
-		const url = editingCategory ? `/api/admin/categories/${editingCategory._id}` : "/api/admin/categories";
+  const handleIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // In a real app, you would upload this to a storage service
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFormData({ ...formData, iconUrl: e.target?.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
-		const method = editingCategory ? "PUT" : "POST";
-
-		try {
-			const response = await fetch(url, {
-				method,
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify(formData),
-			});
-
-			if (response.ok) {
-				await fetchCategories();
-				setIsDialogOpen(false);
-				setEditingCategory(null);
-				setFormData({ name: "", description: "", iconUrl: "" });
-			}
-		} catch (error) {
-			console.error("Error saving category:", error);
-		}
-	};
-
-	const handleEdit = (category: Category) => {
-		setEditingCategory(category);
-		setFormData({
-			name: category.name,
-			description: category.description || "",
-			iconUrl: category.iconUrl || "",
-		});
-		setIsDialogOpen(true);
-	};
-
-	const handleDelete = async (id: string) => {
-		if (!confirm("Are you sure you want to delete this category?")) return;
-
-		try {
-			const response = await fetch(`/api/admin/categories/${id}`, {
-				method: "DELETE",
-			});
-
-			if (response.ok) {
-				await fetchCategories();
-			}
-		} catch (error) {
-			console.error("Error deleting category:", error);
-		}
-	};
-
-	const handleDialogClose = () => {
-		setIsDialogOpen(false);
-		setEditingCategory(null);
-		setFormData({ name: "", description: "", iconUrl: "" });
-	};
-
-	if (loading) {
-		return <div className="p-6">Loading...</div>;
-	}
-
-	return (
-		<div className="p-6 space-y-6">
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-3xl font-bold text-gray-900">Categories</h1>
-					<p className="mt-2 text-gray-600">Manage your product categories</p>
-				</div>
-
-				<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-					<DialogTrigger asChild>
-						<Button className="bg-orange-600 hover:bg-orange-700">
-							<Plus className="h-4 w-4 mr-2" />
-							Add Category
-						</Button>
-					</DialogTrigger>
-					<DialogContent className="sm:max-w-[425px]">
-						<DialogHeader>
-							<DialogTitle>{editingCategory ? "Edit Category" : "Add New Category"}</DialogTitle>
-							<DialogDescription>
-								{editingCategory
-									? "Update the category information below."
-									: "Create a new category for your products."}
-							</DialogDescription>
-						</DialogHeader>
-						<form onSubmit={handleSubmit} className="space-y-4">
-							<div className="space-y-2">
-								<Label htmlFor="name">Category Name</Label>
-								<Input
-									id="name"
-									value={formData.name}
-									onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-									required
-								/>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="description">Description</Label>
-								<Textarea
-									id="description"
-									value={formData.description}
-									onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-									rows={3}
-								/>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="iconUrl">Icon URL</Label>
-								<Input
-									id="iconUrl"
-									type="url"
-									value={formData.iconUrl}
-									onChange={(e) => setFormData({ ...formData, iconUrl: e.target.value })}
-									placeholder="https://example.com/icon.png"
-								/>
-							</div>
-
-							<div className="flex justify-end space-x-2 pt-4">
-								<Button type="button" variant="outline" onClick={handleDialogClose}>
-									Cancel
-								</Button>
-								<Button type="submit" className="bg-orange-600 hover:bg-orange-700">
-									{editingCategory ? "Update" : "Create"}
-								</Button>
-							</div>
-						</form>
-					</DialogContent>
-				</Dialog>
-			</div>
-
-			<Card>
-				<CardHeader>
-					<CardTitle>All Categories</CardTitle>
-					<CardDescription>A list of all product categories in your store</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<Table>
-						<TableHeader>
-							<TableRow>
-								<TableHead>Name</TableHead>
-								<TableHead>Slug</TableHead>
-								<TableHead>Description</TableHead>
-								<TableHead>Status</TableHead>
-								<TableHead>Created</TableHead>
-								<TableHead className="text-right">Actions</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{categories.map((category) => (
-								<TableRow key={category._id}>
-									<TableCell className="font-medium">
-										<div className="flex items-center space-x-2">
-											{category.iconUrl && <Image className="h-6 w-6 text-gray-400" />}
-											{category.name}
-										</div>
-									</TableCell>
-									<TableCell className="text-gray-600">{category.slug}</TableCell>
-									<TableCell className="text-gray-600 max-w-xs truncate">
-										{category.description || "-"}
-									</TableCell>
-									<TableCell>
-										<Badge variant={category.isActive ? "default" : "secondary"}>
-											{category.isActive ? "Active" : "Inactive"}
-										</Badge>
-									</TableCell>
-									<TableCell className="text-gray-600">
-										{new Date(category.createdAt).toLocaleDateString()}
-									</TableCell>
-									<TableCell className="text-right">
-										<div className="flex justify-end space-x-2">
-											<Button variant="ghost" size="sm" onClick={() => handleEdit(category)}>
-												<Edit className="h-4 w-4" />
-											</Button>
-											<Button variant="ghost" size="sm" onClick={() => handleDelete(category._id)}>
-												<Trash2 className="h-4 w-4" />
-											</Button>
-										</div>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
-
-					{categories.length === 0 && (
-						<div className="text-center py-8 text-gray-500">
-							No categories found. Create your first category to get started.
-						</div>
-					)}
-				</CardContent>
-			</Card>
-		</div>
-	);
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Categories</h1>
+          <p className="text-gray-600">Manage product categories</p>
+        </div>
+        
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-orange-600 hover:bg-orange-700">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Category
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingCategory ? 'Edit Category' : 'Add New Category'}
+              </DialogTitle>
+              <DialogDescription>
+                {editingCategory ? 'Update category information' : 'Create a new product category'}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="name">Category Name</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="slug">Slug</Label>
+                <Input
+                  id="slug"
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="icon">Category Icon</Label>
+                <div className="flex items-center space-x-4">
+                  <Input
+                    id="icon"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleIconUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('icon')?.click()}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Icon
+                  </Button>
+                  {formData.iconUrl && (
+                    <img 
+                      src={formData.iconUrl} 
+                      alt="Category icon" 
+                      className="w-10 h-10 object-cover rounded"
+                    />
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" className="bg-orange-600 hover:bg-orange-700">
+                  {editingCategory ? 'Update' : 'Create'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>All Categories</CardTitle>
+          <CardDescription>List of all product categories</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Icon</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Slug</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {categories.map((category) => (
+                <TableRow key={category._id}>
+                  <TableCell>
+                    <img 
+                      src={category.iconUrl} 
+                      alt={category.name} 
+                      className="w-8 h-8 object-cover rounded"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{category.name}</TableCell>
+                  <TableCell className="text-gray-600">{category.slug}</TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(category)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(category._id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

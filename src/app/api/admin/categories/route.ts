@@ -1,103 +1,136 @@
-import { getAuth } from "firebase-admin/auth";
-import { type NextRequest, NextResponse } from "next/server";
-import { dbConnect } from "@/lib/db";
-import { Category } from "@/lib/models";
+import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
+import connectDB from '@/lib/mongodb';
+import Category from '@/lib/models/Category';
 
-// Initialize Firebase Admin
-const serviceAccount = {
-	type: process.env.FIREBASE_TYPE,
-	project_id: process.env.FIREBASE_PROJECT_ID,
-	private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
-	private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-	client_email: process.env.FIREBASE_CLIENT_EMAIL,
-	client_id: process.env.FIREBASE_CLIENT_ID,
-	auth_uri: process.env.FIREBASE_AUTH_URI,
-	token_uri: process.env.FIREBASE_TOKEN_URI,
-	auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
-	client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
-};
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-let app: any;
+// Verify admin authentication
+async function verifyAuth(request: NextRequest) {
+  const token = request.cookies.get('auth-token')?.value;
+  
+  if (!token) {
+    return null;
+  }
 
-if (!app) {
-	try {
-		const admin = require("firebase-admin");
-		app = admin.initializeApp({
-			credential: admin.credential.cert(serviceAccount),
-		});
-	} catch (error) {
-		console.error("Firebase admin initialization error:", error);
-	}
-}
-
-// Helper function to verify admin session
-async function verifyAdminSession(request: NextRequest) {
-	const sessionCookie = request.cookies.get("session")?.value;
-
-	if (!sessionCookie) {
-		return null;
-	}
-
-	try {
-		const auth = getAuth(app);
-		const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
-
-		if (decodedClaims.admin !== true) {
-			return null;
-		}
-
-		return decodedClaims;
-	} catch (error) {
-		console.error("Session verification error:", error);
-		return null;
-	}
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded;
+  } catch (error) {
+    return null;
+  }
 }
 
 export async function GET(request: NextRequest) {
-	try {
-		const adminUser = await verifyAdminSession(request);
-		if (!adminUser) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
+  try {
+    const user = await verifyAuth(request);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
-		await dbConnect();
+    await connectDB();
 
-		const categories = await Category.find({}).sort({ createdAt: -1 });
+    const categories = await Category.find({}).sort({ name: 1 }).lean();
 
-		return NextResponse.json(categories);
-	} catch (error: any) {
-		console.error("Error fetching categories:", error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
-	}
+    return NextResponse.json({ categories });
+  } catch (error) {
+    console.error('Error fetching admin categories:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch categories' },
+      { status: 500 }
+    );
+  }
 }
 
-export async function POST(request: NextRequest) {
-	try {
-		const adminUser = await verifyAdminSession(request);
-		if (!adminUser) {
-			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-		}
+export async function PUT(request: NextRequest) {
+  try {
+    const user = await verifyAuth(request);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
 
-		await dbConnect();
+    const { id, name, slug, iconUrl } = await request.json();
 
-		const body = await request.json();
-		const { name, description, iconUrl } = body;
+    if (!id || !name || !slug || !iconUrl) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
 
-		if (!name) {
-			return NextResponse.json({ error: "Category name is required" }, { status: 400 });
-		}
+    await connectDB();
 
-		const category = new Category({
-			name,
-			description,
-			iconUrl,
-		});
+    const category = await Category.findByIdAndUpdate(
+      id,
+      { name, slug, iconUrl },
+      { new: true }
+    );
 
-		await category.save();
+    if (!category) {
+      return NextResponse.json(
+        { error: 'Category not found' },
+        { status: 404 }
+      );
+    }
 
-		return NextResponse.json(category, { status: 201 });
-	} catch (error: any) {
-		console.error("Error creating category:", error);
-		return NextResponse.json({ error: error.message }, { status: 500 });
-	}
+    return NextResponse.json({
+      message: 'Category updated successfully',
+      category
+    });
+  } catch (error) {
+    console.error('Error updating category:', error);
+    return NextResponse.json(
+      { error: 'Failed to update category' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await verifyAuth(request);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Missing category ID' },
+        { status: 400 }
+      );
+    }
+
+    await connectDB();
+
+    const category = await Category.findByIdAndDelete(id);
+
+    if (!category) {
+      return NextResponse.json(
+        { error: 'Category not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      message: 'Category deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete category' },
+      { status: 500 }
+    );
+  }
 }

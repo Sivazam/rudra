@@ -1,184 +1,114 @@
-"use client";
+'use client';
 
-import {
-	AlertCircle,
-	DollarSign,
-	FileText,
-	Package,
-	ShoppingCart,
-	Tag,
-	TrendingUp,
-	Users,
-} from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/shadcn/card";
-
-const stats = [
-	{
-		name: "Total Products",
-		value: "156",
-		change: "+12%",
-		changeType: "positive" as const,
-		icon: Package,
-	},
-	{
-		name: "Total Orders",
-		value: "1,234",
-		change: "+8%",
-		changeType: "positive" as const,
-		icon: ShoppingCart,
-	},
-	{
-		name: "Total Revenue",
-		value: "₹2,45,678",
-		change: "+15%",
-		changeType: "positive" as const,
-		icon: DollarSign,
-	},
-	{
-		name: "Active Customers",
-		value: "892",
-		change: "+5%",
-		changeType: "positive" as const,
-		icon: Users,
-	},
-];
-
-const recentOrders = [
-	{
-		id: "ORD-001",
-		customer: "Rajesh Kumar",
-		amount: "₹1,499",
-		status: "delivered",
-		date: "2024-01-15",
-	},
-	{
-		id: "ORD-002",
-		customer: "Priya Sharma",
-		amount: "₹2,999",
-		status: "pending",
-		date: "2024-01-15",
-	},
-	{
-		id: "ORD-003",
-		customer: "Amit Patel",
-		amount: "₹899",
-		status: "paid",
-		date: "2024-01-14",
-	},
-];
-
-const lowStockProducts = [
-	{
-		name: "10 Mukhi Rudraksha",
-		stock: 3,
-		sku: "RK10-001",
-	},
-	{
-		name: "9 Mukhi Rudraksha",
-		stock: 5,
-		sku: "RK09-001",
-	},
-	{
-		name: "Sphatik Mala",
-		stock: 2,
-		sku: "SP-001",
-	},
-];
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Package, Tags, ShoppingCart, Users } from 'lucide-react';
 
 export default function AdminDashboard() {
-	return (
-		<div className="p-6 space-y-6">
-			<div>
-				<h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-				<p className="mt-2 text-gray-600">Welcome back! Here's what's happening with your store today.</p>
-			</div>
+  const stats = [
+    {
+      title: 'Total Products',
+      value: '156',
+      description: '+12% from last month',
+      icon: Package,
+    },
+    {
+      title: 'Categories',
+      value: '8',
+      description: '+2 new categories',
+      icon: Tags,
+    },
+    {
+      title: 'Total Orders',
+      value: '1,234',
+      description: '+18% from last month',
+      icon: ShoppingCart,
+    },
+    {
+      title: 'Customers',
+      value: '892',
+      description: '+25% from last month',
+      icon: Users,
+    },
+  ];
 
-			{/* Stats Grid */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-				{stats.map((stat) => (
-					<Card key={stat.name}>
-						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-							<CardTitle className="text-sm font-medium text-gray-600">{stat.name}</CardTitle>
-							<stat.icon className="h-4 w-4 text-orange-600" />
-						</CardHeader>
-						<CardContent>
-							<div className="text-2xl font-bold">{stat.value}</div>
-							<p className="text-xs text-green-600 flex items-center mt-1">
-								<TrendingUp className="h-3 w-3 mr-1" />
-								{stat.change} from last month
-							</p>
-						</CardContent>
-					</Card>
-				))}
-			</div>
-
-			<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-				{/* Recent Orders */}
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center">
-							<FileText className="h-5 w-5 mr-2" />
-							Recent Orders
-						</CardTitle>
-						<CardDescription>Latest orders from your customers</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="space-y-4">
-							{recentOrders.map((order) => (
-								<div key={order.id} className="flex items-center justify-between">
-									<div>
-										<p className="font-medium">{order.id}</p>
-										<p className="text-sm text-gray-600">{order.customer}</p>
-									</div>
-									<div className="text-right">
-										<p className="font-medium">{order.amount}</p>
-										<p className="text-sm text-gray-600">{order.date}</p>
-									</div>
-									<div
-										className={`px-2 py-1 rounded-full text-xs font-medium ${
-											order.status === "delivered"
-												? "bg-green-100 text-green-800"
-												: order.status === "pending"
-													? "bg-yellow-100 text-yellow-800"
-													: "bg-blue-100 text-blue-800"
-										}`}
-									>
-										{order.status}
-									</div>
-								</div>
-							))}
-						</div>
-					</CardContent>
-				</Card>
-
-				{/* Low Stock Alerts */}
-				<Card>
-					<CardHeader>
-						<CardTitle className="flex items-center">
-							<AlertCircle className="h-5 w-5 mr-2" />
-							Low Stock Alerts
-						</CardTitle>
-						<CardDescription>Products that need restocking</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<div className="space-y-4">
-							{lowStockProducts.map((product) => (
-								<div key={product.sku} className="flex items-center justify-between">
-									<div>
-										<p className="font-medium">{product.name}</p>
-										<p className="text-sm text-gray-600">SKU: {product.sku}</p>
-									</div>
-									<div className="text-right">
-										<p className={`font-medium ${product.stock <= 3 ? "text-red-600" : "text-orange-600"}`}>
-											{product.stock} left
-										</p>
-									</div>
-								</div>
-							))}
-						</div>
-					</CardContent>
-				</Card>
-			</div>
-		</div>
-	);
+  return (
+    <div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-gray-600">Welcome back to Rudra Admin Panel</p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {stats.map((stat) => (
+          <Card key={stat.title}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                {stat.title}
+              </CardTitle>
+              <stat.icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs text-muted-foreground">{stat.description}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Orders</CardTitle>
+            <CardDescription>Latest orders from customers</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[
+                { id: '#1234', customer: 'John Doe', amount: '₹2,499', status: 'Delivered' },
+                { id: '#1235', customer: 'Jane Smith', amount: '₹1,899', status: 'Processing' },
+                { id: '#1236', customer: 'Bob Johnson', amount: '₹3,299', status: 'Shipped' },
+              ].map((order) => (
+                <div key={order.id} className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{order.id}</p>
+                    <p className="text-sm text-gray-600">{order.customer}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">{order.amount}</p>
+                    <p className="text-sm text-green-600">{order.status}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Products</CardTitle>
+            <CardDescription>Best selling products this month</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[
+                { name: '10 Mukhi Rudraksha', sales: 45, revenue: '₹67,455' },
+                { name: '9 Mukhi Rudraksha', sales: 38, revenue: '₹56,962' },
+                { name: '7 Mukhi Rudraksha', sales: 32, revenue: '₹47,968' },
+              ].map((product) => (
+                <div key={product.name} className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{product.name}</p>
+                    <p className="text-sm text-gray-600">{product.sales} sales</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">{product.revenue}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }
