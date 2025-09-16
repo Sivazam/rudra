@@ -101,24 +101,24 @@ export default function CartPage() {
                       const itemTotal = (item.variant.price - (item.variant.price * item.variant.discount) / 100) * item.quantity;
                       
                       return (
-                        <div key={item.id} className="flex space-x-4 p-4 border rounded-lg" style={{ borderColor: '#f3f4f6' }}>
+                        <div key={item.id} className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 p-4 border rounded-lg" style={{ borderColor: '#f3f4f6' }}>
                           {/* Product Image */}
                           <img 
                             src={item.image} 
                             alt={item.name}
-                            className="w-24 h-24 object-cover rounded-lg"
+                            className="w-full sm:w-24 h-48 sm:h-24 object-cover rounded-lg"
                           />
                           
                           {/* Product Details */}
                           <div className="flex-1 space-y-2">
                             <div>
-                              <h3 className="font-semibold text-base" style={{ color: '#755e3e' }}>{item.name}</h3>
+                              <h3 className="font-semibold text-base sm:text-base" style={{ color: '#755e3e' }}>{item.name}</h3>
                               <p className="text-sm" style={{ color: '#846549' }}>{item.deity}</p>
                               <p className="text-sm opacity-75" style={{ color: '#846549' }}>{item.variant.label}</p>
                             </div>
                             
                             {/* Price */}
-                            <div className="flex items-center space-x-2">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-1 sm:space-y-0">
                               <span className="font-bold text-lg" style={{ color: '#755e3e' }}>
                                 {pricing.current}
                               </span>
@@ -128,14 +128,14 @@ export default function CartPage() {
                                 </span>
                               )}
                               {item.variant.discount > 0 && (
-                                <Badge className="bg-red-600 hover:bg-red-700">
+                                <Badge className="bg-red-600 hover:bg-red-700 self-start sm:self-auto">
                                   {item.variant.discount}% OFF
                                 </Badge>
                               )}
                             </div>
                             
                             {/* Quantity Controls */}
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col space-y-3">
                               <div className="flex items-center space-x-3">
                                 <span className="text-sm font-medium" style={{ color: '#6b7280' }}>Quantity:</span>
                                 <div className="flex items-center space-x-2">
@@ -161,20 +161,24 @@ export default function CartPage() {
                                     <Plus className="h-4 w-4" />
                                   </Button>
                                 </div>
-                                <span className="text-sm font-medium" style={{ color: '#755e3e' }}>
-                                  = {pricing.current.replace('₹', '') * item.quantity}
-                                </span>
                               </div>
                               
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeItem(item.id)}
-                                style={{ color: '#f20600' }}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Remove
-                              </Button>
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                                <span className="text-sm font-medium" style={{ color: '#755e3e' }}>
+                                  = ₹{Math.round(item.variant.price - (item.variant.price * item.variant.discount) / 100) * item.quantity}
+                                </span>
+                                
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeItem(item.id)}
+                                  style={{ color: '#f20600' }}
+                                  className="self-start sm:self-auto"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Remove
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>

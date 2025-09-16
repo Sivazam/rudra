@@ -299,23 +299,23 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                   />
                   <Label
                     htmlFor={address.id}
-                    className={`flex items-start space-x-3 p-4 border rounded-lg cursor-pointer transition-colors peer-data-[state=checked]:border-orange-600 peer-data-[state=checked]:bg-orange-50 hover:bg-gray-50 ${
+                    className={`flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-3 p-4 border rounded-lg cursor-pointer transition-colors peer-data-[state=checked]:border-orange-600 peer-data-[state=checked]:bg-orange-50 hover:bg-gray-50 ${
                       selectedAddress?.id === address.id ? 'border-orange-600 bg-orange-50' : 'border-gray-200'
                     }`}
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
                           <span className="font-medium">{address.name}</span>
                           <span className="text-sm text-gray-600">{address.phone}</span>
                           {address.isDefault && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="secondary" className="text-xs self-start sm:self-auto">
                               Default
                             </Badge>
                           )}
                         </div>
                         {selectedAddress?.id === address.id && (
-                          <Check className="h-4 w-4 text-orange-600" />
+                          <Check className="h-4 w-4 text-orange-600 flex-shrink-0" />
                         )}
                       </div>
                       <p className="text-sm text-gray-600">{formatAddress(address)}</p>
@@ -333,7 +333,7 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                     </div>
                   </Label>
                   
-                  <div className="absolute top-2 right-2 flex space-x-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 mt-3 sm:mt-0 sm:absolute sm:top-2 sm:right-2">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -355,9 +355,10 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                         variant="ghost"
                         size="sm"
                         onClick={() => handleSetDefault(address.id!)}
-                        className="h-8 w-8 p-0"
+                        className="h-8 px-3 py-1 text-xs sm:h-8 sm:w-auto sm:px-2 sm:py-0"
                       >
-                        <span className="text-xs">Set Default</span>
+                        <span className="sm:hidden">Set Default</span>
+                        <span className="hidden sm:inline">Set Default</span>
                       </Button>
                     )}
                   </div>
@@ -578,10 +579,10 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
               )}
             </div>
             
-            <div className="flex space-x-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 onClick={editingAddress ? handleUpdateAddress : handleAddAddress}
-                className="flex-1"
+                className="flex-1 sm:flex-none"
               >
                 {editingAddress ? 'Update Address' : 'Add Address'}
               </Button>
@@ -591,6 +592,7 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                   setShowAddForm(false);
                   setEditingAddress(null);
                 }}
+                className="flex-1 sm:flex-none"
               >
                 Cancel
               </Button>

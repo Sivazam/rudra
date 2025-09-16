@@ -21,6 +21,7 @@ interface Address {
   pincode: string;
   landmark: string;
   addressType: 'home' | 'office' | 'other';
+  customAddressName?: string;
   isDefault?: boolean;
   createdAt?: string;
 }
@@ -38,6 +39,7 @@ export default function AddressesPage() {
     pincode: '',
     landmark: '',
     addressType: 'home',
+    customAddressName: '',
     isDefault: false
   });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -92,7 +94,8 @@ export default function AddressesPage() {
 
   const handleAddAddress = async () => {
     if (!validateAddress(newAddress)) {
-      alert('Please fill in all address fields');
+      const errorMessage = getValidationErrorMessage(newAddress);
+      alert(errorMessage);
       return;
     }
 
@@ -110,6 +113,7 @@ export default function AddressesPage() {
             pincode: '',
             landmark: '',
             addressType: 'home',
+            customAddressName: '',
             isDefault: false
           });
           setIsDialogOpen(false);
@@ -123,7 +127,8 @@ export default function AddressesPage() {
 
   const handleUpdateAddress = async () => {
     if (!editingAddress || !validateAddress(editingAddress)) {
-      alert('Please fill in all address fields');
+      const errorMessage = getValidationErrorMessage(editingAddress || newAddress);
+      alert(errorMessage);
       return;
     }
 
@@ -194,6 +199,7 @@ export default function AddressesPage() {
       pincode: '',
       landmark: '',
       addressType: 'home',
+      customAddressName: '',
       isDefault: false
     });
     setIsDialogOpen(true);
@@ -207,6 +213,11 @@ export default function AddressesPage() {
   const validateAddress = (address: Address): boolean => {
     // Required fields: name, phone (with +91), doorNo, pincode
     const requiredFields = ['name', 'phone', 'doorNo', 'pincode'];
+    
+    // If address type is 'other', customAddressName is also required
+    if (address.addressType === 'other') {
+      requiredFields.push('customAddressName');
+    }
     
     for (const field of requiredFields) {
       const value = address[field as keyof Address];
@@ -228,6 +239,37 @@ export default function AddressesPage() {
     return true;
   };
 
+  const getValidationErrorMessage = (address: Address): string => {
+    // Check if custom address name is missing for 'other' type
+    if (address.addressType === 'other' && (!address.customAddressName || address.customAddressName.trim() === '')) {
+      return 'Please enter an address label to save this address as (e.g., "Mom\'s House")';
+    }
+    
+    // Check other required fields
+    const requiredFields = ['name', 'phone', 'doorNo', 'pincode'];
+    for (const field of requiredFields) {
+      const value = address[field as keyof Address];
+      if (!value || value.toString().trim() === '') {
+        if (field === 'name') {
+          return 'Please enter the recipient\'s full name';
+        }
+        return `Please fill in the ${field} field`;
+      }
+    }
+    
+    // Check phone format
+    if (!address.phone.startsWith('+91') || address.phone.length < 5) {
+      return 'Please enter a valid phone number starting with +91';
+    }
+    
+    // Check pincode format
+    if (!/^\d{6}$/.test(address.pincode)) {
+      return 'Please enter a valid 6-digit pincode';
+    }
+    
+    return '';
+  };
+
   const formatAddress = (address: Address): string => {
     const parts = [address.doorNo];
     if (address.landmark) {
@@ -237,6 +279,9 @@ export default function AddressesPage() {
   };
 
   const getAddressType = (address: Address): string => {
+    if (address.addressType === 'other' && address.customAddressName) {
+      return address.customAddressName;
+    }
     switch (address.addressType) {
       case 'home':
         return 'Home';
@@ -290,7 +335,7 @@ export default function AddressesPage() {
                   Add New Address
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
+              <DialogContent className="max-w-[95vw] sm:max-w-[600px] w-full mx-auto sm:mx-4">
                 <DialogHeader>
                   <DialogTitle>
                     {editingAddress ? 'Edit Address' : 'Add New Address'}
@@ -395,7 +440,7 @@ export default function AddressesPage() {
                       Add Your First Address
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[600px]">
+                  <DialogContent className="max-w-[95vw] sm:max-w-[600px] w-full mx-auto sm:mx-4">
                     <DialogHeader>
                       <DialogTitle>Add New Address</DialogTitle>
                     </DialogHeader>
@@ -562,6 +607,23 @@ function AddressForm({ address, setAddress, onSave, onCancel, isEditing }: Addre
         </div>
       </div>
       
+      {/* Conditional address label field - only shown when 'other' is selected */}
+      {address.addressType === 'other' && (
+        <div>
+          <Label htmlFor="customAddressName">Address Label *</Label>
+          <Input
+            id="customAddressName"
+            value={address.customAddressName || ''}
+            onChange={(e) => setAddress({ ...address, customAddressName: e.target.value })}
+            placeholder="e.g., Mom's House, Friend's Place, etc."
+            required
+          />
+          <p className="text-sm text-gray-500 mt-1">
+            This name will be used to identify this address
+          </p>
+        </div>
+      )}
+      
       {!isEditing && (
         <div className="flex items-center space-x-2">
           <input
@@ -575,12 +637,12 @@ function AddressForm({ address, setAddress, onSave, onCancel, isEditing }: Addre
         </div>
       )}
       
-      <div className="flex space-x-2 pt-4">
-        <Button onClick={onSave} className="flex-1">
+      <div className="flex flex-col sm:flex-row gap-2 pt-4">
+        <Button onClick={onSave} className="flex-1 sm:flex-none">
           <Check className="h-4 w-4 mr-2" />
           {isEditing ? 'Update Address' : 'Add Address'}
         </Button>
-        <Button variant="outline" onClick={onCancel}>
+        <Button variant="outline" onClick={onCancel} className="flex-1 sm:flex-none">
           Cancel
         </Button>
       </div>

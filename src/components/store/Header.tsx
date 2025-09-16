@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Menu, Search, Heart, ShoppingCart, User, Package, LogOut, Phone, MapPin, Edit, UserPlus, AlertCircle } from 'lucide-react';
+import { Menu, Search, Heart, ShoppingCart, User, Package, LogOut, Phone, MapPin, Edit, UserPlus, AlertCircle, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -25,6 +25,7 @@ export function Header({ onSearch }: HeaderProps) {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   const [isCheckingProfile, setIsCheckingProfile] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { getTotalItems, openCart } = useCartStore();
   const router = useRouter();
 
@@ -103,6 +104,11 @@ export function Header({ onSearch }: HeaderProps) {
     router.push('/');
   };
 
+  const handleNavigation = (path: string) => {
+    setIsSidebarOpen(false);
+    router.push(path);
+  };
+
   const formatPhoneNumber = (phone: string) => {
     if (!phone) return '';
     if (phone.startsWith('+91')) {
@@ -139,9 +145,9 @@ export function Header({ onSearch }: HeaderProps) {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Mobile Menu */}
-          <Sheet>
+          <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
+              <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsSidebarOpen(true)}>
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
@@ -223,6 +229,17 @@ export function Header({ onSearch }: HeaderProps) {
                         Edit Profile
                       </Button>
                     </Link>
+                    
+                    {/* Shop by Category Button - Outlined */}
+                    <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="block">
+                      <Button 
+                        variant="outline"
+                        className="w-full text-xs py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50"
+                      >
+                        <ShoppingBag className="h-3 w-3 mr-2" />
+                        Shop by category
+                      </Button>
+                    </Link>
                   </div>
                 )}
                 
@@ -258,6 +275,17 @@ export function Header({ onSearch }: HeaderProps) {
                 {/* Login/Signup section - Only show if not authenticated */}
                 {!isAuth && (
                   <div className="space-y-4 pt-4">
+                    {/* Shop by Category Button - Outlined */}
+                    <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="block">
+                      <Button 
+                        variant="outline"
+                        className="w-full text-sm py-3 border-gray-300 text-gray-700 hover:bg-gray-50"
+                      >
+                        <ShoppingBag className="h-4 w-4 mr-2" />
+                        Shop by category
+                      </Button>
+                    </Link>
+                    
                     <Link href="/auth/login" className="block">
                       <Button 
                         className="w-full text-sm py-3" 
@@ -283,7 +311,10 @@ export function Header({ onSearch }: HeaderProps) {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            {/* Desktop navigation is now empty - all items moved to user dropdown */}
+            <Link href="/" className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors">
+              <ShoppingBag className="h-4 w-4" />
+              <span>Shop by category</span>
+            </Link>
           </nav>
 
           {/* Search and Actions */}

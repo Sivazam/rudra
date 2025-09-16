@@ -335,18 +335,27 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {/* Repeat or Select Different Variant Dialog */}
       <Dialog open={showRepeatDialog} onOpenChange={setShowRepeatDialog}>
-        <DialogContent className="sm:max-w-[90%] sm:rounded-lg max-sm:bottom-0 max-sm:left-0 max-sm:right-0 max-sm:rounded-t-lg max-sm:max-w-none max-sm:translate-y-0">
-          <DialogHeader>
-            <DialogTitle>Choose an option</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-[425px] max-sm:bottom-0 max-sm:left-0 max-sm:right-0 max-sm:rounded-t-lg max-sm:max-w-none max-sm:translate-y-0 max-sm:h-auto max-sm:p-6">
+          <DialogHeader className="max-sm:text-center max-sm:mb-4">
+            <DialogTitle className="max-sm:text-lg max-sm:mb-2">Choose an option</DialogTitle>
+            <DialogDescription className="max-sm:text-sm max-sm:px-4">
               Would you like to add more of the same variant or select a different variant?
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button onClick={handleSelectDifferentVariant} variant="outline" className="sm:flex-1" style={{ borderColor: '#846549', color: '#846549' }}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-3 max-sm:gap-2 max-sm:w-full">
+            <Button 
+              onClick={handleSelectDifferentVariant} 
+              variant="outline" 
+              className="sm:flex-1 max-sm:w-full max-sm:order-2" 
+              style={{ borderColor: '#846549', color: '#846549' }}
+            >
               Select Different Variant
             </Button>
-            <Button onClick={handleRepeat} className="sm:flex-1" style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}>
+            <Button 
+              onClick={handleRepeat} 
+              className="sm:flex-1 max-sm:w-full max-sm:order-1" 
+              style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
+            >
               Add Same Variant
             </Button>
           </DialogFooter>

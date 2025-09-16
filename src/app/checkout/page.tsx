@@ -302,7 +302,7 @@ export default function CheckoutPage() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 pb-24">
         <div className="mb-6">
           <Button
             variant="ghost"
@@ -400,20 +400,31 @@ export default function CheckoutPage() {
                   </div>
                 </div>
                 
-                <Button
-                  onClick={handlePlaceOrder}
-                  disabled={loading || !validateForm()}
-                  className="w-full mt-6 bg-orange-600 hover:bg-orange-700"
-                  size="lg"
-                >
-                  {loading ? 'Processing...' : `Pay ${formatPrice(total)}`}
-                </Button>
-                
                 <p className="text-xs text-gray-500 text-center mt-2">
                   By placing this order, you agree to our Terms & Conditions
                 </p>
               </CardContent>
             </Card>
+          </div>
+        </div>
+
+        {/* Fixed Bottom Payment Button for All Devices */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total</p>
+                <p className="text-lg font-bold text-orange-600">{formatPrice(total)}</p>
+              </div>
+              <Button
+                onClick={handlePlaceOrder}
+                disabled={loading || !validateForm()}
+                className="bg-orange-600 hover:bg-orange-700 px-8 py-3"
+                size="lg"
+              >
+                {loading ? 'Processing...' : `Pay ${formatPrice(total)}`}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

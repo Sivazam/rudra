@@ -256,7 +256,9 @@ export function SlideInCart() {
                   <ArrowRight className="h-3 w-3 ml-2" />
                 </Button>
                 <Button variant="outline" className="w-full text-sm" style={{ borderColor: '#e5e7eb', color: '#6b7280' }} asChild>
-                  <Link href="/cart">View Full Cart</Link>
+                  <Link href="/cart" onClick={(e) => { e.preventDefault(); closeCart(); router.push('/cart'); }}>
+                    View Full Cart
+                  </Link>
                 </Button>
                 <Button variant="ghost" className="w-full text-sm" style={{ color: 'rgba(156,86,26,255)' }} asChild>
                   <Link href="/" onClick={closeCart}>
