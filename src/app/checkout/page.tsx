@@ -226,6 +226,10 @@ export default function CheckoutPage() {
             if (verifyResponse.ok) {
               const verifyData = await verifyResponse.json();
               console.log('Payment verified:', verifyData);
+              
+              // Set sessionStorage flag before redirecting
+              sessionStorage.setItem('fromCheckout', 'true');
+              
               clearCart();
               router.push('/order-success');
             } else {

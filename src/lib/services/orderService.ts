@@ -103,12 +103,17 @@ class OrderService {
   // Get orders by user ID
   async getOrdersByUserId(userId: string): Promise<IOrder[]> {
     try {
-      return await firestoreService.getAll(this.collection, {
+      console.log('OrderService: Getting orders for userId:', userId);
+      
+      const orders = await firestoreService.getAll(this.collection, {
         where: { field: 'userId', operator: '==', value: userId },
         orderBy: { field: 'orderDate', direction: 'desc' }
       });
+      
+      console.log('OrderService: Found', orders.length, 'orders for userId:', userId);
+      return orders;
     } catch (error) {
-      console.error('Error getting user orders:', error);
+      console.error('OrderService: Error getting user orders:', error);
       throw error;
     }
   }

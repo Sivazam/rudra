@@ -49,41 +49,65 @@ export default function MyOrdersPage() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
+        console.log('MyOrders: Starting to fetch orders...');
+        
         // Check if user is authenticated using our auth utility
         const isAuthenticated = isUserAuthenticated();
+        console.log('MyOrders: Authentication status:', isAuthenticated);
+        
         if (!isAuthenticated) {
+          console.log('MyOrders: User not authenticated, redirecting to login');
           router.push('/auth/login');
           return;
         }
 
         // Get current user using our auth utility
         const currentUser = getCurrentUser();
+        console.log('MyOrders: Current user:', currentUser);
+        
         if (!currentUser) {
+          console.log('MyOrders: No current user found, redirecting to login');
           router.push('/auth/login');
           return;
         }
 
-        console.log('Fetching orders for user:', currentUser.phoneNumber);
+        console.log('MyOrders: Fetching orders for user:', currentUser.phoneNumber);
         
         // Get user with orders using the improved service
         const userWithOrders = await userService.getUserWithOrders(currentUser.phoneNumber);
         
+        console.log('MyOrders: User with orders result:', userWithOrders);
+        
         if (userWithOrders && userWithOrders.orders) {
-          console.log('Found orders:', userWithOrders.orders.length);
+          console.log('MyOrders: Found orders:', userWithOrders.orders.length);
           setOrders(userWithOrders.orders);
         } else {
-          console.log('No orders found for user');
+          console.log('MyOrders: No orders found for user');
           setOrders([]);
         }
       } catch (error) {
-        console.error('Error fetching orders:', error);
+        console.error('MyOrders: Error fetching orders:', error);
         setError('Failed to load orders');
       } finally {
         setLoading(false);
       }
     };
 
+    // Set up auth state change listener
+    const handleAuthStateChange = () => {
+      console.log('MyOrders: Auth state change event received');
+      fetchOrders();
+    };
+
+    window.addEventListener('auth-state-changed', handleAuthStateChange);
+    
+    // Initial fetch
     fetchOrders();
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('auth-state-changed', handleAuthStateChange);
+    };
   }, [router]);
 
   const formatPrice = (price: number) => {

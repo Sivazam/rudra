@@ -134,18 +134,28 @@ class UserService {
   // Add order to user's order history
   async addOrderToUser(userId: string, orderId: string): Promise<void> {
     try {
+      console.log('UserService: Adding order', orderId, 'to user', userId);
+      
       const user = await this.getUserById(userId);
       if (!user) {
+        console.error('UserService: User not found for ID:', userId);
         throw new Error('User not found');
       }
+
+      console.log('UserService: User found, current orderIds:', user.orderIds);
 
       const orderIds = user.orderIds || [];
       if (!orderIds.includes(orderId)) {
         orderIds.push(orderId);
+        console.log('UserService: Adding order ID to user, new orderIds:', orderIds);
+        
         await firestoreService.update(this.collection, userId, { orderIds });
+        console.log('UserService: Order successfully added to user');
+      } else {
+        console.log('UserService: Order ID already exists in user orderIds');
       }
     } catch (error) {
-      console.error('Error adding order to user:', error);
+      console.error('UserService: Error adding order to user:', error);
       throw error;
     }
   }
@@ -186,10 +196,15 @@ class UserService {
   // Get user with orders
   async getUserWithOrders(phoneNumber: string): Promise<IUser & { orders?: any[] } | null> {
     try {
+      console.log('UserService: Getting user with orders for phone:', phoneNumber);
+      
       const user = await this.getUserByPhoneNumber(phoneNumber);
       if (!user) {
+        console.log('UserService: User not found for phone:', phoneNumber);
         return null;
       }
+
+      console.log('UserService: User found:', user.id, 'orderIds:', user.orderIds);
 
       // Get user orders
       const { orderService } = await import('./orderService');
@@ -197,30 +212,40 @@ class UserService {
 
       // Try to get orders by user ID first
       try {
+        console.log('UserService: Trying to get orders by userId:', phoneNumber);
         orders = await orderService.getOrdersByUserId(phoneNumber);
+        console.log('UserService: Found', orders.length, 'orders by userId');
       } catch (error) {
-        console.warn('Error getting orders by userId, trying alternative method:', error);
+        console.warn('UserService: Error getting orders by userId, trying alternative method:', error);
         
         // Fallback: get orders by orderIds if available
         if (user.orderIds && user.orderIds.length > 0) {
+          console.log('UserService: Trying fallback method with orderIds:', user.orderIds);
           try {
             const orderPromises = user.orderIds.map(orderId => 
-              orderService.getOrderById(orderId).catch(() => null)
+              orderService.getOrderById(orderId).catch(err => {
+                console.log('UserService: Failed to get order by ID:', orderId, err);
+                return null;
+              })
             );
             const orderResults = await Promise.all(orderPromises);
             orders = orderResults.filter(order => order !== null);
+            console.log('UserService: Found', orders.length, 'orders using fallback method');
           } catch (fallbackError) {
-            console.error('Fallback order fetching failed:', fallbackError);
+            console.error('UserService: Fallback order fetching failed:', fallbackError);
           }
+        } else {
+          console.log('UserService: No orderIds available for fallback');
         }
       }
 
+      console.log('UserService: Final orders count:', orders.length);
       return {
         ...user,
         orders
       };
     } catch (error) {
-      console.error('Error getting user with orders:', error);
+      console.error('UserService: Error getting user with orders:', error);
       throw error;
     }
   }
