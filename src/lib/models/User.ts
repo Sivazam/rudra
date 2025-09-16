@@ -7,6 +7,18 @@ export interface IUser {
   city?: string;
   state?: string;
   pincode?: string;
+  addresses?: Array<{
+    id?: string;
+    name: string;
+    phone: string;
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+    isDefault?: boolean;
+    createdAt?: string;
+  }>;
+  orderIds?: string[];
   createdAt?: any;
   updatedAt?: any;
 }

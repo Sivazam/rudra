@@ -175,6 +175,32 @@ export function withRateLimit(handler: (req: NextRequest) => Promise<NextRespons
 
 import jwt from 'jsonwebtoken';
 
+// JWT secret handling with error prevention
+const getJwtSecret = (): string => {
+  try {
+    const secret = process.env.JWT_SECRET || 'your-secret-key';
+    if (typeof secret !== 'string') {
+      console.error('JWT_SECRET is not a string, using fallback');
+      return 'your-secret-key';
+    }
+    return secret;
+  } catch (error) {
+    console.error('Error accessing JWT_SECRET:', error);
+    return 'your-secret-key';
+  }
+};
+
+// Buffer-based secret handling to avoid instanceof issues
+const getSecretBuffer = (): Buffer => {
+  const secret = getJwtSecret();
+  try {
+    return Buffer.from(secret);
+  } catch (error) {
+    console.error('Error creating buffer from secret:', error);
+    return Buffer.from('your-secret-key');
+  }
+};
+
 // Authentication middleware
 export async function withAuth(
   request: NextRequest,
@@ -187,10 +213,19 @@ export async function withAuth(
       return APIResponse.unauthorized('Authentication token required');
     }
 
-    const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-    
     try {
-      const decoded = jwt.verify(token, JWT_SECRET);
+      // Try multiple verification approaches
+      let decoded: any;
+      try {
+        const secretBuffer = getSecretBuffer();
+        decoded = jwt.verify(token, secretBuffer);
+        console.log('API Utils: Token verified using Buffer secret');
+      } catch (error) {
+        console.warn('API Utils: Buffer verification failed, trying string approach');
+        const secretString = getJwtSecret();
+        decoded = jwt.verify(token, secretString, { algorithms: ['HS256'] });
+        console.log('API Utils: Token verified using string secret');
+      }
       return await handler(decoded.phoneNumber);
     } catch (error) {
       return APIResponse.unauthorized('Invalid or expired token');

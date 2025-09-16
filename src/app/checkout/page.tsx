@@ -12,7 +12,8 @@ import { useCartStore } from '@/store/cartStore';
 import { loadRazorpayScript, initializeRazorpay } from '@/lib/razorpay';
 import { ArrowLeft, Shield, Truck, Package } from 'lucide-react';
 import { MainLayout } from '@/components/store/MainLayout';
-import { isUserAuthenticated } from '@/lib/auth';
+import { isUserAuthenticated, getCurrentUser } from '@/lib/auth';
+import { userService } from '@/lib/services';
 import Link from 'next/link';
 
 interface ShippingAddress {
@@ -45,13 +46,54 @@ export default function CheckoutPage() {
     // Function to check authentication
     const checkAuth = () => {
       const authStatus = isUserAuthenticated();
+      console.log('Checkout auth status:', authStatus);
       setIsAuthenticated(authStatus);
       
       // If not authenticated, redirect to login
       if (!authStatus) {
+        console.log('User not authenticated, redirecting to login');
         // Store current URL to redirect back after login
         sessionStorage.setItem('redirectUrl', '/checkout');
         router.push('/auth/login');
+        return;
+      }
+
+      // If authenticated, try to get user data and pre-fill shipping info
+      try {
+        const currentUser = getCurrentUser();
+        if (currentUser) {
+          console.log('Current user found:', currentUser.phoneNumber);
+          
+          // Try to get user addresses
+          userService.getUserByPhoneNumber(currentUser.phoneNumber).then(user => {
+            if (user && user.addresses && user.addresses.length > 0) {
+              const defaultAddress = user.addresses.find(addr => addr.isDefault) || user.addresses[0];
+              if (defaultAddress) {
+                console.log('Pre-filling shipping address from user profile');
+                setShippingAddress({
+                  name: defaultAddress.name || user.name || '',
+                  phone: defaultAddress.phone || user.phoneNumber || '',
+                  address: defaultAddress.address,
+                  city: defaultAddress.city,
+                  state: defaultAddress.state,
+                  pincode: defaultAddress.pincode
+                });
+              }
+            } else if (user) {
+              // User exists but no addresses, pre-fill basic info
+              console.log('Pre-filling basic user info');
+              setShippingAddress(prev => ({
+                ...prev,
+                name: user.name || prev.name,
+                phone: user.phoneNumber || prev.phone
+              }));
+            }
+          }).catch(error => {
+            console.error('Error getting user addresses:', error);
+          });
+        }
+      } catch (error) {
+        console.error('Error getting current user:', error);
       }
     };
     
@@ -63,11 +105,18 @@ export default function CheckoutPage() {
       checkAuth();
     };
     
-    window.addEventListener('storage', handleStorageChange);
+    const handleAuthStateChange = () => {
+      console.log('Auth state change event received in checkout');
+      checkAuth();
+    };
     
-    // Cleanup event listener on component unmount
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('auth-state-changed', handleAuthStateChange);
+    
+    // Cleanup event listeners on component unmount
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth-state-changed', handleAuthStateChange);
     };
   }, [router]);
 
@@ -132,6 +181,10 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
+      console.log('Starting order creation process...');
+      console.log('Shipping address:', shippingAddress);
+      console.log('Cart items:', items);
+
       // Create Razorpay order
       const response = await fetch('/api/payment/create-order', {
         method: 'POST',
@@ -148,20 +201,27 @@ export default function CheckoutPage() {
         }),
       });
 
+      console.log('API response status:', response.status);
+      
       if (!response.ok) {
         const errorData = await response.json();
         console.error('API Error:', errorData);
-        throw new Error(errorData.error || 'Failed to create order');
+        const errorMessage = errorData.details || errorData.error || 'Failed to create order';
+        throw new Error(errorMessage);
       }
 
       const apiResponse = await response.json();
+      console.log('API Response:', apiResponse);
       
       if (!apiResponse.success) {
         console.error('API Error:', apiResponse);
-        throw new Error(apiResponse.error || 'Failed to create order');
+        const errorMessage = apiResponse.details || apiResponse.error || 'Failed to create order';
+        throw new Error(errorMessage);
       }
 
       const { orderId, amount, currency, keyId } = apiResponse.data;
+
+      console.log('Razorpay order created:', { orderId, amount, currency, keyId });
 
       // Initialize Razorpay payment
       const options = {
@@ -180,6 +240,8 @@ export default function CheckoutPage() {
         },
         handler: async (response: any) => {
           try {
+            console.log('Payment successful:', response);
+            
             // Verify payment
             const verifyResponse = await fetch('/api/payment/verify', {
               method: 'POST',
@@ -193,23 +255,41 @@ export default function CheckoutPage() {
               }),
             });
 
+            console.log('Payment verification response status:', verifyResponse.status);
+
             if (verifyResponse.ok) {
+              const verifyData = await verifyResponse.json();
+              console.log('Payment verified:', verifyData);
               clearCart();
               router.push('/order-success');
             } else {
-              throw new Error('Payment verification failed');
+              const verifyError = await verifyResponse.json();
+              console.error('Payment verification failed:', verifyError);
+              throw new Error('Payment verification failed: ' + (verifyError.error || 'Unknown error'));
             }
           } catch (error) {
             console.error('Payment verification error:', error);
             alert('Payment verification failed. Please contact support.');
           }
         },
+        modal: {
+          ondismiss: () => {
+            console.log('Payment modal dismissed');
+            setLoading(false);
+          },
+          onclose: () => {
+            console.log('Payment modal closed');
+            setLoading(false);
+          }
+        }
       };
 
+      console.log('Initializing Razorpay with options:', { ...options, key: '***' });
       await initializeRazorpay(options);
     } catch (error) {
       console.error('Order creation error:', error);
-      alert('Failed to place order. Please try again.');
+      const errorMessage = (error as Error).message || 'Failed to place order. Please try again.';
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }

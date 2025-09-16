@@ -19,20 +19,34 @@ export const db = getFirestore(app);
 export const firestoreService = {
   // Generic CRUD operations
   create: async (collectionName: string, data: any, id?: string) => {
-    if (id) {
-      await setDoc(doc(db, collectionName, id), {
-        ...data,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+    try {
+      console.log(`Firestore: Creating document in collection ${collectionName}`);
+      if (id) {
+        await setDoc(doc(db, collectionName, id), {
+          ...data,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        console.log(`Firestore: Document created with ID ${id}`);
+        return id;
+      } else {
+        const docRef = await addDoc(collection(db, collectionName), {
+          ...data,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        console.log(`Firestore: Document created with ID ${docRef.id}`);
+        return docRef.id;
+      }
+    } catch (error) {
+      console.error('Firestore: Error creating document:', error);
+      console.error('Firestore: Error details:', {
+        name: (error as any).name,
+        message: (error as any).message,
+        stack: (error as any).stack,
+        code: (error as any).code
       });
-      return id;
-    } else {
-      const docRef = await addDoc(collection(db, collectionName), {
-        ...data,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      return docRef.id;
+      throw new Error(`Failed to create document: ${(error as any).message || 'Unknown error'}`);
     }
   },
 

@@ -46,6 +46,12 @@ class OrderService {
   // Create a new order
   async createOrder(orderData: Omit<IOrder, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
+      console.log('OrderService: Creating order with data:', { 
+        userId: orderData.userId, 
+        itemCount: orderData.items.length,
+        total: orderData.total 
+      });
+      
       // Generate order number
       const orderNumber = `RUD${Date.now().toString().slice(-8)}`;
       
@@ -55,11 +61,19 @@ class OrderService {
         orderDate: new Date().toISOString()
       };
 
+      console.log('OrderService: Creating document in Firestore...');
       const orderId = await firestoreService.create(this.collection, orderToCreate);
+      console.log('OrderService: Order created successfully with ID:', orderId);
       return orderId;
     } catch (error) {
-      console.error('Error creating order:', error);
-      throw error;
+      console.error('OrderService: Error creating order:', error);
+      console.error('OrderService: Error details:', {
+        name: (error as any).name,
+        message: (error as any).message,
+        stack: (error as any).stack,
+        code: (error as any).code
+      });
+      throw new Error(`Failed to create order: ${(error as any).message || 'Unknown error'}`);
     }
   }
 

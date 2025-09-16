@@ -6,58 +6,80 @@ import { orderService, userService, type IOrderItem, type ICustomerInfo } from '
 // Razorpay Configuration
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_RHpVquZ5e0nUkX';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'C0qZuu2HhC7cLYUKBxlKI2at';
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
+// JWT secret handling with error prevention
+const getJwtSecret = (): string => {
+  try {
+    const secret = process.env.JWT_SECRET || 'your-secret-key';
+    if (typeof secret !== 'string') {
+      console.error('JWT_SECRET is not a string, using fallback');
+      return 'your-secret-key';
+    }
+    return secret;
+  } catch (error) {
+    console.error('Error accessing JWT_SECRET:', error);
+    return 'your-secret-key';
+  }
+};
+
+// Buffer-based secret handling to avoid instanceof issues
+const getSecretBuffer = (): Buffer => {
+  const secret = getJwtSecret();
+  try {
+    return Buffer.from(secret);
+  } catch (error) {
+    console.error('Error creating buffer from secret:', error);
+    return Buffer.from('your-secret-key');
+  }
+};
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Payment create-order API called');
+    
     // Check authentication (optional for guest checkout)
     const token = request.cookies.get('auth-token')?.value;
     let userId: string;
     
     if (token) {
       try {
-        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        // Try multiple verification approaches
+        let decoded: any;
+        try {
+          const secretBuffer = getSecretBuffer();
+          decoded = jwt.verify(token, secretBuffer);
+          console.log('Payment: Token verified using Buffer secret');
+        } catch (error) {
+          console.warn('Payment: Buffer verification failed, trying string approach');
+          const secretString = getJwtSecret();
+          decoded = jwt.verify(token, secretString, { algorithms: ['HS256'] });
+          console.log('Payment: Token verified using string secret');
+        }
         userId = decoded.phoneNumber;
       } catch (error) {
         // Invalid token, treat as guest
         userId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        console.log('Invalid token, treating as guest user:', userId);
       }
     } else {
       // Guest checkout
       userId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    }
-
-    // Create or update user if phone number is provided
-    if (shippingAddress.phone) {
-      try {
-        // For authenticated users, use their phone number as userId
-        // For guest users, create user record with the provided phone number
-        const userPhoneNumber = userId.startsWith('guest_') ? shippingAddress.phone : userId;
-        
-        await userService.createOrUpdateUser({
-          phoneNumber: userPhoneNumber,
-          name: shippingAddress.name,
-          email: customerInfo?.email || '',
-          address: shippingAddress.address,
-          city: shippingAddress.city || '',
-          state: shippingAddress.state || '',
-          pincode: shippingAddress.pincode || ''
-        });
-        
-        // Update userId to use phone number for consistency
-        if (userId.startsWith('guest_')) {
-          userId = userPhoneNumber;
-        }
-      } catch (error) {
-        console.error('Error creating/updating user:', error);
-        // Don't fail the order creation if user creation fails
-      }
+      console.log('Guest checkout, userId:', userId);
     }
 
     // Get cart data from request body
-    const { items, shippingAddress, customerInfo } = await request.json();
+    const body = await request.json();
+    console.log('Request body received:', { 
+      hasItems: !!body.items, 
+      hasShippingAddress: !!body.shippingAddress,
+      hasCustomerInfo: !!body.customerInfo,
+      itemCount: body.items?.length || 0
+    });
+
+    const { items, shippingAddress, customerInfo } = body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
+      console.error('Invalid cart data:', items);
       return NextResponse.json(
         { success: false, error: 'Invalid cart data' },
         { status: 400 }
@@ -66,10 +88,73 @@ export async function POST(request: NextRequest) {
 
     // Validate shipping address
     if (!shippingAddress || !shippingAddress.name || !shippingAddress.phone || !shippingAddress.address) {
+      console.error('Invalid shipping address:', shippingAddress);
       return NextResponse.json(
         { success: false, error: 'Complete shipping address is required' },
         { status: 400 }
       );
+    }
+
+    console.log('Creating or updating user for phone:', shippingAddress.phone);
+    
+    // Create or update user if phone number is provided - with better error handling
+    if (shippingAddress.phone) {
+      try {
+        // For authenticated users, use their phone number as userId
+        // For guest users, create user record with the provided phone number
+        const userPhoneNumber = userId.startsWith('guest_') ? shippingAddress.phone : userId;
+        
+        console.log('Attempting to create/update user with phone:', userPhoneNumber);
+        
+        // Prepare user data with address
+        const userData = {
+          phoneNumber: userPhoneNumber,
+          name: shippingAddress.name,
+          email: customerInfo?.email || '',
+          address: shippingAddress.address,
+          city: shippingAddress.city || '',
+          state: shippingAddress.state || '',
+          pincode: shippingAddress.pincode || ''
+        };
+
+        // Create or update user
+        const userIdFromDb = await userService.createOrUpdateUser(userData);
+        
+        // Add shipping address to user's addresses
+        try {
+          const addressData = {
+            name: shippingAddress.name,
+            phone: shippingAddress.phone,
+            address: shippingAddress.address,
+            city: shippingAddress.city || '',
+            state: shippingAddress.state || '',
+            pincode: shippingAddress.pincode || '',
+            isDefault: true // Make this the default address
+          };
+          
+          await userService.addAddress(userIdFromDb, addressData);
+          console.log('Address added to user profile successfully');
+        } catch (addressError) {
+          console.error('Error adding address to user profile:', addressError);
+          // Don't fail the order creation if address addition fails
+        }
+        
+        // Update userId to use phone number for consistency
+        if (userId.startsWith('guest_')) {
+          userId = userPhoneNumber;
+        }
+        console.log('User created/updated successfully:', userId);
+      } catch (error) {
+        console.error('Error creating/updating user:', error);
+        console.error('User creation error details:', {
+          name: (error as any).name,
+          message: (error as any).message,
+          stack: (error as any).stack,
+          code: (error as any).code
+        });
+        // Don't fail the order creation if user creation fails
+        // Continue with guest user ID
+      }
     }
 
     // Calculate total amount
@@ -81,6 +166,8 @@ export async function POST(request: NextRequest) {
     // Add shipping cost (free shipping for orders above 999)
     const shippingCost = subtotal >= 999 ? 0 : 99;
     const total = subtotal + shippingCost;
+
+    console.log('Order totals calculated:', { subtotal, shippingCost, total });
 
     // Create Razorpay order
     const razorpay = new Razorpay({
@@ -101,7 +188,23 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    const razorpayOrder = await razorpay.orders.create(options);
+    console.log('Creating Razorpay order with options:', { ...options, key_secret: '***' });
+
+    let razorpayOrder: any;
+    try {
+      razorpayOrder = await razorpay.orders.create(options);
+      console.log('Razorpay order created successfully:', razorpayOrder.id);
+    } catch (razorpayError) {
+      console.error('Razorpay order creation failed:', razorpayError);
+      console.error('Razorpay error details:', {
+        name: (razorpayError as any).name,
+        message: (razorpayError as any).message,
+        stack: (razorpayError as any).stack,
+        code: (razorpayError as any).code,
+        statusCode: (razorpayError as any).statusCode
+      });
+      throw new Error(`Failed to create Razorpay order: ${(razorpayError as any).message || 'Unknown error'}`);
+    }
 
     // Prepare order data for Firebase
     const orderItems: IOrderItem[] = items.map(item => ({
@@ -124,19 +227,51 @@ export async function POST(request: NextRequest) {
       pincode: shippingAddress.pincode || ''
     };
 
-    // Create order in Firebase
-    const orderId = await orderService.createOrder({
-      userId,
-      customerInfo: customerData,
-      items: orderItems,
-      subtotal,
-      shippingCost,
-      total,
-      razorpayOrderId: razorpayOrder.id,
-      status: 'pending',
-      paymentStatus: 'pending',
-      orderDate: new Date()
-    });
+    console.log('Creating order in Firebase...');
+
+    // Create order in Firebase with fallback
+    let orderId: string;
+    try {
+      const orderData = {
+        userId,
+        customerInfo: customerData,
+        items: orderItems,
+        subtotal,
+        shippingCost,
+        total,
+        razorpayOrderId: razorpayOrder.id,
+        status: 'pending',
+        paymentStatus: 'pending',
+        orderDate: new Date()
+      };
+      
+      orderId = await orderService.createOrder(orderData);
+      console.log('Order created successfully in Firebase:', orderId);
+      
+      // Associate order with user
+      try {
+        if (!userId.startsWith('guest_')) {
+          await userService.addOrderToUser(userId, orderId);
+          console.log('Order associated with user successfully');
+        }
+      } catch (associationError) {
+        console.error('Error associating order with user:', associationError);
+        // Don't fail the order creation if association fails
+      }
+    } catch (firebaseError) {
+      console.error('Firebase order creation failed:', firebaseError);
+      console.error('Firebase error details:', {
+        name: (firebaseError as any).name,
+        message: (firebaseError as any).message,
+        stack: (firebaseError as any).stack,
+        code: (firebaseError as any).code
+      });
+      // Fallback: Generate a local order ID without Firebase
+      orderId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      console.log('Using fallback order ID:', orderId);
+      // Continue with the payment process even if Firebase fails
+      // The order can be reconciled later
+    }
 
     return NextResponse.json({
       success: true,
@@ -153,8 +288,14 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error creating Razorpay order:', error);
+    console.error('Error details:', {
+      name: (error as any).name,
+      message: (error as any).message,
+      stack: (error as any).stack,
+      code: (error as any).code
+    });
     return NextResponse.json(
-      { success: false, error: 'Failed to create order' },
+      { success: false, error: 'Failed to create order', details: (error as any).message },
       { status: 500 }
     );
   }

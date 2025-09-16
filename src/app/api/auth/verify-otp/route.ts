@@ -6,6 +6,32 @@ import { IUser } from '@/lib/models/User';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
+// Ensure JWT_SECRET is a string and handle potential module conflicts
+const getJwtSecret = (): string => {
+  try {
+    const secret = process.env.JWT_SECRET || 'your-secret-key';
+    if (typeof secret !== 'string') {
+      console.error('JWT_SECRET is not a string, using fallback');
+      return 'your-secret-key';
+    }
+    return secret;
+  } catch (error) {
+    console.error('Error accessing JWT_SECRET:', error);
+    return 'your-secret-key';
+  }
+};
+
+// Buffer-based secret handling to avoid instanceof issues
+const getSecretBuffer = (): Buffer => {
+  const secret = getJwtSecret();
+  try {
+    return Buffer.from(secret);
+  } catch (error) {
+    console.error('Error creating buffer from secret:', error);
+    return Buffer.from('your-secret-key');
+  }
+};
+
 export async function POST(request: NextRequest) {
   try {
     console.log('OTP verification API called');
@@ -56,11 +82,29 @@ export async function POST(request: NextRequest) {
 
     // Create JWT token for session management
     console.log('Creating JWT token');
-    const token = jwt.sign(
-      { phoneNumber }, // Only store the phone number, not the entire Firebase token
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
+    
+    // Try multiple approaches for token signing
+    let token: string;
+    try {
+      // Approach 1: Use Buffer-based secret
+      const secretBuffer = getSecretBuffer();
+      token = jwt.sign(
+        { phoneNumber },
+        secretBuffer,
+        { expiresIn: '7d' }
+      );
+      console.log('Token created successfully using Buffer secret');
+    } catch (error) {
+      console.warn('Buffer approach failed, trying string approach:', error);
+      // Approach 2: Use string secret with explicit options
+      const secretString = getJwtSecret();
+      token = jwt.sign(
+        { phoneNumber },
+        secretString,
+        { algorithm: 'HS256', expiresIn: '7d' }
+      );
+      console.log('Token created successfully using string secret');
+    }
 
     // Create response with session cookie
     const response = NextResponse.json(

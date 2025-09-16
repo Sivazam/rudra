@@ -10,7 +10,7 @@ import { ArrowLeft, Package, Truck, CheckCircle, Clock, XCircle, AlertCircle } f
 import Link from 'next/link';
 import { userService } from '@/lib/services';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { isUserAuthenticated } from '@/lib/auth';
+import { isUserAuthenticated, getCurrentUser } from '@/lib/auth';
 
 interface Order {
   id: string;
@@ -49,36 +49,31 @@ export default function MyOrdersPage() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        // Check if user is authenticated
-        const token = document.cookie
-          .split(';')
-          .find(cookie => cookie.trim().startsWith('auth-token='))
-          ?.split('=')[1];
-
-        if (!token) {
+        // Check if user is authenticated using our auth utility
+        const isAuthenticated = isUserAuthenticated();
+        if (!isAuthenticated) {
           router.push('/auth/login');
           return;
         }
 
-        // Get user info from token
-        const response = await fetch('/api/auth/me', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
+        // Get current user using our auth utility
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
           router.push('/auth/login');
           return;
         }
 
-        const { user } = await response.json();
+        console.log('Fetching orders for user:', currentUser.phoneNumber);
         
-        // Get user with orders
-        const userWithOrders = await userService.getUserWithOrders(user.phoneNumber);
+        // Get user with orders using the improved service
+        const userWithOrders = await userService.getUserWithOrders(currentUser.phoneNumber);
         
         if (userWithOrders && userWithOrders.orders) {
+          console.log('Found orders:', userWithOrders.orders.length);
           setOrders(userWithOrders.orders);
+        } else {
+          console.log('No orders found for user');
+          setOrders([]);
         }
       } catch (error) {
         console.error('Error fetching orders:', error);
