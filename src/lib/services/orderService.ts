@@ -113,12 +113,39 @@ class OrderService {
         orderBy: { field: 'orderDate', direction: 'desc' }
       });
       
-      const orders = await firestoreService.getAll(this.collection, {
-        where: { field: 'userId', operator: '==', value: userId },
-        orderBy: { field: 'orderDate', direction: 'desc' }
-      });
+      let orders: IOrder[] = [];
       
-      console.log('OrderService: Found', orders.length, 'orders for userId:', userId);
+      // Try to query with orderBy first (more efficient)
+      try {
+        orders = await firestoreService.getAll(this.collection, {
+          where: { field: 'userId', operator: '==', value: userId },
+          orderBy: { field: 'orderDate', direction: 'desc' }
+        });
+        console.log('OrderService: Found', orders.length, 'orders with orderBy');
+      } catch (orderByError) {
+        console.warn('OrderService: Query with orderBy failed, trying without orderBy:', orderByError);
+        
+        // Fallback: query without orderBy and sort manually
+        try {
+          orders = await firestoreService.getAll(this.collection, {
+            where: { field: 'userId', operator: '==', value: userId }
+          });
+          console.log('OrderService: Found', orders.length, 'orders without orderBy');
+          
+          // Sort manually by orderDate (newest first)
+          orders.sort((a, b) => {
+            const dateA = new Date(a.orderDate).getTime();
+            const dateB = new Date(b.orderDate).getTime();
+            return dateB - dateA;
+          });
+          console.log('OrderService: Orders sorted manually');
+        } catch (whereOnlyError) {
+          console.error('OrderService: Even where-only query failed:', whereOnlyError);
+          throw whereOnlyError;
+        }
+      }
+      
+      console.log('OrderService: Final orders count:', orders.length);
       if (orders.length > 0) {
         console.log('OrderService: First order sample:', {
           id: orders[0].id,
