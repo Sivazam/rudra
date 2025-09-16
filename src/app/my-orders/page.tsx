@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { userService } from '@/lib/services';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { isUserAuthenticated, getCurrentUser } from '@/lib/auth';
+import { getUserIdentifier, standardizeUserId } from '@/lib/userUtils';
 
 interface Order {
   id: string;
@@ -71,13 +72,18 @@ export default function MyOrdersPage() {
           return;
         }
 
-        console.log('MyOrders: Fetching orders for user:', currentUser.phoneNumber);
+        // Get standardized user identifier
+        const userIdentifier = getUserIdentifier(currentUser);
+        const standardizedUserId = standardizeUserId(userIdentifier.userId);
+        
+        console.log('MyOrders: Fetching orders for user:', currentUser.phoneNumber, 'standardizedUserId:', standardizedUserId);
         
         // Get user with orders using the improved service
-        const userWithOrders = await userService.getUserWithOrders(currentUser.phoneNumber);
+        const userWithOrders = await userService.getUserWithOrders(standardizedUserId);
         
         console.log('MyOrders: User with orders result:', userWithOrders);
         console.log('MyOrders: User phone number:', currentUser.phoneNumber);
+        console.log('MyOrders: Standardized userId:', standardizedUserId);
         
         if (userWithOrders) {
           console.log('MyOrders: User found, checking orders...');
@@ -89,7 +95,7 @@ export default function MyOrdersPage() {
             // Fallback: try to get orders directly by userId
             try {
               const { orderService } = await import('@/lib/services');
-              const directOrders = await orderService.getOrdersByUserId(currentUser.phoneNumber);
+              const directOrders = await orderService.getOrdersByUserId(standardizedUserId);
               console.log('MyOrders: Direct query found orders:', directOrders.length);
               setOrders(directOrders);
             } catch (directError) {
@@ -102,7 +108,7 @@ export default function MyOrdersPage() {
           // Fallback: try to get orders directly by userId
           try {
             const { orderService } = await import('@/lib/services');
-            const directOrders = await orderService.getOrdersByUserId(currentUser.phoneNumber);
+            const directOrders = await orderService.getOrdersByUserId(standardizedUserId);
             console.log('MyOrders: Direct query found orders:', directOrders.length);
             setOrders(directOrders);
           } catch (directError) {

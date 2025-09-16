@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import jwt from 'jsonwebtoken';
 import { orderService, userService, type IOrderItem, type ICustomerInfo } from '@/lib/services';
+import { getUserIdentifier, getGuestUserIdentifier, standardizeUserId } from '@/lib/userUtils';
 
 // Razorpay Configuration
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_RHpVquZ5e0nUkX';
@@ -39,8 +40,7 @@ export async function POST(request: NextRequest) {
     
     // Check authentication (optional for guest checkout)
     const token = request.cookies.get('auth-token')?.value;
-    let userId: string;
-    let isGuestUser = true;
+    let userIdentifier;
     
     if (token) {
       try {
@@ -56,18 +56,19 @@ export async function POST(request: NextRequest) {
           decoded = jwt.verify(token, secretString, { algorithms: ['HS256'] });
           console.log('Payment: Token verified using string secret');
         }
-        userId = decoded.phoneNumber;
-        isGuestUser = false;
-        console.log('Payment: Authenticated user:', userId);
+        
+        // Get standardized user identifier
+        userIdentifier = getUserIdentifier(decoded);
+        console.log('Payment: Authenticated user identifier:', userIdentifier);
       } catch (error) {
         // Invalid token, treat as guest
-        userId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        console.log('Payment: Invalid token, treating as guest user:', userId);
+        userIdentifier = getGuestUserIdentifier(shippingAddress?.phone);
+        console.log('Payment: Invalid token, using guest identifier:', userIdentifier);
       }
     } else {
       // Guest checkout
-      userId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      console.log('Payment: Guest checkout, userId:', userId);
+      userIdentifier = getGuestUserIdentifier(shippingAddress?.phone);
+      console.log('Payment: Guest checkout identifier:', userIdentifier);
     }
 
     // Get cart data from request body
@@ -99,19 +100,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Creating or updating user for phone:', shippingAddress.phone);
+      console.log('Creating or updating user for phone:', shippingAddress.phone);
     
     // Create or update user if phone number is provided - with better error handling
-    if (shippingAddress.phone) {
+    if (shippingAddress.phone && userIdentifier.isAuthenticated) {
       try {
-        // Always use the phone number as the consistent userId
-        const phoneUserId = shippingAddress.phone;
+        // Use the standardized user ID (phone number)
+        const standardizedUserId = standardizeUserId(userIdentifier.userId);
         
-        console.log('Attempting to create/update user with phone:', phoneUserId, 'original userId:', userId, 'isGuest:', isGuestUser);
+        console.log('Attempting to create/update user with phone:', standardizedUserId, 'isAuthenticated:', userIdentifier.isAuthenticated);
         
         // Prepare user data with address
         const userData = {
-          phoneNumber: phoneUserId,
+          phoneNumber: standardizedUserId,
           name: shippingAddress.name,
           email: customerInfo?.email || '',
           address: shippingAddress.address,
@@ -161,12 +162,7 @@ export async function POST(request: NextRequest) {
           // Don't fail the order creation if address addition fails
         }
         
-        // Update userId to use phone number for consistency
-        if (isGuestUser) {
-          console.log('Updating userId from guest to phone number:', userId, '->', phoneUserId);
-          userId = phoneUserId;
-        }
-        console.log('User created/updated successfully:', userId);
+        console.log('User created/updated successfully:', standardizedUserId);
       } catch (error) {
         console.error('Error creating/updating user:', error);
         console.error('User creation error details:', {
@@ -176,7 +172,7 @@ export async function POST(request: NextRequest) {
           code: (error as any).code
         });
         // Don't fail the order creation if user creation fails
-        // Continue with guest user ID
+        // Continue with original user identifier
       }
     }
 
@@ -263,8 +259,11 @@ export async function POST(request: NextRequest) {
     // Create order in Firebase with fallback
     let orderId: string;
     try {
+      // Use standardized user ID for order creation
+      const standardizedUserId = standardizeUserId(userIdentifier.userId);
+      
       const orderData = {
-        userId,
+        userId: standardizedUserId,
         customerInfo: customerData,
         items: orderItems,
         subtotal,
@@ -277,13 +276,13 @@ export async function POST(request: NextRequest) {
       };
       
       orderId = await orderService.createOrder(orderData);
-      console.log('Order created successfully in Firebase:', orderId);
+      console.log('Order created successfully in Firebase:', orderId, 'with userId:', standardizedUserId);
       
       // Associate order with user
       try {
-        console.log('Associating order with user:', userId, 'orderId:', orderId, 'isGuest:', isGuestUser);
-        if (!isGuestUser) {
-          await userService.addOrderToUser(userId, orderId);
+        console.log('Associating order with user:', standardizedUserId, 'orderId:', orderId, 'isAuthenticated:', userIdentifier.isAuthenticated);
+        if (userIdentifier.isAuthenticated) {
+          await userService.addOrderToUser(standardizedUserId, orderId);
           console.log('Order associated with user successfully');
         } else {
           console.log('Skipping user association for guest user');
