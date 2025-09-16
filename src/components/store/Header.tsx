@@ -23,7 +23,7 @@ export function Header({ onSearch }: HeaderProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [isProfileComplete, setIsProfileComplete] = useState<boolean | null>(null);
+  const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   const [isCheckingProfile, setIsCheckingProfile] = useState(false);
   const { getTotalItems, openCart } = useCartStore();
   const router = useRouter();
@@ -36,24 +36,34 @@ export function Header({ onSearch }: HeaderProps) {
       const authStatus = isUserAuthenticated();
       setIsAuth(authStatus);
       if (authStatus) {
-        const user = getCurrentUser();
-        setCurrentUser(user);
+        const userToken = getCurrentUser();
+        if (userToken) {
+          // Fetch complete user profile from userService
+          try {
+            const { userService } = await import('@/lib/services');
+            const fullUser = await userService.getUserByPhoneNumber(userToken.phoneNumber);
+            setCurrentUser(fullUser || userToken); // Fallback to token if full user not found
+          } catch (error) {
+            console.error('Error fetching user profile:', error);
+            setCurrentUser(userToken); // Fallback to token data
+          }
+        }
         
         // Check profile completion
         try {
           setIsCheckingProfile(true);
-          const profileComplete = await isProfileComplete();
-          console.log('Profile completion check result:', profileComplete);
-          setIsProfileComplete(profileComplete);
+          const profileCompleteStatus = await isProfileComplete();
+          console.log('Profile completion check result:', profileCompleteStatus);
+          setProfileComplete(profileCompleteStatus);
         } catch (error) {
           console.error('Error checking profile completion:', error);
-          setIsProfileComplete(false);
+          setProfileComplete(false);
         } finally {
           setIsCheckingProfile(false);
         }
       } else {
         setCurrentUser(null);
-        setIsProfileComplete(null);
+        setProfileComplete(null);
       }
     };
     
@@ -94,10 +104,33 @@ export function Header({ onSearch }: HeaderProps) {
   };
 
   const formatPhoneNumber = (phone: string) => {
+    if (!phone) return '';
     if (phone.startsWith('+91')) {
       return `+91 ${phone.slice(3, 8)} ${phone.slice(8)}`;
     }
     return phone;
+  };
+
+  const getDisplayName = (user: any) => {
+    if (!user) return 'User';
+    // If user has a name property (from full profile), use it
+    if (user.name && user.name.trim() !== '') return user.name;
+    // If user has phoneNumber (from token), use last 4 digits as fallback
+    if (user.phoneNumber) return `User ${user.phoneNumber.slice(-4)}`;
+    // Final fallback
+    return 'User';
+  };
+
+  const getUserEmail = (user: any) => {
+    if (!user) return null;
+    // Return email if available from full profile
+    return user.email || null;
+  };
+
+  const getUserPhone = (user: any) => {
+    if (!user) return null;
+    // Return phoneNumber from either full profile or token
+    return user.phoneNumber || null;
   };
 
   return (
@@ -122,7 +155,7 @@ export function Header({ onSearch }: HeaderProps) {
                 {isAuth && currentUser && (
                   <div className="space-y-4">
                     {/* Profile Completion Warning - Only show if profile is incomplete and not loading */}
-                    {!isCheckingProfile && isProfileComplete === false && (
+                    {!isCheckingProfile && profileComplete === false && (
                       <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                         <div className="flex items-center space-x-2">
                           <AlertCircle className="h-4 w-4 text-orange-600 flex-shrink-0" />
@@ -157,24 +190,24 @@ export function Header({ onSearch }: HeaderProps) {
                       {/* Left Column - Avatar */}
                       <Avatar className="h-14 w-14 flex-shrink-0">
                         <AvatarFallback className="bg-orange-100 text-orange-600 text-sm">
-                          {currentUser.phoneNumber ? currentUser.phoneNumber.slice(-2) : 'U'}
+                          {getUserPhone(currentUser) ? getUserPhone(currentUser)!.slice(-2) : 'U'}
                         </AvatarFallback>
                       </Avatar>
                       
                       {/* Right Column - User Info */}
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm text-black">
-                          {currentUser.name || 'User'}
+                          {getDisplayName(currentUser)}
                         </p>
-                        {currentUser.email && (
+                        {getUserEmail(currentUser) && (
                           <p className="text-xs text-gray-600 mt-1">
-                            {currentUser.email}
+                            {getUserEmail(currentUser)}
                           </p>
                         )}
-                        {currentUser.phoneNumber && (
+                        {getUserPhone(currentUser) && (
                           <div className="flex items-center space-x-1 text-xs text-gray-600 mt-1">
                             <Phone className="h-3 w-3" style={{ color: '#846549' }} />
-                            <span>{formatPhoneNumber(currentUser.phoneNumber)}</span>
+                            <span>{formatPhoneNumber(getUserPhone(currentUser)!)}</span>
                           </div>
                         )}
                       </div>
@@ -250,21 +283,7 @@ export function Header({ onSearch }: HeaderProps) {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/categories" className="hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
-              Categories
-            </Link>
-            <Link href="/about" className="hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
-              About Us
-            </Link>
-            <Link href="/contact" className="hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
-              Contact
-            </Link>
-            {isAuth && (
-              <Link href="/my-orders" className="hover:opacity-80 transition-colors flex items-center space-x-1" style={{ color: '#846549' }}>
-                <Package className="h-4 w-4" />
-                <span>My Orders</span>
-              </Link>
-            )}
+            {/* Desktop navigation is now empty - all items moved to user dropdown */}
           </nav>
 
           {/* Search and Actions */}
@@ -322,7 +341,7 @@ export function Header({ onSearch }: HeaderProps) {
                   <Button variant="ghost" size="icon" className="relative hidden md:flex">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-orange-100 text-orange-600">
-                        {currentUser.phoneNumber ? currentUser.phoneNumber.slice(-2) : 'U'}
+                        {getUserPhone(currentUser) ? getUserPhone(currentUser)!.slice(-2) : 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -330,29 +349,36 @@ export function Header({ onSearch }: HeaderProps) {
                 <DropdownMenuContent align="end" className="w-56">
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">Account</p>
-                      <p className="w-[200px] truncate text-sm text-muted-foreground">
-                        {formatPhoneNumber(currentUser.phoneNumber)}
-                      </p>
+                      <p className="font-medium">{getDisplayName(currentUser)}</p>
+                      {getUserEmail(currentUser) && (
+                        <p className="w-[200px] truncate text-sm text-muted-foreground">
+                          {getUserEmail(currentUser)}
+                        </p>
+                      )}
+                      {getUserPhone(currentUser) && (
+                        <p className="w-[200px] truncate text-sm text-muted-foreground">
+                          {formatPhoneNumber(getUserPhone(currentUser)!)}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/my-orders" className="flex items-center gap-2">
-                      <Package className="h-4 w-4" />
-                      <span>My Orders</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile" className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      <span>Profile</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
                     <Link href="/addresses" className="flex items-center gap-2">
                       <MapPin className="h-4 w-4" />
                       <span>Addresses</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/my-favorites" className="flex items-center gap-2">
+                      <Heart className="h-4 w-4" />
+                      <span>My Favourites</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/my-orders" className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      <span>My Orders</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

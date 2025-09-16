@@ -9,6 +9,7 @@ interface Address {
   pincode: string;
   landmark: string;
   addressType: 'home' | 'office' | 'other';
+  customAddressName?: string;
   isDefault?: boolean;
   createdAt?: string;
 }

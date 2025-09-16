@@ -20,6 +20,7 @@ interface Address {
   pincode: string;
   landmark: string;
   addressType: 'home' | 'office' | 'other';
+  customAddressName?: string;
   isDefault?: boolean;
   createdAt?: string;
 }
@@ -41,6 +42,7 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
     pincode: '',
     landmark: '',
     addressType: 'home',
+    customAddressName: '',
     isDefault: false
   });
 
@@ -81,7 +83,7 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
 
   const handleAddAddress = async () => {
     if (!validateAddress(newAddress)) {
-      alert('Please fill in all address fields');
+      alert(getValidationErrorMessage(newAddress));
       return;
     }
 
@@ -99,6 +101,7 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
             pincode: '',
             landmark: '',
             addressType: 'home',
+            customAddressName: '',
             isDefault: false
           });
           setShowAddForm(false);
@@ -112,7 +115,7 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
 
   const handleUpdateAddress = async () => {
     if (!editingAddress || !validateAddress(editingAddress)) {
-      alert('Please fill in all address fields');
+      alert(getValidationErrorMessage(editingAddress || newAddress));
       return;
     }
 
@@ -172,6 +175,11 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
     // Required fields: name, phone (with +91), doorNo, pincode
     const requiredFields = ['name', 'phone', 'doorNo', 'pincode'];
     
+    // If address type is 'other', customAddressName is also required
+    if (address.addressType === 'other') {
+      requiredFields.push('customAddressName');
+    }
+    
     for (const field of requiredFields) {
       const value = address[field as keyof Address];
       if (!value || value.toString().trim() === '') {
@@ -192,12 +200,50 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
     return true;
   };
 
+  const getValidationErrorMessage = (address: Address): string => {
+    // Check if custom address name is missing for 'other' type
+    if (address.addressType === 'other' && (!address.customAddressName || address.customAddressName.trim() === '')) {
+      return 'Please enter a name to save this address as (e.g., "Mom\'s House")';
+    }
+    
+    // Check other required fields
+    const requiredFields = ['name', 'phone', 'doorNo', 'pincode'];
+    for (const field of requiredFields) {
+      const value = address[field as keyof Address];
+      if (!value || value.toString().trim() === '') {
+        if (field === 'name') {
+          return 'Please enter the recipient\'s full name';
+        }
+        return `Please fill in the ${field} field`;
+      }
+    }
+    
+    // Check phone format
+    if (!address.phone.startsWith('+91') || address.phone.length < 5) {
+      return 'Please enter a valid phone number starting with +91';
+    }
+    
+    // Check pincode format
+    if (!/^\d{6}$/.test(address.pincode)) {
+      return 'Please enter a valid 6-digit pincode';
+    }
+    
+    return '';
+  };
+
   const formatAddress = (address: Address): string => {
     const parts = [address.doorNo];
     if (address.landmark) {
       parts.push(`Near ${address.landmark}`);
     }
     return parts.join(', ');
+  };
+
+  const formatAddressType = (address: Address): string => {
+    if (address.addressType === 'other' && address.customAddressName) {
+      return address.customAddressName;
+    }
+    return address.addressType.charAt(0).toUpperCase() + address.addressType.slice(1);
   };
 
   if (loading) {
@@ -274,6 +320,16 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                       </div>
                       <p className="text-sm text-gray-600">{formatAddress(address)}</p>
                       <p className="text-sm text-gray-600">Pincode: {address.pincode}</p>
+                      {address.addressType === 'other' && address.customAddressName ? (
+                        <p className="text-sm font-medium text-blue-600">
+                          📍 {address.customAddressName}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-gray-600">
+                          <span className="font-medium">Type: </span>
+                          {formatAddressType(address)}
+                        </p>
+                      )}
                     </div>
                   </Label>
                   
@@ -286,6 +342,14 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteAddress(address.id!)}
+                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                     {!address.isDefault && (
                       <Button
                         variant="ghost"
@@ -294,16 +358,6 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                         className="h-8 w-8 p-0"
                       >
                         <span className="text-xs">Set Default</span>
-                      </Button>
-                    )}
-                    {addresses.length > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteAddress(address.id!)}
-                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
                       </Button>
                     )}
                   </div>
@@ -328,7 +382,7 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="name">Full Name *</Label>
+                <Label htmlFor="name">Recipient's Full Name *</Label>
                 <Input
                   id="name"
                   value={editingAddress ? editingAddress.name : newAddress.name}
@@ -339,7 +393,7 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                       setNewAddress({ ...newAddress, name: e.target.value });
                     }
                   }}
-                  placeholder="Enter full name"
+                  placeholder="Enter recipient's full name"
                   required
                 />
               </div>
@@ -498,6 +552,30 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                   <span>Other</span>
                 </button>
               </div>
+              
+              {/* Custom address label field - only show when "Other" is selected */}
+              {(editingAddress ? editingAddress.addressType === 'other' : newAddress.addressType === 'other') && (
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <Label htmlFor="customAddressName" className="text-sm font-medium text-blue-800">
+                    Save Address As <span className="text-red-500">*</span>
+                  </Label>
+                  <p className="text-xs text-blue-600 mb-2">Give this address a name (e.g., "Mom's House", "Work Office", "Friend's Place")</p>
+                  <Input
+                    id="customAddressName"
+                    value={editingAddress ? (editingAddress.customAddressName || '') : newAddress.customAddressName}
+                    onChange={(e) => {
+                      if (editingAddress) {
+                        setEditingAddress({ ...editingAddress, customAddressName: e.target.value });
+                      } else {
+                        setNewAddress({ ...newAddress, customAddressName: e.target.value });
+                      }
+                    }}
+                    placeholder="e.g., Mom's House, Work Office"
+                    className="border-blue-300 focus:border-blue-500"
+                    required
+                  />
+                </div>
+              )}
             </div>
             
             <div className="flex space-x-2">
