@@ -4,7 +4,7 @@ import { useCartStore } from '@/store/cartStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { X, Minus, Plus, ShoppingBag, Heart, ArrowRight } from 'lucide-react';
+import { X, Minus, Plus as PlusIcon, ShoppingBag, Heart, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { isUserAuthenticated } from '@/lib/auth';
@@ -24,6 +24,43 @@ export function SlideInCart() {
   
   const router = useRouter();
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const [shouldSlideIn, setShouldSlideIn] = useState(false);
+
+  // Handle component mounting
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
+
+  // Handle animation states
+  useEffect(() => {
+    if (isOpen) {
+      setIsAnimating(true);
+      setShouldSlideIn(false); // Start in hidden position
+      
+      // Use a timeout to trigger the slide-in animation after the component is mounted
+      setTimeout(() => {
+        setShouldSlideIn(true); // Trigger slide-in animation
+      }, 10);
+      
+      // Prevent body scrolling when cart is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      setShouldSlideIn(false); // Start slide-out animation
+      const timer = setTimeout(() => {
+        setIsAnimating(false);
+      }, 300);
+      // Restore body scrolling when cart is closed
+      document.body.style.overflow = '';
+      return () => clearTimeout(timer);
+    }
+    
+    // Cleanup: restore body scrolling when component unmounts
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   const formatPrice = (price: number, discount: number = 0) => {
     const discountedPrice = price - (price * discount) / 100;
@@ -53,25 +90,6 @@ export function SlideInCart() {
     }
   };
 
-  // Handle animation states
-  useEffect(() => {
-    if (isOpen) {
-      setIsAnimating(true);
-      // Prevent body scrolling when cart is open
-      document.body.style.overflow = 'hidden';
-    } else {
-      const timer = setTimeout(() => setIsAnimating(false), 300);
-      // Restore body scrolling when cart is closed
-      document.body.style.overflow = '';
-      return () => clearTimeout(timer);
-    }
-    
-    // Cleanup: restore body scrolling when component unmounts
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-
   if (!isOpen && !isAnimating) return null;
 
   return (
@@ -85,7 +103,7 @@ export function SlideInCart() {
       
       {/* Cart Panel */}
       <div className={`fixed right-0 top-0 h-full w-full max-w-md bg-white shadow-xl transform transition-transform duration-300 ease-in-out overflow-hidden ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
+        shouldSlideIn ? 'translate-x-0' : 'translate-x-full'
       }`}>
         <div className="flex flex-col h-full">
           {/* Header */}
@@ -171,7 +189,7 @@ export function SlideInCart() {
                               style={{ borderColor: '#e5e7eb', color: '#6b7280' }}
                               onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             >
-                              <Plus className="h-3 w-3" />
+                              <PlusIcon className="h-3 w-3" />
                             </Button>
                           </div>
                           
@@ -239,6 +257,12 @@ export function SlideInCart() {
                 </Button>
                 <Button variant="outline" className="w-full text-sm" style={{ borderColor: '#e5e7eb', color: '#6b7280' }} asChild>
                   <Link href="/cart">View Full Cart</Link>
+                </Button>
+                <Button variant="ghost" className="w-full text-sm" style={{ color: 'rgba(156,86,26,255)' }} asChild>
+                  <Link href="/" onClick={closeCart}>
+                    <PlusIcon className="h-3 w-3 mr-2" />
+                    Add more items
+                  </Link>
                 </Button>
               </div>
             </div>

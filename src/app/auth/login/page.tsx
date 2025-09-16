@@ -73,7 +73,7 @@ export default function LoginPage() {
             </div>
             <CardTitle className="text-2xl font-bold text-gray-900">Welcome to Rudra Store</CardTitle>
             <CardDescription className="text-gray-600">
-              Enter your phone number to receive OTP
+              Enter your phone number to login or signup
             </CardDescription>
           </CardHeader>
           <CardContent>

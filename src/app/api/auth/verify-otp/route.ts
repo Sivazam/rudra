@@ -51,9 +51,13 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // Create or update user in Firestore
+    let existingUser: any[] = [];
+    let isNewUser = false;
+    let needsProfileCompletion = true;
+    
     try {
       console.log('Creating/updating user in Firestore for phone:', phoneNumber);
-      const existingUser = await firestoreService.getAll('users', {
+      existingUser = await firestoreService.getAll('users', {
         where: { field: 'phoneNumber', operator: '==', value: phoneNumber }
       });
 
@@ -63,21 +67,34 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date()
       };
 
+      let userId: string;
+
       if (existingUser.length > 0) {
         // Update existing user
-        const userId = existingUser[0].id;
+        userId = existingUser[0].id!;
         await firestoreService.update('users', userId, {
           updatedAt: new Date()
         });
         console.log('User updated in Firestore:', userId);
+        
+        // Check if user has completed profile
+        const user = existingUser[0];
+        needsProfileCompletion = !user.name || !user.email;
+        if (needsProfileCompletion) {
+          console.log('User profile incomplete, needs completion');
+        }
       } else {
         // Create new user
-        const userId = await firestoreService.create('users', userData);
+        userId = await firestoreService.create('users', userData);
+        isNewUser = true;
         console.log('New user created in Firestore:', userId);
       }
     } catch (firestoreError) {
       console.error('Error creating/updating user in Firestore:', firestoreError);
       // Don't fail the authentication if Firestore fails
+      // Assume it's a new user if we can't check
+      isNewUser = true;
+      needsProfileCompletion = true;
     }
 
     // Create JWT token for session management
@@ -112,7 +129,9 @@ export async function POST(request: NextRequest) {
         message: 'OTP verified successfully',
         success: true,
         phoneNumber,
-        token // Include token in response for fallback storage
+        token, // Include token in response for fallback storage
+        isNewUser, // Indicate if this is a new user
+        needsProfileCompletion // Indicate if profile completion is needed
       },
       { status: 200 }
     );

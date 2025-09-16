@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { MapPin, Plus, Edit, Trash2, Home, Building, Check } from 'lucide-react';
+import { MapPin, Plus, Edit, Trash2, Home, Building, Check, Phone, MapPin as MapPinIcon } from 'lucide-react';
 import { MainLayout } from '@/components/store/MainLayout';
 import { isUserAuthenticated, getCurrentUser } from '@/lib/auth';
 import { userService } from '@/lib/services';
@@ -17,10 +17,10 @@ interface Address {
   id?: string;
   name: string;
   phone: string;
-  address: string;
-  city: string;
-  state: string;
+  doorNo: string;
   pincode: string;
+  landmark: string;
+  addressType: 'home' | 'office' | 'other';
   isDefault?: boolean;
   createdAt?: string;
 }
@@ -33,14 +33,15 @@ export default function AddressesPage() {
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [newAddress, setNewAddress] = useState<Address>({
     name: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
+    phone: '+91',
+    doorNo: '',
     pincode: '',
+    landmark: '',
+    addressType: 'home',
     isDefault: false
   });
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userName, setUserName] = useState('');
 
   useEffect(() => {
     checkAuthAndLoadAddresses();
@@ -56,6 +57,21 @@ export default function AddressesPage() {
     }
 
     await loadAddresses();
+    await loadUserName();
+  };
+
+  const loadUserName = async () => {
+    try {
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        const user = await userService.getUserByPhoneNumber(currentUser.phoneNumber);
+        if (user && user.name) {
+          setUserName(user.name);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user name:', error);
+    }
   };
 
   const loadAddresses = async () => {
@@ -89,11 +105,11 @@ export default function AddressesPage() {
           await loadAddresses();
           setNewAddress({
             name: '',
-            phone: '',
-            address: '',
-            city: '',
-            state: '',
+            phone: '+91',
+            doorNo: '',
             pincode: '',
+            landmark: '',
+            addressType: 'home',
             isDefault: false
           });
           setIsDialogOpen(false);
@@ -172,12 +188,12 @@ export default function AddressesPage() {
   const openAddDialog = () => {
     setEditingAddress(null);
     setNewAddress({
-      name: '',
-      phone: '',
-      address: '',
-      city: '',
-      state: '',
+      name: userName, // Pre-fill with user's name
+      phone: '+91',
+      doorNo: '',
       pincode: '',
+      landmark: '',
+      addressType: 'home',
       isDefault: false
     });
     setIsDialogOpen(true);
@@ -189,23 +205,45 @@ export default function AddressesPage() {
   };
 
   const validateAddress = (address: Address): boolean => {
-    return Object.values(address).every(value => {
-      if (value === undefined || value === null) return false;
-      return value.toString().trim() !== '';
-    });
+    // Required fields: name, phone (with +91), doorNo, pincode
+    const requiredFields = ['name', 'phone', 'doorNo', 'pincode'];
+    
+    for (const field of requiredFields) {
+      const value = address[field as keyof Address];
+      if (!value || value.toString().trim() === '') {
+        return false;
+      }
+    }
+    
+    // Phone must start with +91 and contain only numbers after that
+    if (!address.phone.startsWith('+91') || address.phone.length < 5) {
+      return false;
+    }
+    
+    // Pincode must be 6 digits
+    if (!/^\d{6}$/.test(address.pincode)) {
+      return false;
+    }
+    
+    return true;
   };
 
   const formatAddress = (address: Address): string => {
-    return `${address.address}, ${address.city}, ${address.state} - ${address.pincode}`;
+    const parts = [address.doorNo];
+    if (address.landmark) {
+      parts.push(`Near ${address.landmark}`);
+    }
+    return parts.join(', ');
   };
 
   const getAddressType = (address: Address): string => {
-    if (address.address.toLowerCase().includes('home') || address.address.toLowerCase().includes('house')) {
-      return 'Home';
-    } else if (address.address.toLowerCase().includes('office') || address.address.toLowerCase().includes('work')) {
-      return 'Work';
-    } else {
-      return 'Other';
+    switch (address.addressType) {
+      case 'home':
+        return 'Home';
+      case 'office':
+        return 'Office';
+      default:
+        return address.name || userName || 'Other';
     }
   };
 
@@ -301,9 +339,10 @@ export default function AddressesPage() {
                     
                     <div className="flex items-start space-x-2">
                       <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-gray-700 leading-relaxed">
-                        {formatAddress(address)}
-                      </p>
+                      <div className="text-sm text-gray-700 leading-relaxed">
+                        <p>{formatAddress(address)}</p>
+                        <p className="mt-1">Pincode: {address.pincode}</p>
+                      </div>
                     </div>
                     
                     <div className="flex items-center justify-between pt-2">
@@ -387,6 +426,38 @@ interface AddressFormProps {
 }
 
 function AddressForm({ address, setAddress, onSave, onCancel, isEditing }: AddressFormProps) {
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    
+    // Only allow numbers after +91
+    if (value.startsWith('+91')) {
+      const numbersOnly = value.replace(/[^\d]/g, '');
+      if (numbersOnly.length > 10) {
+        value = '+91' + numbersOnly.slice(2, 12); // Limit to 10 digits after +91
+      } else {
+        value = '+91' + numbersOnly.slice(2);
+      }
+    } else if (value === '') {
+      value = '+91';
+    }
+    
+    setAddress({ ...address, phone: value });
+  };
+
+  const handlePincodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    
+    // Only allow numbers and limit to 6 digits
+    const numbersOnly = value.replace(/[^\d]/g, '');
+    if (numbersOnly.length > 6) {
+      value = numbersOnly.slice(0, 6);
+    } else {
+      value = numbersOnly;
+    }
+    
+    setAddress({ ...address, pincode: value });
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -397,57 +468,97 @@ function AddressForm({ address, setAddress, onSave, onCancel, isEditing }: Addre
             value={address.name}
             onChange={(e) => setAddress({ ...address, name: e.target.value })}
             placeholder="Enter full name"
+            required
           />
         </div>
         <div>
-          <Label htmlFor="phone">Phone Number *</Label>
+          <Label htmlFor="phone">Contact Number *</Label>
           <Input
             id="phone"
             type="tel"
             value={address.phone}
-            onChange={(e) => setAddress({ ...address, phone: e.target.value })}
-            placeholder="Enter phone number"
+            onChange={handlePhoneChange}
+            placeholder="+91"
+            required
           />
         </div>
       </div>
       
       <div>
-        <Label htmlFor="address">Address *</Label>
+        <Label htmlFor="doorNo">Door No/Flat No/Building Name *</Label>
         <Input
-          id="address"
-          value={address.address}
-          onChange={(e) => setAddress({ ...address, address: e.target.value })}
-          placeholder="Enter complete address"
+          id="doorNo"
+          value={address.doorNo}
+          onChange={(e) => setAddress({ ...address, doorNo: e.target.value })}
+          placeholder="Enter door/flat number or building name"
+          required
         />
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="city">City *</Label>
-          <Input
-            id="city"
-            value={address.city}
-            onChange={(e) => setAddress({ ...address, city: e.target.value })}
-            placeholder="City"
-          />
-        </div>
-        <div>
-          <Label htmlFor="state">State *</Label>
-          <Input
-            id="state"
-            value={address.state}
-            onChange={(e) => setAddress({ ...address, state: e.target.value })}
-            placeholder="State"
-          />
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="pincode">Pincode *</Label>
           <Input
             id="pincode"
             value={address.pincode}
-            onChange={(e) => setAddress({ ...address, pincode: e.target.value })}
-            placeholder="Pincode"
+            onChange={handlePincodeChange}
+            placeholder="Enter 6-digit pincode"
+            maxLength={6}
+            required
           />
+        </div>
+        <div>
+          <Label htmlFor="landmark">Nearby Landmark</Label>
+          <Input
+            id="landmark"
+            value={address.landmark}
+            onChange={(e) => setAddress({ ...address, landmark: e.target.value })}
+            placeholder="Enter nearby landmark (optional)"
+          />
+        </div>
+      </div>
+      
+      <div>
+        <Label>Save as *</Label>
+        <div className="flex space-x-4 mt-2">
+          <button
+            type="button"
+            onClick={() => setAddress({ ...address, addressType: 'home' })}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg border-2 transition-colors ${
+              address.addressType === 'home'
+                ? 'border-orange-600 bg-orange-50 text-orange-700'
+                : 'border-gray-200 text-gray-600 hover:border-gray-300'
+            }`}
+          >
+            <Home className="h-4 w-4" />
+            <span>Home</span>
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => setAddress({ ...address, addressType: 'office' })}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg border-2 transition-colors ${
+              address.addressType === 'office'
+                ? 'border-blue-600 bg-blue-50 text-blue-700'
+                : 'border-gray-200 text-gray-600 hover:border-gray-300'
+            }`}
+          >
+            <Building className="h-4 w-4" />
+            <span>Office</span>
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => setAddress({ ...address, addressType: 'other' })}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg border-2 transition-colors ${
+              address.addressType === 'other'
+                ? 'border-green-600 bg-green-50 text-green-700'
+                : 'border-gray-200 text-gray-600 hover:border-gray-300'
+            }`}
+          >
+            <MapPinIcon className="h-4 w-4" />
+            <span>Other</span>
+          </button>
         </div>
       </div>
       

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { MapPin, Plus, Edit, Trash2, Check } from 'lucide-react';
+import { MapPin, Plus, Edit, Trash2, Check, Home, Building, Phone, MapPin as MapPinIcon } from 'lucide-react';
 import { userService } from '@/lib/services';
 import { getCurrentUser } from '@/lib/auth';
 
@@ -16,10 +16,10 @@ interface Address {
   id?: string;
   name: string;
   phone: string;
-  address: string;
-  city: string;
-  state: string;
+  doorNo: string;
   pincode: string;
+  landmark: string;
+  addressType: 'home' | 'office' | 'other';
   isDefault?: boolean;
   createdAt?: string;
 }
@@ -36,11 +36,11 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [newAddress, setNewAddress] = useState<Address>({
     name: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
+    phone: '+91',
+    doorNo: '',
     pincode: '',
+    landmark: '',
+    addressType: 'home',
     isDefault: false
   });
 
@@ -94,11 +94,11 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
           await loadAddresses();
           setNewAddress({
             name: '',
-            phone: '',
-            address: '',
-            city: '',
-            state: '',
+            phone: '+91',
+            doorNo: '',
             pincode: '',
+            landmark: '',
+            addressType: 'home',
             isDefault: false
           });
           setShowAddForm(false);
@@ -169,14 +169,35 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
   };
 
   const validateAddress = (address: Address): boolean => {
-    return Object.values(address).every(value => {
-      if (value === undefined || value === null) return false;
-      return value.toString().trim() !== '';
-    });
+    // Required fields: name, phone (with +91), doorNo, pincode
+    const requiredFields = ['name', 'phone', 'doorNo', 'pincode'];
+    
+    for (const field of requiredFields) {
+      const value = address[field as keyof Address];
+      if (!value || value.toString().trim() === '') {
+        return false;
+      }
+    }
+    
+    // Phone must start with +91 and contain only numbers after that
+    if (!address.phone.startsWith('+91') || address.phone.length < 5) {
+      return false;
+    }
+    
+    // Pincode must be 6 digits
+    if (!/^\d{6}$/.test(address.pincode)) {
+      return false;
+    }
+    
+    return true;
   };
 
   const formatAddress = (address: Address): string => {
-    return `${address.address}, ${address.city}, ${address.state} - ${address.pincode}`;
+    const parts = [address.doorNo];
+    if (address.landmark) {
+      parts.push(`Near ${address.landmark}`);
+    }
+    return parts.join(', ');
   };
 
   if (loading) {
@@ -252,6 +273,7 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                         )}
                       </div>
                       <p className="text-sm text-gray-600">{formatAddress(address)}</p>
+                      <p className="text-sm text-gray-600">Pincode: {address.pincode}</p>
                     </div>
                   </Label>
                   
@@ -318,87 +340,163 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                     }
                   }}
                   placeholder="Enter full name"
+                  required
                 />
               </div>
               <div>
-                <Label htmlFor="phone">Phone Number *</Label>
+                <Label htmlFor="phone">Contact Number *</Label>
                 <Input
                   id="phone"
                   type="tel"
                   value={editingAddress ? editingAddress.phone : newAddress.phone}
                   onChange={(e) => {
+                    let value = e.target.value;
+                    
+                    // Only allow numbers after +91
+                    if (value.startsWith('+91')) {
+                      const numbersOnly = value.replace(/[^\d]/g, '');
+                      if (numbersOnly.length > 10) {
+                        value = '+91' + numbersOnly.slice(2, 12); // Limit to 10 digits after +91
+                      } else {
+                        value = '+91' + numbersOnly.slice(2);
+                      }
+                    } else if (value === '') {
+                      value = '+91';
+                    }
+                    
                     if (editingAddress) {
-                      setEditingAddress({ ...editingAddress, phone: e.target.value });
+                      setEditingAddress({ ...editingAddress, phone: value });
                     } else {
-                      setNewAddress({ ...newAddress, phone: e.target.value });
+                      setNewAddress({ ...newAddress, phone: value });
                     }
                   }}
-                  placeholder="Enter phone number"
+                  placeholder="+91"
+                  required
                 />
               </div>
             </div>
             
             <div>
-              <Label htmlFor="address">Address *</Label>
+              <Label htmlFor="doorNo">Door No/Flat No/Building Name *</Label>
               <Input
-                id="address"
-                value={editingAddress ? editingAddress.address : newAddress.address}
+                id="doorNo"
+                value={editingAddress ? editingAddress.doorNo : newAddress.doorNo}
                 onChange={(e) => {
                   if (editingAddress) {
-                    setEditingAddress({ ...editingAddress, address: e.target.value });
+                    setEditingAddress({ ...editingAddress, doorNo: e.target.value });
                   } else {
-                    setNewAddress({ ...newAddress, address: e.target.value });
+                    setNewAddress({ ...newAddress, doorNo: e.target.value });
                   }
                 }}
-                placeholder="Enter complete address"
+                placeholder="Enter door/flat number or building name"
+                required
               />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="city">City *</Label>
-                <Input
-                  id="city"
-                  value={editingAddress ? editingAddress.city : newAddress.city}
-                  onChange={(e) => {
-                    if (editingAddress) {
-                      setEditingAddress({ ...editingAddress, city: e.target.value });
-                    } else {
-                      setNewAddress({ ...newAddress, city: e.target.value });
-                    }
-                  }}
-                  placeholder="City"
-                />
-              </div>
-              <div>
-                <Label htmlFor="state">State *</Label>
-                <Input
-                  id="state"
-                  value={editingAddress ? editingAddress.state : newAddress.state}
-                  onChange={(e) => {
-                    if (editingAddress) {
-                      setEditingAddress({ ...editingAddress, state: e.target.value });
-                    } else {
-                      setNewAddress({ ...newAddress, state: e.target.value });
-                    }
-                  }}
-                  placeholder="State"
-                />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="pincode">Pincode *</Label>
                 <Input
                   id="pincode"
                   value={editingAddress ? editingAddress.pincode : newAddress.pincode}
                   onChange={(e) => {
-                    if (editingAddress) {
-                      setEditingAddress({ ...editingAddress, pincode: e.target.value });
+                    let value = e.target.value;
+                    
+                    // Only allow numbers and limit to 6 digits
+                    const numbersOnly = value.replace(/[^\d]/g, '');
+                    if (numbersOnly.length > 6) {
+                      value = numbersOnly.slice(0, 6);
                     } else {
-                      setNewAddress({ ...newAddress, pincode: e.target.value });
+                      value = numbersOnly;
+                    }
+                    
+                    if (editingAddress) {
+                      setEditingAddress({ ...editingAddress, pincode: value });
+                    } else {
+                      setNewAddress({ ...newAddress, pincode: value });
                     }
                   }}
-                  placeholder="Pincode"
+                  placeholder="Enter 6-digit pincode"
+                  maxLength={6}
+                  required
                 />
+              </div>
+              <div>
+                <Label htmlFor="landmark">Nearby Landmark</Label>
+                <Input
+                  id="landmark"
+                  value={editingAddress ? editingAddress.landmark : newAddress.landmark}
+                  onChange={(e) => {
+                    if (editingAddress) {
+                      setEditingAddress({ ...editingAddress, landmark: e.target.value });
+                    } else {
+                      setNewAddress({ ...newAddress, landmark: e.target.value });
+                    }
+                  }}
+                  placeholder="Enter nearby landmark (optional)"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label>Save as *</Label>
+              <div className="flex space-x-4 mt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (editingAddress) {
+                      setEditingAddress({ ...editingAddress, addressType: 'home' });
+                    } else {
+                      setNewAddress({ ...newAddress, addressType: 'home' });
+                    }
+                  }}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg border-2 transition-colors ${
+                    (editingAddress ? editingAddress.addressType : newAddress.addressType) === 'home'
+                      ? 'border-orange-600 bg-orange-50 text-orange-700'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <Home className="h-4 w-4" />
+                  <span>Home</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (editingAddress) {
+                      setEditingAddress({ ...editingAddress, addressType: 'office' });
+                    } else {
+                      setNewAddress({ ...newAddress, addressType: 'office' });
+                    }
+                  }}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg border-2 transition-colors ${
+                    (editingAddress ? editingAddress.addressType : newAddress.addressType) === 'office'
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <Building className="h-4 w-4" />
+                  <span>Office</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (editingAddress) {
+                      setEditingAddress({ ...editingAddress, addressType: 'other' });
+                    } else {
+                      setNewAddress({ ...newAddress, addressType: 'other' });
+                    }
+                  }}
+                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg border-2 transition-colors ${
+                    (editingAddress ? editingAddress.addressType : newAddress.addressType) === 'other'
+                      ? 'border-green-600 bg-green-50 text-green-700'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}
+                >
+                  <MapPinIcon className="h-4 w-4" />
+                  <span>Other</span>
+                </button>
               </div>
             </div>
             

@@ -97,6 +97,18 @@ export default function VerifyPage() {
         // Clear session storage
         sessionStorage.removeItem('phoneNumber');
         
+        // Check if user needs to complete profile
+        if (responseData.needsProfileCompletion) {
+          console.log('User needs to complete profile, redirecting to complete-profile page');
+          // Force a small delay to ensure cookies are set
+          setTimeout(() => {
+            // Dispatch custom event to notify components of auth state change
+            window.dispatchEvent(new Event('auth-state-changed'));
+            router.push('/auth/complete-profile');
+          }, 200);
+          return;
+        }
+        
         // Check if there's a redirect URL
         const redirectUrl = sessionStorage.getItem('redirectUrl');
         console.log('Redirect URL from session storage:', redirectUrl);

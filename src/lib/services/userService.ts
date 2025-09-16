@@ -5,10 +5,10 @@ interface Address {
   id?: string;
   name: string;
   phone: string;
-  address: string;
-  city: string;
-  state: string;
+  doorNo: string;
   pincode: string;
+  landmark: string;
+  addressType: 'home' | 'office' | 'other';
   isDefault?: boolean;
   createdAt?: string;
 }

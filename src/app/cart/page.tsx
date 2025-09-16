@@ -4,7 +4,7 @@ import { useCartStore } from '@/store/cartStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Minus, Plus, ShoppingBag, Heart, ArrowRight, Trash2 } from 'lucide-react';
+import { ArrowLeft, Minus, Plus, ShoppingBag, Heart, ArrowRight, Trash2, Plus as PlusIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { isUserAuthenticated } from '@/lib/auth';
@@ -228,9 +228,9 @@ export default function CartPage() {
                     </Button>
                     
                     <Link href="/" className="block">
-                      <Button variant="ghost" className="w-full" style={{ color: '#846549' }}>
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Continue Shopping
+                      <Button variant="ghost" className="w-full" style={{ color: 'rgba(156,86,26,255)' }}>
+                        <PlusIcon className="h-4 w-4 mr-2" />
+                        Add more items
                       </Button>
                     </Link>
                   </div>

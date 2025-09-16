@@ -198,9 +198,9 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow group" style={{ border: `1px solid #846549` }}>
-        {/* Product Image */}
-        <div className="relative aspect-square overflow-hidden">
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow group flex flex-col h-full" style={{ border: `1px solid #846549` }}>
+        {/* Product Image - Fixed height */}
+        <div className="relative aspect-square overflow-hidden flex-shrink-0">
           <Link href={`/products/${product.id}`}>
             <img
               src={product.image}
@@ -224,14 +224,14 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
         
-        {/* Product Info */}
-        <div className="p-4 space-y-2">
+        {/* Product Info - Flexible content area */}
+        <div className="p-4 space-y-2 flex flex-col flex-1">
           {/* Deity */}
           <p className="text-sm font-medium" style={{ color: '#846549' }}>{product.deity}</p>
           
-          {/* Product Name */}
-          <Link href={`/products/${product.id}`}>
-            <div className="flex items-center justify-between">
+          {/* Product Name - Flexible but with max lines */}
+          <Link href={`/products/${product.id}`} className="flex-1">
+            <div className="flex items-center justify-between h-full">
               <h3 className="font-semibold line-clamp-2 hover:opacity-80 transition-colors flex-1" style={{ color: '#755e3e' }}>
                 {product.name}
               </h3>
@@ -251,7 +251,7 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           </Link>
           
-          {/* Rating */}
+          {/* Rating - Fixed height */}
           <div className="flex items-center space-x-1">
             <div className="flex items-center">
               {[...Array(5)].map((_, i) => (
@@ -271,7 +271,7 @@ export function ProductCard({ product }: ProductCardProps) {
             </span>
           </div>
           
-          {/* Price */}
+          {/* Price - Fixed height */}
           <div className="flex items-center space-x-2">
             <span className="text-lg font-bold" style={{ color: '#755e3e' }}>
               ₹{product.price.toLocaleString()}
@@ -283,42 +283,44 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
           
-          {/* Add to Cart Button OR Counter */}
-          {totalQuantityInCart === 0 ? (
-            <Button
-              onClick={handleAddToCart}
-              disabled={isAdding}
-              className="w-full mt-3"
-              variant="outline"
-              style={{ borderColor: '#846549', color: '#846549' }}
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              {isAdding ? 'Adding...' : 'ADD TO CART'}
-            </Button>
-          ) : (
-            <div className="flex items-center justify-center space-x-2 mt-3">
+          {/* Add to Cart Button OR Counter - Fixed height */}
+          <div className="mt-auto pt-2">
+            {totalQuantityInCart === 0 ? (
               <Button
+                onClick={handleAddToCart}
+                disabled={isAdding}
+                className="w-full h-10"
                 variant="outline"
-                size="icon"
-                className="h-8 w-8"
                 style={{ borderColor: '#846549', color: '#846549' }}
-                onClick={() => handleQuantityChange(totalQuantityInCart - 1)}
-                disabled={totalQuantityInCart <= 0}
               >
-                <Minus className="h-4 w-4" />
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                {isAdding ? 'Adding...' : 'ADD TO CART'}
               </Button>
-              <span className="w-12 text-center font-medium" style={{ color: '#755e3e' }}>{totalQuantityInCart}</span>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                style={{ borderColor: '#846549', color: '#846549' }}
-                onClick={() => handleQuantityChange(totalQuantityInCart + 1)}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center justify-center space-x-2 h-10">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  style={{ borderColor: '#846549', color: '#846549' }}
+                  onClick={() => handleQuantityChange(totalQuantityInCart - 1)}
+                  disabled={totalQuantityInCart <= 0}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="w-12 text-center font-medium" style={{ color: '#755e3e' }}>{totalQuantityInCart}</span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  style={{ borderColor: '#846549', color: '#846549' }}
+                  onClick={() => handleQuantityChange(totalQuantityInCart + 1)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Menu, Search, Heart, ShoppingCart, User, Package, LogOut, Phone, MapPin } from 'lucide-react';
+import { Menu, Search, Heart, ShoppingCart, User, Package, LogOut, Phone, MapPin, Edit, UserPlus, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -11,6 +11,7 @@ import { useCartStore } from '@/store/cartStore';
 import { SlideInCart } from './SlideInCart';
 import Link from 'next/link';
 import { isUserAuthenticated, getCurrentUser } from '@/lib/auth';
+import { isProfileComplete, getCurrentUserProfile } from '@/lib/profileCompletionMiddleware';
 import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
@@ -22,6 +23,8 @@ export function Header({ onSearch }: HeaderProps) {
   const [isMounted, setIsMounted] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isProfileComplete, setIsProfileComplete] = useState<boolean | null>(null);
+  const [isCheckingProfile, setIsCheckingProfile] = useState(false);
   const { getTotalItems, openCart } = useCartStore();
   const router = useRouter();
 
@@ -29,14 +32,28 @@ export function Header({ onSearch }: HeaderProps) {
     setIsMounted(true);
     
     // Function to check authentication status and get current user
-    const checkAuth = () => {
+    const checkAuth = async () => {
       const authStatus = isUserAuthenticated();
       setIsAuth(authStatus);
       if (authStatus) {
         const user = getCurrentUser();
         setCurrentUser(user);
+        
+        // Check profile completion
+        try {
+          setIsCheckingProfile(true);
+          const profileComplete = await isProfileComplete();
+          console.log('Profile completion check result:', profileComplete);
+          setIsProfileComplete(profileComplete);
+        } catch (error) {
+          console.error('Error checking profile completion:', error);
+          setIsProfileComplete(false);
+        } finally {
+          setIsCheckingProfile(false);
+        }
       } else {
         setCurrentUser(null);
+        setIsProfileComplete(null);
       }
     };
     
@@ -50,7 +67,10 @@ export function Header({ onSearch }: HeaderProps) {
     
     const handleAuthStateChange = () => {
       console.log('Auth state change event received');
-      checkAuth();
+      // Add a small delay to ensure Firestore updates are committed
+      setTimeout(() => {
+        checkAuth();
+      }, 500);
     };
     
     window.addEventListener('storage', handleStorageChange);
@@ -92,35 +112,129 @@ export function Header({ onSearch }: HeaderProps) {
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-64">
-              <nav className="space-y-4 mt-6">
-                <Link href="/" className="block text-lg font-semibold" style={{ color: 'rgba(156,86,26,255)' }}>
+            <SheetContent side="left" className="w-64 bg-white">
+              <nav className="space-y-6 mt-6 px-4">
+                <Link href="/" className="block text-lg font-semibold text-black">
                   Rudra Store
                 </Link>
-                <Link href="/categories" className="block py-2 hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
-                  Categories
-                </Link>
-                <Link href="/about" className="block py-2 hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
-                  About Us
-                </Link>
-                <Link href="/contact" className="block py-2 hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
-                  Contact
-                </Link>
-                <Link href="/auth/login" className="block py-2 hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
-                  Login
-                </Link>
-                {isAuth && (
-                  <>
-                    <Link href="/my-orders" className="block py-2 hover:opacity-80 transition-colors" style={{ color: '#846549' }}>
-                      My Orders
+                
+                {/* User Information Section - Only show if authenticated */}
+                {isAuth && currentUser && (
+                  <div className="space-y-4">
+                    {/* Profile Completion Warning - Only show if profile is incomplete and not loading */}
+                    {!isCheckingProfile && isProfileComplete === false && (
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                        <div className="flex items-center space-x-2">
+                          <AlertCircle className="h-4 w-4 text-orange-600 flex-shrink-0" />
+                          <div className="flex-1">
+                            <p className="text-xs font-medium text-orange-800">Complete Your Profile</p>
+                            <p className="text-xs text-orange-600">Please add your name and email</p>
+                          </div>
+                        </div>
+                        <Link href="/auth/complete-profile" className="block mt-2">
+                          <Button 
+                            className="w-full text-xs py-1.5" 
+                            style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
+                          >
+                            Complete Now
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                    
+                    {/* Loading indicator for profile check */}
+                    {isCheckingProfile && (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                          <span className="ml-2 text-xs text-gray-600">Checking profile...</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* User Details Row */}
+                    <div className="flex items-start space-x-3">
+                      {/* Left Column - Avatar */}
+                      <Avatar className="h-14 w-14 flex-shrink-0">
+                        <AvatarFallback className="bg-orange-100 text-orange-600 text-sm">
+                          {currentUser.phoneNumber ? currentUser.phoneNumber.slice(-2) : 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      {/* Right Column - User Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm text-black">
+                          {currentUser.name || 'User'}
+                        </p>
+                        {currentUser.email && (
+                          <p className="text-xs text-gray-600 mt-1">
+                            {currentUser.email}
+                          </p>
+                        )}
+                        {currentUser.phoneNumber && (
+                          <div className="flex items-center space-x-1 text-xs text-gray-600 mt-1">
+                            <Phone className="h-3 w-3" style={{ color: '#846549' }} />
+                            <span>{formatPhoneNumber(currentUser.phoneNumber)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Edit Profile Button - Much Smaller */}
+                    <Link href="/profile" className="block">
+                      <Button 
+                        className="w-full text-xs py-1.5" 
+                        style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
+                      >
+                        <Edit className="h-3 w-3 mr-2" />
+                        Edit Profile
+                      </Button>
                     </Link>
+                  </div>
+                )}
+                
+                {/* User-specific menu items - Only show if authenticated */}
+                {isAuth && (
+                  <div className="space-y-1">
+                    <div className="border-b border-gray-200"></div>
+                    <Link href="/addresses" className="block py-3 hover:opacity-80 transition-colors flex items-center space-x-3 text-black">
+                      <MapPin className="h-4 w-4" style={{ color: '#846549' }} />
+                      <span>Addresses</span>
+                    </Link>
+                    <div className="border-b border-gray-200"></div>
+                    <Link href="/my-favorites" className="block py-3 hover:opacity-80 transition-colors flex items-center space-x-3 text-black">
+                      <Heart className="h-4 w-4" style={{ color: '#846549' }} />
+                      <span>My Favourites</span>
+                    </Link>
+                    <div className="border-b border-gray-200"></div>
+                    <Link href="/my-orders" className="block py-3 hover:opacity-80 transition-colors flex items-center space-x-3 text-black">
+                      <Package className="h-4 w-4" style={{ color: '#846549' }} />
+                      <span>My Orders</span>
+                    </Link>
+                    <div className="border-b border-gray-200"></div>
                     <button 
                       onClick={handleLogout}
-                      className="block py-2 hover:opacity-80 transition-colors text-left w-full text-red-600"
+                      className="block py-3 hover:opacity-80 transition-colors text-left w-full flex items-center space-x-3 text-red-600"
                     >
-                      Logout
+                      <LogOut className="h-4 w-4" />
+                      <span>Logout</span>
                     </button>
-                  </>
+                  </div>
+                )}
+                
+                {/* Login/Signup section - Only show if not authenticated */}
+                {!isAuth && (
+                  <div className="space-y-4 pt-4">
+                    <Link href="/auth/login" className="block">
+                      <Button 
+                        className="w-full text-sm py-3" 
+                        style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
+                      >
+                        <User className="h-4 w-4 mr-2" />
+                        Login / Signup
+                      </Button>
+                    </Link>
+                  </div>
                 )}
               </nav>
             </SheetContent>
@@ -201,11 +315,11 @@ export function Header({ onSearch }: HeaderProps) {
               )}
             </Button>
 
-            {/* User Account */}
+            {/* User Account - Desktop Only */}
             {isAuth && currentUser ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative">
+                  <Button variant="ghost" size="icon" className="relative hidden md:flex">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-orange-100 text-orange-600">
                         {currentUser.phoneNumber ? currentUser.phoneNumber.slice(-2) : 'U'}
@@ -249,7 +363,7 @@ export function Header({ onSearch }: HeaderProps) {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link href="/auth/login">
+              <Link href="/auth/login" className="hidden md:flex">
                 <Button variant="ghost" size="icon">
                   <User className="h-6 w-6" />
                 </Button>
