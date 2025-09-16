@@ -124,9 +124,7 @@ export async function POST(request: NextRequest) {
         // Create or update user
         const userIdFromDb = await userService.createOrUpdateUser(userData);
         
-        // Update userId to use phone number for consistency
-        userId = phoneUserId;
-        console.log('Updated userId to phone number:', userId);
+        console.log('User created/updated with database ID:', userIdFromDb);
         
         // Add shipping address to user's addresses only if it's not already saved
         try {
@@ -197,7 +195,7 @@ export async function POST(request: NextRequest) {
     const options = {
       amount: Math.round(total * 100), // Convert to paise
       currency: 'INR',
-      receipt: `order_${Date.now()}_${userId}`,
+      receipt: `order_${Date.now()}_${userIdentifier.userId}`,
       payment_capture: 1,
       notes: {
         customer_name: shippingAddress.name,
@@ -301,7 +299,7 @@ export async function POST(request: NextRequest) {
       });
       // Fallback: Generate a local order ID without Firebase
       orderId = `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      console.log('Using fallback order ID:', orderId);
+      console.log('Using fallback order ID:', orderId, 'with userId:', standardizedUserId);
       // Continue with the payment process even if Firebase fails
       // The order can be reconciled later
     }
