@@ -98,25 +98,43 @@ export function ProductCard({ product }: ProductCardProps) {
       });
       setIsAdding(false);
       setShowVariantSelector(false);
+      
+      toast({
+        title: "Added to cart",
+        description: `${product.name} added to cart`,
+      });
     }, 500);
   };
 
   const handleQuantityChange = (newQuantity: number) => {
     if (cartItem) {
-      if (newQuantity > quantityInCart) {
+      if (newQuantity > totalQuantityInCart) {
         // This is an increment operation
-        setShowRepeatDialog(true);
-      } else {
-        // This is a decrement operation, just update the first item's quantity
-        updateQuantity(cartItem.id, newQuantity);
+        const mockVariants = product.hasVariants === false ? [getDefaultVariant(product)] : getMockVariants(product.id);
+        if (mockVariants.length > 1) {
+          // If multiple variants exist, show dialog to choose
+          setShowRepeatDialog(true);
+        } else {
+          // If only one variant, just increment
+          useCartStore.getState().updateQuantity(cartItem.id, newQuantity);
+        }
+      } else if (newQuantity > 0) {
+        // This is a decrement operation
+        useCartStore.getState().updateQuantity(cartItem.id, newQuantity);
       }
     }
   };
 
   const handleRepeat = () => {
+    // Simply increment the first item's quantity (standard ecommerce behavior)
     if (cartItem) {
-      updateQuantity(cartItem.id, quantityInCart + 1);
+      useCartStore.getState().updateQuantity(cartItem.id, cartItem.quantity + 1);
       setShowRepeatDialog(false);
+      
+      toast({
+        title: "Quantity updated",
+        description: `${product.name} quantity increased to ${cartItem.quantity + 1}`,
+      });
     }
   };
 
@@ -220,26 +238,26 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
           
-          {/* Add to Cart Button or Counter */}
-          {totalQuantityInCart === 0 ? (
-            <Button
-              onClick={handleAddToCart}
-              disabled={isAdding}
-              className="w-full mt-3"
-              variant="outline"
-              style={{ borderColor: '#846549', color: '#846549' }}
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              {isAdding ? 'Adding...' : 'ADD TO CART'}
-            </Button>
-          ) : (
+          {/* Add to Cart Button */}
+          <Button
+            onClick={handleAddToCart}
+            disabled={isAdding}
+            className="w-full mt-3"
+            variant="outline"
+            style={{ borderColor: '#846549', color: '#846549' }}
+          >
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            {isAdding ? 'Adding...' : 'ADD TO CART'}
+          </Button>
+  
             <div className="flex items-center justify-center space-x-2 mt-3">
               <Button
                 variant="outline"
                 size="icon"
                 className="h-8 w-8"
                 style={{ borderColor: '#846549', color: '#846549' }}
-                onClick={() => handleQuantityChange(quantityInCart - 1)}
+                onClick={() => handleQuantityChange(totalQuantityInCart - 1)}
+                disabled={totalQuantityInCart <= 0}
               >
                 <Minus className="h-4 w-4" />
               </Button>
@@ -249,12 +267,11 @@ export function ProductCard({ product }: ProductCardProps) {
                 size="icon"
                 className="h-8 w-8"
                 style={{ borderColor: '#846549', color: '#846549' }}
-                onClick={() => handleQuantityChange(quantityInCart + 1)}
+                onClick={() => handleQuantityChange(totalQuantityInCart + 1)}
               >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-          )}
         </div>
       </div>
       
@@ -269,21 +286,18 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {/* Repeat or Select Different Variant Dialog */}
       <Dialog open={showRepeatDialog} onOpenChange={setShowRepeatDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-[90%] sm:rounded-lg max-sm:bottom-0 max-sm:left-0 max-sm:right-0 max-sm:rounded-t-lg max-sm:max-w-none max-sm:translate-y-0">
           <DialogHeader>
             <DialogTitle>Choose an option</DialogTitle>
             <DialogDescription>
-              You already have this item in your cart. Would you like to add more of the same variant or select a different variant?
+              Would you like to add more of the same variant or select a different variant?
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex space-x-2">
-            <Button variant="outline" onClick={() => setShowRepeatDialog(false)} style={{ borderColor: '#846549', color: '#846549' }}>
-              Cancel
-            </Button>
-            <Button onClick={handleSelectDifferentVariant} variant="outline" style={{ borderColor: '#846549', color: '#846549' }}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={handleSelectDifferentVariant} variant="outline" className="sm:flex-1" style={{ borderColor: '#846549', color: '#846549' }}>
               Select Different Variant
             </Button>
-            <Button onClick={handleRepeat} style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}>
+            <Button onClick={handleRepeat} className="sm:flex-1" style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}>
               Add Same Variant
             </Button>
           </DialogFooter>

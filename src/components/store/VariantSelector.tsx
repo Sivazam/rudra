@@ -95,7 +95,7 @@ export function VariantSelector({
                   <p className="text-gray-500">No variants available for this product.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {variants.map((variant) => {
                     const pricing = formatPrice(variant.price, variant.discount);
                     const isSelected = selectedVariant?.label === variant.label;
@@ -105,7 +105,7 @@ export function VariantSelector({
                       <div
                         key={variant.label}
                         onClick={() => !isOutOfStock && setSelectedVariant(variant)}
-                        className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        className={`p-3 border-2 rounded-lg cursor-pointer transition-all min-h-[80px] ${
                           isSelected 
                             ? 'border-orange-600 bg-orange-50' 
                             : isOutOfStock
@@ -117,32 +117,32 @@ export function VariantSelector({
                           backgroundColor: isSelected ? '#fef3c7' : isOutOfStock ? '#f9fafb' : 'white'
                         }}
                       >
-                        <div className="space-y-2">
+                        <div className="space-y-1">
                           <div className="flex items-center justify-between">
-                            <span className={`font-medium text-sm ${isOutOfStock ? 'text-gray-400' : ''}`} style={{ color: isOutOfStock ? '#9ca3af' : '#755e3e' }}>
+                            <span className={`font-medium text-xs ${isOutOfStock ? 'text-gray-400' : ''}`} style={{ color: isOutOfStock ? '#9ca3af' : '#755e3e' }}>
                               {variant.label}
                             </span>
                             <div className="flex space-x-1">
                               {variant.isDefault && (
-                                <Badge variant="secondary" className="text-xs">Default</Badge>
+                                <Badge variant="secondary" className="text-xs px-1 py-0">Default</Badge>
                               )}
                               {isOutOfStock && (
-                                <Badge variant="destructive" className="text-xs">Out of Stock</Badge>
+                                <Badge variant="destructive" className="text-xs px-1 py-0">Out of Stock</Badge>
                               )}
                             </div>
                           </div>
                           
                           <div className="flex items-center justify-between">
-                            <span className={`text-lg font-bold ${isOutOfStock ? 'text-gray-400' : ''}`} style={{ color: isOutOfStock ? '#9ca3af' : '#755e3e' }}>
+                            <span className={`text-sm font-bold ${isOutOfStock ? 'text-gray-400' : ''}`} style={{ color: isOutOfStock ? '#9ca3af' : '#755e3e' }}>
                               {pricing.current}
                             </span>
-                            <div className="w-5 h-5 rounded-full border-2 flex-shrink-0" style={{
+                            <div className="w-3 h-3 rounded-full border-2 flex-shrink-0" style={{
                               borderColor: isSelected ? 'rgba(156,86,26,255)' : isOutOfStock ? '#d1d5db' : '#d1d5db',
                               backgroundColor: isSelected ? 'rgba(156,86,26,255)' : isOutOfStock ? '#e5e7eb' : 'white'
                             }}>
                               {isSelected && (
                                 <div className="w-full h-full flex items-center justify-center">
-                                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                                  <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
                                 </div>
                               )}
                             </div>
@@ -154,7 +154,7 @@ export function VariantSelector({
                                 {pricing.original}
                               </span>
                               {pricing.savings && (
-                                <Badge className="bg-red-600 hover:bg-red-700 text-xs">
+                                <Badge className="bg-red-600 hover:bg-red-700 text-xs px-1 py-0">
                                   {pricing.savings}
                                 </Badge>
                               )}
@@ -175,23 +175,14 @@ export function VariantSelector({
           
           {/* Add to Cart Button - Fixed at bottom */}
           <div className="border-t bg-white px-6 py-4">
-            <div className="flex space-x-3">
-              <Button 
-                variant="outline" 
-                onClick={onClose}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleAddToCart}
-                disabled={!selectedVariant || selectedVariant.inventory === 0}
-                className="flex-1"
-                style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
-              >
-                Add to Cart
-              </Button>
-            </div>
+            <Button 
+              onClick={handleAddToCart}
+              disabled={!selectedVariant || selectedVariant.inventory === 0}
+              className="w-full"
+              style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
+            >
+              Add to Cart
+            </Button>
           </div>
         </div>
       </DrawerContent>

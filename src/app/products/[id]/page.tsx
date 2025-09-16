@@ -15,66 +15,187 @@ import { MainLayout } from '@/components/store/MainLayout';
 import { useToast } from '@/hooks/use-toast';
 
 // Mock product data - will be replaced with API call
-const mockProduct = {
-  id: '1',
-  name: 'Natural 10 Mukhi Rudraksha',
-  subtitle: '(Nepali)',
-  deity: 'Lord Vishnu',
-  price: 8800,
-  originalPrice: 11000,
-  rating: 4.8,
-  reviews: 342,
-  images: [
-    '/products/10-mukhi-1.jpg',
-    '/products/10-mukhi-2.jpg',
-    '/products/10-mukhi-3.jpg',
-    '/products/10-mukhi-4.jpg',
-  ],
-  origin: 'Nepali',
-  description: 'Authentic 10 Mukhi Rudraksha bead from Nepal, blessed by Lord Vishnu. This powerful spiritual bead is known for bringing prosperity, protection, and spiritual growth to the wearer.',
-  spiritualMeaning: 'The 10 Mukhi Rudraksha represents the ten directions and ten incarnations of Lord Vishnu. It is believed to remove negative energies and bring harmony to life.',
-  specifications: [
-    'Aura Cleansing',
-    'Provides Protection',
-    'Enhances Spiritual Growth',
-    'Brings Prosperity',
-    'Removes Negative Energies',
-    'Improves Focus'
-  ],
-  wearGuide: {
-    title: 'Rudraksha Wear Guide',
-    steps: [
-      'Purify the Rudraksha by soaking it in clean water overnight',
-      'Choose an auspicious day (Monday or Thursday) for wearing',
-      'Perform a small puja or prayer before wearing',
-      'Wear it on a red or yellow thread',
-      'Chant "Om Namah Shivaya" 108 times',
-      'Remove during sleep, bath, and toilet visits'
+const mockProducts = [
+  {
+    id: '1',
+    name: 'Natural 10 Mukhi Rudraksha',
+    subtitle: '(Nepali)',
+    deity: 'Lord Vishnu',
+    price: 8800,
+    originalPrice: 11000,
+    rating: 4.8,
+    reviews: 342,
+    images: [
+      '/products/10-mukhi-1.jpg',
+      '/products/10-mukhi-2.jpg',
+      '/products/10-mukhi-3.jpg',
+      '/products/10-mukhi-4.jpg',
     ],
-    image: '/guides/wear-guide.jpg'
-  },
-  careGuide: {
-    title: 'Rudraksha Care Guide',
-    steps: [
-      'Clean with soft brush and clean water monthly',
-      'Avoid exposure to chemicals and perfumes',
-      'Remove before swimming or bathing',
-      'Store in a clean, dry place',
-      'Re-energize by placing in sunlight for 1 hour weekly',
-      'Avoid contact with sharp objects'
+    origin: 'Nepali',
+    description: 'Authentic 10 Mukhi Rudraksha bead from Nepal, blessed by Lord Vishnu. This powerful spiritual bead is known for bringing prosperity, protection, and spiritual growth to the wearer.',
+    spiritualMeaning: 'The 10 Mukhi Rudraksha represents the ten directions and ten incarnations of Lord Vishnu. It is believed to remove negative energies and bring harmony to life.',
+    specifications: [
+      'Aura Cleansing',
+      'Provides Protection',
+      'Enhances Spiritual Growth',
+      'Brings Prosperity',
+      'Removes Negative Energies',
+      'Improves Focus'
     ],
-    image: '/guides/care-guide.jpg'
+    wearGuide: {
+      title: 'Rudraksha Wear Guide',
+      steps: [
+        'Purify the Rudraksha by soaking it in clean water overnight',
+        'Choose an auspicious day (Monday or Thursday) for wearing',
+        'Perform a small puja or prayer before wearing',
+        'Wear it on a red or yellow thread',
+        'Chant "Om Namah Shivaya" 108 times',
+        'Remove during sleep, bath, and toilet visits'
+      ],
+      image: '/guides/wear-guide.jpg'
+    },
+    careGuide: {
+      title: 'Rudraksha Care Guide',
+      steps: [
+        'Clean with soft brush and clean water monthly',
+        'Avoid exposure to chemicals and perfumes',
+        'Remove before swimming or bathing',
+        'Store in a clean, dry place',
+        'Re-energize by placing in sunlight for 1 hour weekly',
+        'Avoid contact with sharp objects'
+      ],
+      image: '/guides/care-guide.jpg'
+    },
+    variants: [
+      { label: 'Regular', price: 8800, sku: '10M-REG-001', discount: 0, inventory: 25, isDefault: true },
+      { label: 'Medium', price: 12000, sku: '10M-MED-002', discount: 10, inventory: 15 },
+      { label: 'Ultra', price: 18000, sku: '10M-ULT-003', discount: 15, inventory: 8 },
+      { label: 'Rare', price: 25000, sku: '10M-RAR-004', discount: 20, inventory: 3 }
+    ]
   },
-  variants: [
-    { label: 'Regular', price: 8800, sku: '10M-REG-001', discount: 0, inventory: 25, isDefault: true },
-    { label: 'Medium', price: 12000, sku: '10M-MED-002', discount: 10, inventory: 15 },
-    { label: 'Ultra', price: 18000, sku: '10M-ULT-003', discount: 15, inventory: 8 },
-    { label: 'Rare', price: 25000, sku: '10M-RAR-004', discount: 20, inventory: 3 }
-  ]
-};
+  {
+    id: '2',
+    name: 'Natural 9 Mukhi Rudraksha',
+    subtitle: '(Nepali)',
+    deity: 'Goddess Durga',
+    price: 1299,
+    originalPrice: 1599,
+    rating: 4.8,
+    reviews: 423,
+    images: [
+      '/products/9-mukhi.jpg',
+      '/products/9-mukhi-1.jpg',
+      '/products/9-mukhi-2.jpg',
+      '/products/9-mukhi-3.jpg',
+    ],
+    origin: 'Nepali',
+    description: 'Authentic 9 Mukhi Rudraksha bead representing Goddess Durga. This powerful bead is known for providing protection, courage, and removing obstacles.',
+    spiritualMeaning: 'The 9 Mukhi Rudraksha represents the nine forms of Goddess Durga. It is believed to provide protection from negative energies and enhance courage.',
+    specifications: [
+      'Goddess Durga Blessings',
+      'Removes Obstacles',
+      'Provides Protection',
+      'Enhances Courage',
+      'Improves Confidence',
+      'Spiritual Growth'
+    ],
+    wearGuide: {
+      title: 'Rudraksha Wear Guide',
+      steps: [
+        'Purify the Rudraksha by soaking it in clean water overnight',
+        'Choose an auspicious day (Tuesday or Friday) for wearing',
+        'Perform a small puja or prayer before wearing',
+        'Wear it on a red or yellow thread',
+        'Chant "Om Dum Durgayei Namaha" 108 times',
+        'Remove during sleep, bath, and toilet visits'
+      ],
+      image: '/guides/wear-guide.jpg'
+    },
+    careGuide: {
+      title: 'Rudraksha Care Guide',
+      steps: [
+        'Clean with soft brush and clean water monthly',
+        'Avoid exposure to chemicals and perfumes',
+        'Remove before swimming or bathing',
+        'Store in a clean, dry place',
+        'Re-energize by placing in sunlight for 1 hour weekly',
+        'Avoid contact with sharp objects'
+      ],
+      image: '/guides/care-guide.jpg'
+    },
+    variants: [
+      { label: 'Regular', price: 1299, sku: '9M-REG-001', discount: 0, inventory: 30, isDefault: true },
+      { label: 'Medium', price: 1899, sku: '9M-MED-002', discount: 5, inventory: 20 },
+      { label: 'Ultra', price: 2599, sku: '9M-ULT-003', discount: 10, inventory: 12 },
+      { label: 'Rare', price: 3499, sku: '9M-RAR-004', discount: 15, inventory: 6 }
+    ]
+  },
+  {
+    id: '3',
+    name: 'Natural 5 Mukhi Rudraksha',
+    subtitle: '(Indonesian)',
+    deity: 'Lord Shiva',
+    price: 799,
+    originalPrice: 999,
+    rating: 4.9,
+    reviews: 612,
+    images: [
+      '/products/5-mukhi.jpg',
+      '/products/5-mukhi-1.jpg',
+      '/products/5-mukhi-2.jpg',
+      '/products/5-mukhi-3.jpg',
+    ],
+    origin: 'Indonesian',
+    description: 'Authentic 5 Mukhi Rudraksha bead blessed by Lord Shiva. This is the most commonly available Rudraksha, known for bringing peace and spiritual growth.',
+    spiritualMeaning: 'The 5 Mukhi Rudraksha represents the five faces of Lord Shiva. It is believed to bring peace, prosperity, and spiritual enlightenment.',
+    specifications: [
+      'Lord Shiva Blessings',
+      'Brings Peace',
+      'Enhances Meditation',
+      'Improves Focus',
+      'Spiritual Growth',
+      'Removes Stress'
+    ],
+    wearGuide: {
+      title: 'Rudraksha Wear Guide',
+      steps: [
+        'Purify the Rudraksha by soaking it in clean water overnight',
+        'Choose an auspicious day (Monday) for wearing',
+        'Perform a small puja or prayer before wearing',
+        'Wear it on a red or yellow thread',
+        'Chant "Om Namah Shivaya" 108 times',
+        'Remove during sleep, bath, and toilet visits'
+      ],
+      image: '/guides/wear-guide.jpg'
+    },
+    careGuide: {
+      title: 'Rudraksha Care Guide',
+      steps: [
+        'Clean with soft brush and clean water monthly',
+        'Avoid exposure to chemicals and perfumes',
+        'Remove before swimming or bathing',
+        'Store in a clean, dry place',
+        'Re-energize by placing in sunlight for 1 hour weekly',
+        'Avoid contact with sharp objects'
+      ],
+      image: '/guides/care-guide.jpg'
+    },
+    variants: [
+      { label: 'Regular', price: 799, sku: '5M-REG-001', discount: 0, inventory: 50, isDefault: true },
+      { label: 'Medium', price: 1199, sku: '5M-MED-002', discount: 8, inventory: 35 },
+      { label: 'Ultra', price: 1599, sku: '5M-ULT-003', discount: 12, inventory: 20 },
+      { label: 'Rare', price: 2199, sku: '5M-RAR-004', discount: 18, inventory: 10 }
+    ]
+  }
+];
 
 export default function ProductDetailPage() {
   const params = useParams();
+  const productId = params.id as string;
+  
+  // Find the product based on ID
+  const mockProduct = mockProducts.find(p => p.id === productId) || mockProducts[0];
+  
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState(mockProduct.variants.find(v => v.isDefault));
   const [quantity, setQuantity] = useState(1);
@@ -82,6 +203,7 @@ export default function ProductDetailPage() {
   const [showVariantSelector, setShowVariantSelector] = useState(false);
   const [showRepeatDialog, setShowRepeatDialog] = useState(false);
   const [shakeButton, setShakeButton] = useState<'add-to-cart' | 'buy-now' | null>(null);
+  const [shakeVariants, setShakeVariants] = useState(false);
   
   const { addItem, items } = useCartStore();
   const { toast } = useToast();
@@ -90,9 +212,8 @@ export default function ProductDetailPage() {
   const cartItemsForProduct = items.filter(item => item.productId === mockProduct.id);
   const totalQuantityInCart = cartItemsForProduct.reduce((sum, item) => sum + item.quantity, 0);
   
-  // For increment operations, we still need the specific cart item
-  const cartItem = cartItemsForProduct[0]; // Get first item for increment operations
-  const quantityInCart = cartItem?.quantity || 0;
+  // For general operations, get the first item (for simplicity)
+  const cartItem = cartItemsForProduct[0];
 
   const handleAddToCart = () => {
     // Check if product has multiple variants
@@ -101,21 +222,52 @@ export default function ProductDetailPage() {
     // If user hasn't selected a variant and there are multiple variants, show shake effect and toast
     if (!selectedVariant && availableVariants.length > 1) {
       setShakeButton('add-to-cart');
+      setShakeVariants(true);
       toast({
         title: "Please select a variant",
         description: "Choose a variant before adding to cart",
         variant: "destructive",
       });
       
-      // Remove shake effect after animation
-      setTimeout(() => setShakeButton(null), 1000);
+      // Remove shake effects after animation
+      setTimeout(() => {
+        setShakeButton(null);
+        setShakeVariants(false);
+      }, 1000);
       return;
     }
     
-    // If only one variant available or user has selected a variant, add it directly to cart
+    // If only one variant available or user has selected a variant
     const variantToAdd = selectedVariant || availableVariants[0];
     if (variantToAdd) {
-      handleVariantSelect(variantToAdd);
+      // Check if this specific variant is already in cart
+      const existingVariantItem = cartItemsForProduct.find(item => 
+        item.variant.label === variantToAdd.label
+      );
+      
+      if (existingVariantItem) {
+        // If variant already exists, show dialog to ask if user wants to add more or select different
+        setShowRepeatDialog(true);
+      } else {
+        // If variant doesn't exist, add it directly
+        addItem({
+          productId: mockProduct.id,
+          name: mockProduct.name,
+          deity: mockProduct.deity,
+          image: mockProduct.images[0],
+          variant: {
+            label: variantToAdd.label,
+            price: variantToAdd.price,
+            sku: variantToAdd.sku,
+            discount: variantToAdd.discount
+          }
+        });
+        
+        toast({
+          title: "Added to cart",
+          description: `${mockProduct.name} added to cart`,
+        });
+      }
     }
   };
 
@@ -126,26 +278,53 @@ export default function ProductDetailPage() {
     // If user hasn't selected a variant and there are multiple variants, show shake effect and toast
     if (!selectedVariant && availableVariants.length > 1) {
       setShakeButton('buy-now');
+      setShakeVariants(true);
       toast({
         title: "Please select a variant",
         description: "Choose a variant before proceeding to buy",
         variant: "destructive",
       });
       
-      // Remove shake effect after animation
-      setTimeout(() => setShakeButton(null), 1000);
+      // Remove shake effects after animation
+      setTimeout(() => {
+        setShakeButton(null);
+        setShakeVariants(false);
+      }, 1000);
       return;
     }
     
-    // If only one variant available or user has selected a variant, add it directly to cart
+    // If only one variant available or user has selected a variant
     const variantToAdd = selectedVariant || availableVariants[0];
     if (variantToAdd) {
-      handleVariantSelect(variantToAdd);
-      // Navigate to checkout (this will be implemented later)
-      setTimeout(() => {
-        // For now, just open cart
-        useCartStore.getState().openCart();
-      }, 500);
+      // Check if this specific variant is already in cart
+      const existingVariantItem = cartItemsForProduct.find(item => 
+        item.variant.label === variantToAdd.label
+      );
+      
+      if (existingVariantItem) {
+        // If variant already exists, show dialog to ask if user wants to add more or select different
+        setShowRepeatDialog(true);
+      } else {
+        // If variant doesn't exist, add it directly
+        addItem({
+          productId: mockProduct.id,
+          name: mockProduct.name,
+          deity: mockProduct.deity,
+          image: mockProduct.images[0],
+          variant: {
+            label: variantToAdd.label,
+            price: variantToAdd.price,
+            sku: variantToAdd.sku,
+            discount: variantToAdd.discount
+          }
+        });
+        
+        // Navigate to checkout (this will be implemented later)
+        setTimeout(() => {
+          // For now, just open cart
+          useCartStore.getState().openCart();
+        }, 500);
+      }
     }
   };
 
@@ -166,18 +345,71 @@ export default function ProductDetailPage() {
         discount: variant.discount
       }
     });
+    
+    toast({
+      title: "Added to cart",
+      description: `${mockProduct.name} added to cart`,
+    });
+  };
+
+  const handleIncrementQuantity = () => {
+    if (totalQuantityInCart === 0) {
+      // If no items in cart, use the add to cart flow
+      handleAddToCart();
+    } else {
+      // If items already exist, increment the first item's quantity (standard ecommerce behavior)
+      if (cartItem) {
+        useCartStore.getState().updateQuantity(cartItem.id, cartItem.quantity + 1);
+        toast({
+          title: "Quantity updated",
+          description: `${mockProduct.name} quantity increased to ${cartItem.quantity + 1}`,
+        });
+      }
+    }
+  };
+
+  const handleDecrementQuantity = () => {
+    if (cartItem && cartItem.quantity > 1) {
+      // Decrement the first item's quantity
+      useCartStore.getState().updateQuantity(cartItem.id, cartItem.quantity - 1);
+      toast({
+        title: "Quantity updated",
+        description: `${mockProduct.name} quantity decreased to ${cartItem.quantity - 1}`,
+      });
+    } else if (cartItem && cartItem.quantity === 1) {
+      // Remove the item if quantity is 1
+      useCartStore.getState().removeItem(cartItem.id);
+      toast({
+        title: "Item removed",
+        description: `${mockProduct.name} removed from cart`,
+      });
+    }
   };
 
   const handleRepeat = () => {
+    // Simply increment the first item's quantity (standard ecommerce behavior)
     if (cartItem) {
-      useCartStore.getState().updateQuantity(cartItem.id, quantityInCart + 1);
-      setShowRepeatDialog(false);
+      useCartStore.getState().updateQuantity(cartItem.id, cartItem.quantity + 1);
+      toast({
+        title: "Quantity updated",
+        description: `${mockProduct.name} quantity increased to ${cartItem.quantity + 1}`,
+      });
     }
+    setShowRepeatDialog(false);
   };
 
   const handleSelectDifferentVariant = () => {
     setShowRepeatDialog(false);
-    setShowVariantSelector(true);
+    // Shake the variant boxes instead of opening popup
+    setShakeVariants(true);
+    toast({
+      title: "Select a variant",
+      description: "Please choose a variant from the options above",
+      variant: "destructive",
+    });
+    
+    // Remove shake effect after animation
+    setTimeout(() => setShakeVariants(false), 1000);
   };
 
   const formatPrice = (price: number, discount: number = 0) => {
@@ -310,7 +542,7 @@ export default function ProductDetailPage() {
                   const variant = mockProduct.variants.find(v => v.label === value);
                   setSelectedVariant(variant);
                 }}
-                className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                className={`grid grid-cols-2 sm:grid-cols-4 gap-2 ${shakeVariants ? 'animate-shake' : ''}`}
               >
                 {mockProduct.variants.map((variant) => {
                   const pricing = formatPrice(variant.price, variant.discount);
@@ -323,13 +555,13 @@ export default function ProductDetailPage() {
                       />
                       <Label
                         htmlFor={variant.label}
-                        className="flex flex-col p-4 border-2 rounded-lg cursor-pointer transition-all peer-data-[state=checked]:border-orange-600 peer-data-[state=checked]:bg-orange-50 hover:border-orange-400"
+                        className="flex flex-col p-3 border-2 rounded-lg cursor-pointer transition-all peer-data-[state=checked]:border-orange-600 peer-data-[state=checked]:bg-orange-50 hover:border-orange-400 min-h-[80px]"
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <span className="font-medium text-sm" style={{ color: '#755e3e' }}>{variant.label}</span>
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-medium text-xs" style={{ color: '#755e3e' }}>{variant.label}</span>
                           <div className="flex space-x-1">
                             {variant.isDefault && (
-                              <Badge variant="secondary" className="text-xs">Default</Badge>
+                              <Badge variant="secondary" className="text-xs px-1 py-0">Default</Badge>
                             )}
                           </div>
                         </div>
@@ -341,24 +573,24 @@ export default function ProductDetailPage() {
                                 {pricing.original}
                               </span>
                             )}
-                            <span className="font-bold text-sm" style={{ color: '#755e3e' }}>
+                            <span className="font-bold text-xs" style={{ color: '#755e3e' }}>
                               {pricing.current}
                             </span>
                           </div>
                           
-                          <div className="w-4 h-4 rounded-full border-2 flex-shrink-0" style={{
+                          <div className="w-3 h-3 rounded-full border-2 flex-shrink-0" style={{
                             borderColor: 'rgba(156,86,26,255)',
                             backgroundColor: 'white'
                           }}>
                             <div className="w-full h-full flex items-center justify-center opacity-0 peer-data-[state=checked]:opacity-100">
-                              <div className="w-2 h-2 bg-white rounded-full"></div>
+                              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
                             </div>
                           </div>
                         </div>
                         
                         {pricing.savings && (
                           <div className="flex justify-between items-center">
-                            <Badge className="bg-red-600 hover:bg-red-700 text-xs">
+                            <Badge className="bg-red-600 hover:bg-red-700 text-xs px-1 py-0">
                               {pricing.savings}
                             </Badge>
                             <span className="text-xs" style={{ color: '#846549' }}>Stock: {variant.inventory}</span>
@@ -495,22 +727,19 @@ export default function ProductDetailPage() {
 
       {/* Repeat or Select Different Variant Dialog */}
       <Dialog open={showRepeatDialog} onOpenChange={setShowRepeatDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-[90%] sm:rounded-lg max-sm:bottom-0 max-sm:left-0 max-sm:right-0 max-sm:rounded-t-lg max-sm:max-w-none max-sm:translate-y-0">
           <DialogHeader>
-            <DialogTitle>Choose an option</DialogTitle>
+            <DialogTitle>Add more items?</DialogTitle>
             <DialogDescription>
-              You already have this item in your cart. Would you like to add more of the same variant or select a different variant?
+              You already have {totalQuantityInCart} item{totalQuantityInCart > 1 ? 's' : ''} in cart. Would you like to add more or select a different variant?
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex space-x-2">
-            <Button variant="outline" onClick={() => setShowRepeatDialog(false)} style={{ borderColor: '#846549', color: '#846549' }}>
-              Cancel
-            </Button>
-            <Button onClick={handleSelectDifferentVariant} variant="outline" style={{ borderColor: '#846549', color: '#846549' }}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={handleSelectDifferentVariant} variant="outline" className="sm:flex-1" style={{ borderColor: '#846549', color: '#846549' }}>
               Select Different Variant
             </Button>
-            <Button onClick={handleRepeat} style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}>
-              Add Same Variant
+            <Button onClick={handleRepeat} className="sm:flex-1" style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}>
+              Add More
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -519,51 +748,28 @@ export default function ProductDetailPage() {
       {/* Fixed Bottom Action Buttons */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50" style={{ borderColor: '#846549' }}>
         <div className="container mx-auto px-4 py-3">
-          {totalQuantityInCart === 0 ? (
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                onClick={handleAddToCart}
-                variant="outline"
-                className={`flex-1 ${shakeButton === 'add-to-cart' ? 'animate-shake' : ''}`}
-                size="lg"
-                style={{ borderColor: '#846549', color: '#846549' }}
-              >
-                <ShoppingCart className="h-4 w-4 mr-2" />
-                Add to Cart
-              </Button>
-              <Button
-                onClick={handleBuyNow}
-                variant="outline"
-                className={`flex-1 ${shakeButton === 'buy-now' ? 'animate-shake' : ''}`}
-                size="lg"
-                style={{ borderColor: '#846549', color: '#846549' }}
-              >
-                Buy Now
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <span className="font-medium" style={{ color: '#755e3e' }}>
-                {totalQuantityInCart} item{totalQuantityInCart > 1 ? 's' : ''} in cart
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowRepeatDialog(true)}
-                  style={{ borderColor: '#846549', color: '#846549' }}
-                >
-                  Add More
-                </Button>
-                <Button 
-                  onClick={() => useCartStore.getState().openCart()}
-                  style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
-                >
-                  View Cart
-                </Button>
-              </div>
-            </div>
-          )}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              onClick={handleAddToCart}
+              variant="outline"
+              className={`flex-1 ${shakeButton === 'add-to-cart' ? 'animate-shake' : ''}`}
+              size="lg"
+              style={{ borderColor: '#846549', color: '#846549' }}
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Add to Cart
+            </Button>
+            <Button
+              onClick={handleBuyNow}
+              variant="outline"
+              className={`flex-1 ${shakeButton === 'buy-now' ? 'animate-shake' : ''}`}
+              size="lg"
+              style={{ borderColor: '#846549', color: '#846549' }}
+            >
+              Buy Now
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
         </div>
       </div>
       </div>
