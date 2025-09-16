@@ -11,6 +11,7 @@ import { loadRazorpayScript, initializeRazorpay } from '@/lib/razorpay';
 import { ArrowLeft, Shield, Package } from 'lucide-react';
 import { MainLayout } from '@/components/store/MainLayout';
 import { AddressSelection } from '@/components/checkout/AddressSelection';
+import { PaymentLoadingOverlay } from '@/components/ui/PaymentLoadingOverlay';
 import { isUserAuthenticated, getCurrentUser } from '@/lib/auth';
 import Link from 'next/link';
 
@@ -30,6 +31,8 @@ export default function CheckoutPage() {
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress | null>(null);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [showPaymentOverlay, setShowPaymentOverlay] = useState(false);
 
   useEffect(() => {
     loadRazorpayScript().then(setRazorpayLoaded);
@@ -208,6 +211,11 @@ export default function CheckoutPage() {
           try {
             console.log('Payment successful:', response);
             
+            // Show loading state immediately
+            setLoading(true);
+            setPaymentProcessing(true);
+            setShowPaymentOverlay(true);
+            
             // Verify payment
             const verifyResponse = await fetch('/api/payment/verify', {
               method: 'POST',
@@ -231,27 +239,42 @@ export default function CheckoutPage() {
               sessionStorage.setItem('fromCheckout', 'true');
               
               clearCart();
-              router.push('/order-success');
+              
+              // Add a small delay to ensure the loading overlay is visible
+              setTimeout(() => {
+                router.push('/order-success');
+              }, 1500);
             } else {
               const verifyError = await verifyResponse.json();
               console.error('Payment verification failed:', verifyError);
+              setPaymentProcessing(false);
+              setShowPaymentOverlay(false);
+              setLoading(false);
               throw new Error('Payment verification failed: ' + (verifyError.error || 'Unknown error'));
             }
           } catch (error) {
             console.error('Payment verification error:', error);
+            setPaymentProcessing(false);
+            setShowPaymentOverlay(false);
+            setLoading(false);
             alert('Payment verification failed. Please contact support.');
           }
         },
         modal: {
           ondismiss: () => {
             console.log('Payment modal dismissed');
+            setPaymentProcessing(false);
+            setShowPaymentOverlay(false);
             setLoading(false);
           },
           onclose: () => {
             console.log('Payment modal closed');
+            setPaymentProcessing(false);
+            setShowPaymentOverlay(false);
             setLoading(false);
           }
-        }
+        },
+        "callback_url": undefined // Prevent automatic redirect
       };
 
       console.log('Initializing Razorpay with options:', { ...options, key: '***' });
@@ -394,6 +417,12 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+      
+      {/* Payment Processing Overlay */}
+      <PaymentLoadingOverlay 
+        isVisible={showPaymentOverlay} 
+        message={paymentProcessing ? 'Processing your payment and creating your order...' : 'Finalizing your order...'}
+      />
     </MainLayout>
   );
 }

@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
     // Check authentication (optional for guest checkout)
     const token = request.cookies.get('auth-token')?.value;
     let userId: string;
+    let isGuestUser = true;
     
     if (token) {
       try {
@@ -56,15 +57,17 @@ export async function POST(request: NextRequest) {
           console.log('Payment: Token verified using string secret');
         }
         userId = decoded.phoneNumber;
+        isGuestUser = false;
+        console.log('Payment: Authenticated user:', userId);
       } catch (error) {
         // Invalid token, treat as guest
         userId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        console.log('Invalid token, treating as guest user:', userId);
+        console.log('Payment: Invalid token, treating as guest user:', userId);
       }
     } else {
       // Guest checkout
       userId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      console.log('Guest checkout, userId:', userId);
+      console.log('Payment: Guest checkout, userId:', userId);
     }
 
     // Get cart data from request body
@@ -101,15 +104,14 @@ export async function POST(request: NextRequest) {
     // Create or update user if phone number is provided - with better error handling
     if (shippingAddress.phone) {
       try {
-        // For authenticated users, use their phone number as userId
-        // For guest users, create user record with the provided phone number
-        const userPhoneNumber = userId.startsWith('guest_') ? shippingAddress.phone : userId;
+        // Always use the phone number as the consistent userId
+        const phoneUserId = shippingAddress.phone;
         
-        console.log('Attempting to create/update user with phone:', userPhoneNumber);
+        console.log('Attempting to create/update user with phone:', phoneUserId, 'original userId:', userId, 'isGuest:', isGuestUser);
         
         // Prepare user data with address
         const userData = {
-          phoneNumber: userPhoneNumber,
+          phoneNumber: phoneUserId,
           name: shippingAddress.name,
           email: customerInfo?.email || '',
           address: shippingAddress.address,
@@ -121,10 +123,14 @@ export async function POST(request: NextRequest) {
         // Create or update user
         const userIdFromDb = await userService.createOrUpdateUser(userData);
         
+        // Update userId to use phone number for consistency
+        userId = phoneUserId;
+        console.log('Updated userId to phone number:', userId);
+        
         // Add shipping address to user's addresses only if it's not already saved
         try {
           // Check if this address already exists for the user
-          const existingUser = await userService.getUserByPhoneNumber(userPhoneNumber);
+          const existingUser = await userService.getUserByPhoneNumber(phoneUserId);
           let addressExists = false;
           
           if (existingUser && existingUser.addresses) {
@@ -156,8 +162,9 @@ export async function POST(request: NextRequest) {
         }
         
         // Update userId to use phone number for consistency
-        if (userId.startsWith('guest_')) {
-          userId = userPhoneNumber;
+        if (isGuestUser) {
+          console.log('Updating userId from guest to phone number:', userId, '->', phoneUserId);
+          userId = phoneUserId;
         }
         console.log('User created/updated successfully:', userId);
       } catch (error) {
@@ -274,9 +281,12 @@ export async function POST(request: NextRequest) {
       
       // Associate order with user
       try {
-        if (!userId.startsWith('guest_')) {
+        console.log('Associating order with user:', userId, 'orderId:', orderId, 'isGuest:', isGuestUser);
+        if (!isGuestUser) {
           await userService.addOrderToUser(userId, orderId);
           console.log('Order associated with user successfully');
+        } else {
+          console.log('Skipping user association for guest user');
         }
       } catch (associationError) {
         console.error('Error associating order with user:', associationError);

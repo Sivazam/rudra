@@ -62,8 +62,11 @@ class OrderService {
       };
 
       console.log('OrderService: Creating document in Firestore...');
+      console.log('OrderService: Order data to create:', JSON.stringify(orderToCreate, null, 2));
+      
       const orderId = await firestoreService.create(this.collection, orderToCreate);
       console.log('OrderService: Order created successfully with ID:', orderId);
+      console.log('OrderService: Order should be associated with userId:', orderData.userId);
       return orderId;
     } catch (error) {
       console.error('OrderService: Error creating order:', error);
@@ -104,6 +107,11 @@ class OrderService {
   async getOrdersByUserId(userId: string): Promise<IOrder[]> {
     try {
       console.log('OrderService: Getting orders for userId:', userId);
+      console.log('OrderService: Query parameters:', {
+        collection: this.collection,
+        where: { field: 'userId', operator: '==', value: userId },
+        orderBy: { field: 'orderDate', direction: 'desc' }
+      });
       
       const orders = await firestoreService.getAll(this.collection, {
         where: { field: 'userId', operator: '==', value: userId },
@@ -111,9 +119,23 @@ class OrderService {
       });
       
       console.log('OrderService: Found', orders.length, 'orders for userId:', userId);
+      if (orders.length > 0) {
+        console.log('OrderService: First order sample:', {
+          id: orders[0].id,
+          orderNumber: orders[0].orderNumber,
+          userId: orders[0].userId,
+          status: orders[0].status
+        });
+      }
       return orders;
     } catch (error) {
       console.error('OrderService: Error getting user orders:', error);
+      console.error('OrderService: Error details:', {
+        name: (error as any).name,
+        message: (error as any).message,
+        stack: (error as any).stack,
+        code: (error as any).code
+      });
       throw error;
     }
   }

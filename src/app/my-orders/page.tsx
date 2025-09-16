@@ -77,13 +77,38 @@ export default function MyOrdersPage() {
         const userWithOrders = await userService.getUserWithOrders(currentUser.phoneNumber);
         
         console.log('MyOrders: User with orders result:', userWithOrders);
+        console.log('MyOrders: User phone number:', currentUser.phoneNumber);
         
-        if (userWithOrders && userWithOrders.orders) {
-          console.log('MyOrders: Found orders:', userWithOrders.orders.length);
-          setOrders(userWithOrders.orders);
+        if (userWithOrders) {
+          console.log('MyOrders: User found, checking orders...');
+          if (userWithOrders.orders && Array.isArray(userWithOrders.orders)) {
+            console.log('MyOrders: Found orders array with length:', userWithOrders.orders.length);
+            setOrders(userWithOrders.orders);
+          } else {
+            console.log('MyOrders: No orders array found or orders is not an array, trying direct query');
+            // Fallback: try to get orders directly by userId
+            try {
+              const { orderService } = await import('@/lib/services');
+              const directOrders = await orderService.getOrdersByUserId(currentUser.phoneNumber);
+              console.log('MyOrders: Direct query found orders:', directOrders.length);
+              setOrders(directOrders);
+            } catch (directError) {
+              console.error('MyOrders: Direct query failed:', directError);
+              setOrders([]);
+            }
+          }
         } else {
-          console.log('MyOrders: No orders found for user');
-          setOrders([]);
+          console.log('MyOrders: No user found, trying direct query');
+          // Fallback: try to get orders directly by userId
+          try {
+            const { orderService } = await import('@/lib/services');
+            const directOrders = await orderService.getOrdersByUserId(currentUser.phoneNumber);
+            console.log('MyOrders: Direct query found orders:', directOrders.length);
+            setOrders(directOrders);
+          } catch (directError) {
+            console.error('MyOrders: Direct query failed:', directError);
+            setOrders([]);
+          }
         }
       } catch (error) {
         console.error('MyOrders: Error fetching orders:', error);

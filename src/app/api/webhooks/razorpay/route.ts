@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import connectDB from '@/lib/mongodb';
-import { Order } from '@/lib/models';
+import { orderService } from '@/lib/services';
 
 const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || 'YourWebhookSecret';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Razorpay webhook received');
+    
     // Get webhook signature
     const signature = request.headers.get('x-razorpay-signature');
     const body = await request.text();
 
     if (!signature) {
+      console.error('Missing webhook signature');
       return NextResponse.json(
         { error: 'Missing signature' },
         { status: 400 }
@@ -26,6 +28,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (!expectedSignature) {
+      console.error('Invalid webhook signature');
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 400 }
@@ -34,6 +37,7 @@ export async function POST(request: NextRequest) {
 
     // Parse webhook body
     const webhookData = JSON.parse(body);
+    console.log('Webhook event:', webhookData.event);
 
     // Handle different webhook events
     switch (webhookData.event) {
@@ -60,32 +64,47 @@ export async function POST(request: NextRequest) {
 }
 
 async function handlePaymentCaptured(payment: any) {
-  await connectDB();
-  
-  const order = await Order.findOne({ 
-    razorpayOrderId: payment.order_id 
-  });
-
-  if (order && order.status !== 'paid') {
-    order.razorpayPaymentId = payment.id;
-    order.status = 'paid';
-    await order.save();
+  try {
+    console.log('Processing payment captured for order:', payment.order_id);
     
-    console.log(`Payment captured for order: ${order._id}`);
+    // Update order using Firebase service
+    const order = await orderService.getOrderByRazorpayOrderId(payment.order_id);
+
+    if (order && order.status !== 'paid') {
+      await orderService.updatePaymentStatus(payment.order_id, {
+        razorpayPaymentId: payment.id,
+        razorpaySignature: payment.signature || '',
+        status: 'paid'
+      });
+      
+      console.log(`Payment captured for order: ${order.id}`);
+    } else {
+      console.log('Order not found or already paid:', payment.order_id);
+    }
+  } catch (error) {
+    console.error('Error handling payment captured:', error);
   }
 }
 
 async function handlePaymentFailed(payment: any) {
-  await connectDB();
-  
-  const order = await Order.findOne({ 
-    razorpayOrderId: payment.order_id 
-  });
-
-  if (order && order.status !== 'failed') {
-    order.status = 'failed';
-    await order.save();
+  try {
+    console.log('Processing payment failed for order:', payment.order_id);
     
-    console.log(`Payment failed for order: ${order._id}`);
+    // Update order using Firebase service
+    const order = await orderService.getOrderByRazorpayOrderId(payment.order_id);
+
+    if (order && order.status !== 'failed') {
+      await orderService.updatePaymentStatus(payment.order_id, {
+        razorpayPaymentId: payment.id,
+        razorpaySignature: payment.signature || '',
+        status: 'failed'
+      });
+      
+      console.log(`Payment failed for order: ${order.id}`);
+    } else {
+      console.log('Order not found or already failed:', payment.order_id);
+    }
+  } catch (error) {
+    console.error('Error handling payment failed:', error);
   }
 }
