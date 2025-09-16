@@ -73,7 +73,8 @@ export async function POST(request: NextRequest) {
       hasItems: !!body.items, 
       hasShippingAddress: !!body.shippingAddress,
       hasCustomerInfo: !!body.customerInfo,
-      itemCount: body.items?.length || 0
+      itemCount: body.items?.length || 0,
+      shippingAddress: body.shippingAddress
     });
 
     const { items, shippingAddress, customerInfo } = body;
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
     if (!shippingAddress || !shippingAddress.name || !shippingAddress.phone || !shippingAddress.address) {
       console.error('Invalid shipping address:', shippingAddress);
       return NextResponse.json(
-        { success: false, error: 'Complete shipping address is required' },
+        { success: false, error: 'Complete shipping address is required', details: 'Missing required address fields' },
         { status: 400 }
       );
     }
@@ -120,22 +121,37 @@ export async function POST(request: NextRequest) {
         // Create or update user
         const userIdFromDb = await userService.createOrUpdateUser(userData);
         
-        // Add shipping address to user's addresses
+        // Add shipping address to user's addresses only if it's not already saved
         try {
-          const addressData = {
-            name: shippingAddress.name,
-            phone: shippingAddress.phone,
-            address: shippingAddress.address,
-            city: shippingAddress.city || '',
-            state: shippingAddress.state || '',
-            pincode: shippingAddress.pincode || '',
-            isDefault: true // Make this the default address
-          };
+          // Check if this address already exists for the user
+          const existingUser = await userService.getUserByPhoneNumber(userPhoneNumber);
+          let addressExists = false;
           
-          await userService.addAddress(userIdFromDb, addressData);
-          console.log('Address added to user profile successfully');
+          if (existingUser && existingUser.addresses) {
+            const addressString = `${shippingAddress.address}, ${shippingAddress.city}, ${shippingAddress.state} - ${shippingAddress.pincode}`;
+            addressExists = existingUser.addresses.some((addr: any) => 
+              `${addr.address}, ${addr.city}, ${addr.state} - ${addr.pincode}` === addressString
+            );
+          }
+          
+          if (!addressExists) {
+            const addressData = {
+              name: shippingAddress.name,
+              phone: shippingAddress.phone,
+              address: shippingAddress.address,
+              city: shippingAddress.city || '',
+              state: shippingAddress.state || '',
+              pincode: shippingAddress.pincode || '',
+              isDefault: false // Don't override existing default
+            };
+            
+            await userService.addAddress(userIdFromDb, addressData);
+            console.log('New address added to user profile successfully');
+          } else {
+            console.log('Address already exists in user profile, skipping duplication');
+          }
         } catch (addressError) {
-          console.error('Error adding address to user profile:', addressError);
+          console.error('Error checking/adding address to user profile:', addressError);
           // Don't fail the order creation if address addition fails
         }
         
@@ -188,12 +204,19 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    console.log('Creating Razorpay order with options:', { ...options, key_secret: '***' });
+    console.log('Creating Razorpay order with options:', { 
+      ...options, 
+      key_secret: '***',
+      amount: options.amount,
+      currency: options.currency,
+      receipt: options.receipt
+    });
 
     let razorpayOrder: any;
     try {
       razorpayOrder = await razorpay.orders.create(options);
       console.log('Razorpay order created successfully:', razorpayOrder.id);
+      console.log('Full Razorpay response:', razorpayOrder);
     } catch (razorpayError) {
       console.error('Razorpay order creation failed:', razorpayError);
       console.error('Razorpay error details:', {
@@ -201,7 +224,8 @@ export async function POST(request: NextRequest) {
         message: (razorpayError as any).message,
         stack: (razorpayError as any).stack,
         code: (razorpayError as any).code,
-        statusCode: (razorpayError as any).statusCode
+        statusCode: (razorpayError as any).statusCode,
+        description: (razorpayError as any).description
       });
       throw new Error(`Failed to create Razorpay order: ${(razorpayError as any).message || 'Unknown error'}`);
     }

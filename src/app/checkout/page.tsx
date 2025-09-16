@@ -3,17 +3,15 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useCartStore } from '@/store/cartStore';
 import { loadRazorpayScript, initializeRazorpay } from '@/lib/razorpay';
-import { ArrowLeft, Shield, Truck, Package } from 'lucide-react';
+import { ArrowLeft, Shield, Package } from 'lucide-react';
 import { MainLayout } from '@/components/store/MainLayout';
+import { AddressSelection } from '@/components/checkout/AddressSelection';
 import { isUserAuthenticated, getCurrentUser } from '@/lib/auth';
-import { userService } from '@/lib/services';
 import Link from 'next/link';
 
 interface ShippingAddress {
@@ -31,14 +29,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
-    name: '',
-    phone: '',
-    address: '',
-    city: '',
-    state: '',
-    pincode: ''
-  });
+  const [shippingAddress, setShippingAddress] = useState<ShippingAddress | null>(null);
 
   useEffect(() => {
     loadRazorpayScript().then(setRazorpayLoaded);
@@ -56,44 +47,6 @@ export default function CheckoutPage() {
         sessionStorage.setItem('redirectUrl', '/checkout');
         router.push('/auth/login');
         return;
-      }
-
-      // If authenticated, try to get user data and pre-fill shipping info
-      try {
-        const currentUser = getCurrentUser();
-        if (currentUser) {
-          console.log('Current user found:', currentUser.phoneNumber);
-          
-          // Try to get user addresses
-          userService.getUserByPhoneNumber(currentUser.phoneNumber).then(user => {
-            if (user && user.addresses && user.addresses.length > 0) {
-              const defaultAddress = user.addresses.find(addr => addr.isDefault) || user.addresses[0];
-              if (defaultAddress) {
-                console.log('Pre-filling shipping address from user profile');
-                setShippingAddress({
-                  name: defaultAddress.name || user.name || '',
-                  phone: defaultAddress.phone || user.phoneNumber || '',
-                  address: defaultAddress.address,
-                  city: defaultAddress.city,
-                  state: defaultAddress.state,
-                  pincode: defaultAddress.pincode
-                });
-              }
-            } else if (user) {
-              // User exists but no addresses, pre-fill basic info
-              console.log('Pre-filling basic user info');
-              setShippingAddress(prev => ({
-                ...prev,
-                name: user.name || prev.name,
-                phone: user.phoneNumber || prev.phone
-              }));
-            }
-          }).catch(error => {
-            console.error('Error getting user addresses:', error);
-          });
-        }
-      } catch (error) {
-        console.error('Error getting current user:', error);
       }
     };
     
@@ -159,17 +112,22 @@ export default function CheckoutPage() {
     }).format(price);
   };
 
-  const handleInputChange = (field: keyof ShippingAddress, value: string) => {
-    setShippingAddress(prev => ({ ...prev, [field]: value }));
+  const handleAddressSelect = (address: ShippingAddress) => {
+    console.log('Address selected:', address);
+    setShippingAddress(address);
   };
 
   const validateForm = (): boolean => {
-    return Object.values(shippingAddress).every(value => value.trim() !== '');
+    if (!shippingAddress) return false;
+    return Object.values(shippingAddress).every(value => {
+      if (value === undefined || value === null) return false;
+      return value.toString().trim() !== '';
+    });
   };
 
   const handlePlaceOrder = async () => {
     if (!validateForm()) {
-      alert('Please fill in all shipping details');
+      alert('Please select or add a shipping address');
       return;
     }
 
@@ -184,6 +142,14 @@ export default function CheckoutPage() {
       console.log('Starting order creation process...');
       console.log('Shipping address:', shippingAddress);
       console.log('Cart items:', items);
+
+      // Validate shipping address before sending
+      if (!shippingAddress || !shippingAddress.name || !shippingAddress.phone || !shippingAddress.address) {
+        console.error('Invalid shipping address:', shippingAddress);
+        throw new Error('Please select a valid shipping address');
+      }
+
+      console.log('Sending shipping address to API:', shippingAddress);
 
       // Create Razorpay order
       const response = await fetch('/api/payment/create-order', {
@@ -289,7 +255,15 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error('Order creation error:', error);
       const errorMessage = (error as Error).message || 'Failed to place order. Please try again.';
-      alert(errorMessage);
+      
+      // Show more user-friendly error messages
+      if (errorMessage.includes('Razorpay')) {
+        alert('Payment service error: ' + errorMessage + '. Please try again later.');
+      } else if (errorMessage.includes('address')) {
+        alert('Address error: ' + errorMessage + '. Please select a valid address.');
+      } else {
+        alert(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -315,85 +289,12 @@ export default function CheckoutPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Shipping Information */}
+          {/* Address Selection */}
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Truck className="h-5 w-5 mr-2" />
-                  Shipping Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="name">Full Name *</Label>
-                    <Input
-                      id="name"
-                      value={shippingAddress.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
-                      placeholder="Enter your full name"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="phone">Phone Number *</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={shippingAddress.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      placeholder="Enter phone number"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="address">Address *</Label>
-                  <Input
-                    id="address"
-                    value={shippingAddress.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                    placeholder="Enter your complete address"
-                    required
-                  />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="city">City *</Label>
-                    <Input
-                      id="city"
-                      value={shippingAddress.city}
-                      onChange={(e) => handleInputChange('city', e.target.value)}
-                      placeholder="City"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="state">State *</Label>
-                    <Input
-                      id="state"
-                      value={shippingAddress.state}
-                      onChange={(e) => handleInputChange('state', e.target.value)}
-                      placeholder="State"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="pincode">Pincode *</Label>
-                    <Input
-                      id="pincode"
-                      value={shippingAddress.pincode}
-                      onChange={(e) => handleInputChange('pincode', e.target.value)}
-                      placeholder="Pincode"
-                      required
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <AddressSelection 
+              onAddressSelect={handleAddressSelect}
+              selectedAddress={shippingAddress || undefined}
+            />
 
             {/* Security Badge */}
             <Card>

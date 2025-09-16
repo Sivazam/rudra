@@ -1,64 +1,48 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log('Test payment API called');
     
-    // Check environment variables
-    const keyId = process.env.RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    // Razorpay Configuration
+    const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_RHpVquZ5e0nUkX';
+    const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'C0qZuu2HhC7cLYUKBxlKI2at';
     
-    console.log('Environment variables check:', {
-      hasKeyId: !!keyId,
-      hasKeySecret: !!keySecret,
-      keyId: keyId ? `${keyId.substring(0, 8)}...` : 'missing'
-    });
-
-    if (!keyId || !keySecret) {
-      return NextResponse.json({
-        success: false,
-        error: 'Razorpay credentials not configured',
-        details: {
-          hasKeyId: !!keyId,
-          hasKeySecret: !!keySecret
-        }
-      }, { status: 500 });
-    }
-
-    // Test Razorpay connection
+    console.log('Testing Razorpay connection with key:', RAZORPAY_KEY_ID);
+    
+    // Create Razorpay instance
     const razorpay = new Razorpay({
-      key_id: keyId,
-      key_secret: keySecret,
+      key_id: RAZORPAY_KEY_ID,
+      key_secret: RAZORPAY_KEY_SECRET,
     });
 
     // Test creating a small order
-    const testOrder = await razorpay.orders.create({
-      amount: 100, // ₹1 in paise
+    const options = {
+      amount: 100, // ₹1.00 in paise
       currency: 'INR',
-      receipt: `test_${Date.now()}`,
+      receipt: `test_order_${Date.now()}`,
       payment_capture: 1,
-    });
+    };
 
-    console.log('Test order created successfully:', testOrder.id);
+    console.log('Creating test Razorpay order...');
+    
+    const razorpayOrder = await razorpay.orders.create(options);
+    
+    console.log('Test Razorpay order created successfully:', razorpayOrder.id);
 
     return NextResponse.json({
       success: true,
-      message: 'Payment system is working correctly',
+      message: 'Razorpay connection successful',
       data: {
-        testOrderId: testOrder.id,
-        testAmount: testOrder.amount,
-        testCurrency: testOrder.currency,
-        environment: {
-          hasKeyId: !!keyId,
-          hasKeySecret: !!keySecret,
-          nodeEnv: process.env.NODE_ENV
-        }
+        orderId: razorpayOrder.id,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        keyId: RAZORPAY_KEY_ID
       }
     });
-
   } catch (error) {
-    console.error('Test payment error:', error);
+    console.error('Test Razorpay connection failed:', error);
     console.error('Error details:', {
       name: (error as any).name,
       message: (error as any).message,
@@ -66,16 +50,15 @@ export async function GET(request: NextRequest) {
       code: (error as any).code,
       statusCode: (error as any).statusCode
     });
-
-    return NextResponse.json({
-      success: false,
-      error: 'Payment system test failed',
-      details: {
-        name: (error as any).name,
-        message: (error as any).message,
-        code: (error as any).code,
-        statusCode: (error as any).statusCode
-      }
-    }, { status: 500 });
+    
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: 'Razorpay connection failed', 
+        details: (error as any).message,
+        keyUsed: process.env.RAZORPAY_KEY_ID
+      },
+      { status: 500 }
+    );
   }
 }
