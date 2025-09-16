@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Package, Truck, CheckCircle, Clock, XCircle, AlertCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ArrowLeft, Package, Truck, CheckCircle, Clock, XCircle, AlertCircle, Eye, Calendar, MapPin, Phone } from 'lucide-react';
 import Link from 'next/link';
 import { userService } from '@/lib/services';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -31,6 +32,7 @@ interface Order {
     price: number;
     discount: number;
     totalPrice: number;
+    image?: string;
   }>;
   subtotal: number;
   shippingCost: number;
@@ -46,6 +48,7 @@ export default function MyOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -199,6 +202,197 @@ export default function MyOrdersPage() {
     }
   };
 
+  const getProductImage = (itemName: string) => {
+    // Map product names to their images
+    const imageMap: { [key: string]: string } = {
+      '10 Mukhi Lord Vishnu': '/products/10-mukhi.jpg',
+      '9 Mukhi Goddess Durga': '/products/9-mukhi.jpg',
+      '7 Mukhi Goddess Lakshmi': '/products/7-mukhi.jpg',
+      '5 Mukhi Lord Shiva': '/products/5-mukhi.jpg',
+      '14 Mukhi Lord Hanuman': '/products/14-mukhi.jpg',
+      '12 Mukhi Lord Sun': '/products/12-mukhi.jpg',
+      '11 Mukhi Lord Indra': '/products/11-mukhi.jpg',
+      '8 Mukhi Lord Ganesha': '/products/8-mukhi.jpg',
+      '6 Mukhi Lord Kartikeya': '/products/6-mukhi.jpg',
+      '4 Mukhi Lord Brahma': '/products/4-mukhi.jpg',
+      '3 Mukhi Lord Agni': '/products/3-mukhi.jpg',
+      '2 Mukhi Lord Shiva Parvati': '/products/2-mukhi.jpg',
+      'Sacred Red Thread Mala': '/products/red-thread.jpg',
+      'Natural Sandalwood Mala': '/products/sandalwood.jpg',
+      'Tulsi Mala': '/products/tulsi.jpg',
+      'Test Product': '/products/10-mukhi.jpg'
+    };
+    
+    return imageMap[itemName] || '/products/10-mukhi.jpg';
+  };
+
+  const OrderOverviewCard = ({ order }: { order: Order }) => (
+    <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+      <CardContent className="p-6">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+          {/* Left side - Order details */}
+          <div className="flex-1 w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
+              <h3 className="text-lg font-semibold">Order #{order.orderNumber}</h3>
+              <div className="flex items-center space-x-2">
+                {getStatusIcon(order.status)}
+                <Badge className={getStatusColor(order.status)}>
+                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                </Badge>
+              </div>
+            </div>
+            
+            <div className="flex items-center text-sm text-gray-600 mb-3">
+              <Calendar className="h-4 w-4 mr-1" />
+              <span>{formatDate(order.orderDate)}</span>
+            </div>
+            
+            <div className="space-y-1 mb-3">
+              <div className="flex items-center text-sm">
+                <Package className="h-4 w-4 mr-2 text-gray-500" />
+                <span>{order.items.length} item{order.items.length !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="flex items-center text-sm">
+                <MapPin className="h-4 w-4 mr-2 text-gray-500" />
+                <span>{order.customerInfo.city}, {order.customerInfo.state}</span>
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="text-lg font-semibold text-orange-600">
+                {formatPrice(order.total)}
+              </div>
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                <Eye className="h-4 w-4 mr-1" />
+                View Details
+              </Button>
+            </div>
+          </div>
+          
+          {/* Right side - Product images */}
+          <div className="flex-shrink-0 w-full sm:w-auto">
+            <div className="flex flex-wrap gap-2 sm:ml-6 sm:flex-nowrap sm:space-x-2">
+              {order.items.slice(0, 4).map((item, index) => (
+                <div key={index} className="relative">
+                  <img
+                    src={getProductImage(item.name)}
+                    alt={item.name}
+                    className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg border"
+                  />
+                  {item.quantity > 1 && (
+                    <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {item.quantity}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {order.items.length > 4 && (
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-lg border flex items-center justify-center">
+                  <span className="text-xs sm:text-sm text-gray-600">+{order.items.length - 4}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const OrderDetailsModal = ({ order }: { order: Order }) => (
+    <div className="space-y-6">
+      {/* Order Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-xl font-bold">Order #{order.orderNumber}</h3>
+          <p className="text-sm text-gray-600">{formatDate(order.orderDate)}</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          {getStatusIcon(order.status)}
+          <Badge className={getStatusColor(order.status)}>
+            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+          </Badge>
+        </div>
+      </div>
+
+      {/* Order Items */}
+      <div>
+        <h4 className="font-semibold mb-3">Order Items</h4>
+        <div className="space-y-3">
+          {order.items.map((item, index) => (
+            <div key={index} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
+              <img
+                src={getProductImage(item.name)}
+                alt={item.name}
+                className="w-12 h-12 object-cover rounded-lg"
+              />
+              <div className="flex-1">
+                <p className="font-medium text-sm">{item.name}</p>
+                <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
+              </div>
+              <div className="text-right">
+                <p className="font-medium text-sm">{formatPrice(item.totalPrice)}</p>
+                {item.discount > 0 && (
+                  <p className="text-xs text-gray-500 line-through">
+                    {formatPrice(item.price * item.quantity)}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Order Summary */}
+      <div>
+        <h4 className="font-semibold mb-3">Order Summary</h4>
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>Subtotal</span>
+            <span>{formatPrice(order.subtotal)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span>Shipping</span>
+            <span>{order.shippingCost === 0 ? 'Free' : formatPrice(order.shippingCost)}</span>
+          </div>
+          <Separator />
+          <div className="flex justify-between font-semibold">
+            <span>Total</span>
+            <span className="text-lg">{formatPrice(order.total)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Shipping Address */}
+      <div>
+        <h4 className="font-semibold mb-3">Shipping Address</h4>
+        <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+          <p className="font-medium">{order.customerInfo.name}</p>
+          <div className="flex items-center mt-1">
+            <Phone className="h-4 w-4 mr-1" />
+            <span>{order.customerInfo.phone}</span>
+          </div>
+          <p className="mt-1">{order.customerInfo.address}</p>
+          <p>{order.customerInfo.city}, {order.customerInfo.state} {order.customerInfo.pincode}</p>
+        </div>
+      </div>
+
+      {/* Payment Status */}
+      <div className="flex items-center justify-between pt-4 border-t">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-600">Payment:</span>
+          <Badge className={order.paymentStatus === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
+            {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
+          </Badge>
+        </div>
+        {order.paidAt && (
+          <p className="text-sm text-gray-600">
+            Paid on {formatDate(order.paidAt)}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <AppLayout>
@@ -261,94 +455,21 @@ export default function MyOrdersPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {orders.map((order) => (
-              <Card key={order.id}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg">Order #{order.orderNumber}</CardTitle>
-                      <p className="text-sm text-gray-600">{formatDate(order.orderDate)}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      {getStatusIcon(order.status)}
-                      <Badge className={getStatusColor(order.status)}>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </Badge>
-                    </div>
+              <Dialog key={order.id}>
+                <DialogTrigger asChild>
+                  <div onClick={() => setSelectedOrder(order)}>
+                    <OrderOverviewCard order={order} />
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Order Items */}
-                    <div>
-                      <h4 className="font-semibold mb-3">Order Items</h4>
-                      <div className="space-y-3">
-                        {order.items.map((item, index) => (
-                          <div key={index} className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium text-sm">{item.name}</p>
-                              <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-medium text-sm">{formatPrice(item.totalPrice)}</p>
-                              {item.discount > 0 && (
-                                <p className="text-xs text-gray-500 line-through">
-                                  {formatPrice(item.price * item.quantity)}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Order Summary */}
-                    <div>
-                      <h4 className="font-semibold mb-3">Order Summary</h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Subtotal</span>
-                          <span>{formatPrice(order.subtotal)}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Shipping</span>
-                          <span>{order.shippingCost === 0 ? 'Free' : formatPrice(order.shippingCost)}</span>
-                        </div>
-                        <Separator />
-                        <div className="flex justify-between font-semibold">
-                          <span>Total</span>
-                          <span className="text-lg">{formatPrice(order.total)}</span>
-                        </div>
-                      </div>
-
-                      <div className="mt-4">
-                        <h4 className="font-semibold mb-3">Shipping Address</h4>
-                        <div className="text-sm text-gray-600">
-                          <p>{order.customerInfo.name}</p>
-                          <p>{order.customerInfo.phone}</p>
-                          <p>{order.customerInfo.address}</p>
-                          <p>{order.customerInfo.city}, {order.customerInfo.state} {order.customerInfo.pincode}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 flex justify-between items-center pt-4 border-t">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">Payment:</span>
-                      <Badge className={order.paymentStatus === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-                        {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
-                      </Badge>
-                    </div>
-                    {order.paidAt && (
-                      <p className="text-sm text-gray-600">
-                        Paid on {formatDate(order.paidAt)}
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Order Details</DialogTitle>
+                  </DialogHeader>
+                  {selectedOrder && <OrderDetailsModal order={selectedOrder} />}
+                </DialogContent>
+              </Dialog>
             ))}
           </div>
         )}

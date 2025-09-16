@@ -60,7 +60,7 @@ export default function OrderSuccessPage() {
               
               <Button 
                 variant="outline" 
-                onClick={() => router.push('/orders')}
+                onClick={() => router.push('/my-orders')}
                 className="w-full"
               >
                 View Order History

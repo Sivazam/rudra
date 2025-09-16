@@ -95,7 +95,7 @@ export function VariantSelector({
                   <p className="text-gray-500">No variants available for this product.</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {variants.map((variant) => {
                     const pricing = formatPrice(variant.price, variant.discount);
                     const isSelected = selectedVariant?.label === variant.label;
@@ -117,49 +117,53 @@ export function VariantSelector({
                           backgroundColor: isSelected ? '#fef3c7' : isOutOfStock ? '#f9fafb' : 'white'
                         }}
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                              <span className={`font-medium ${isOutOfStock ? 'text-gray-400' : ''}`} style={{ color: isOutOfStock ? '#9ca3af' : '#755e3e' }}>
-                                {variant.label}
-                              </span>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className={`font-medium text-sm ${isOutOfStock ? 'text-gray-400' : ''}`} style={{ color: isOutOfStock ? '#9ca3af' : '#755e3e' }}>
+                              {variant.label}
+                            </span>
+                            <div className="flex space-x-1">
                               {variant.isDefault && (
-                                <Badge variant="secondary">Default</Badge>
+                                <Badge variant="secondary" className="text-xs">Default</Badge>
                               )}
                               {isOutOfStock && (
-                                <Badge variant="destructive">Out of Stock</Badge>
+                                <Badge variant="destructive" className="text-xs">Out of Stock</Badge>
                               )}
                             </div>
-                            <div className="flex items-center space-x-2 mt-1">
-                              <span className={`text-lg font-bold ${isOutOfStock ? 'text-gray-400' : ''}`} style={{ color: isOutOfStock ? '#9ca3af' : '#755e3e' }}>
-                                {pricing.current}
-                              </span>
-                              {pricing.original && (
-                                <span className="text-sm text-gray-500 line-through">
-                                  {pricing.original}
-                                </span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <span className={`text-lg font-bold ${isOutOfStock ? 'text-gray-400' : ''}`} style={{ color: isOutOfStock ? '#9ca3af' : '#755e3e' }}>
+                              {pricing.current}
+                            </span>
+                            <div className="w-5 h-5 rounded-full border-2 flex-shrink-0" style={{
+                              borderColor: isSelected ? 'rgba(156,86,26,255)' : isOutOfStock ? '#d1d5db' : '#d1d5db',
+                              backgroundColor: isSelected ? 'rgba(156,86,26,255)' : isOutOfStock ? '#e5e7eb' : 'white'
+                            }}>
+                              {isSelected && (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <div className="w-2 h-2 bg-white rounded-full"></div>
+                                </div>
                               )}
+                            </div>
+                          </div>
+                          
+                          {pricing.original && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-gray-500 line-through">
+                                {pricing.original}
+                              </span>
                               {pricing.savings && (
-                                <Badge className="bg-red-600 hover:bg-red-700">
+                                <Badge className="bg-red-600 hover:bg-red-700 text-xs">
                                   {pricing.savings}
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm mt-1" style={{ color: '#846549' }}>
-                              SKU: {variant.sku} | Stock: {variant.inventory}
-                            </p>
-                          </div>
+                          )}
                           
-                          <div className="w-5 h-5 rounded-full border-2 flex-shrink-0 ml-4" style={{
-                            borderColor: isSelected ? 'rgba(156,86,26,255)' : isOutOfStock ? '#d1d5db' : '#d1d5db',
-                            backgroundColor: isSelected ? 'rgba(156,86,26,255)' : isOutOfStock ? '#e5e7eb' : 'white'
-                          }}>
-                            {isSelected && (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <div className="w-2 h-2 bg-white rounded-full"></div>
-                              </div>
-                            )}
-                          </div>
+                          <p className="text-xs" style={{ color: '#846549' }}>
+                            SKU: {variant.sku} | Stock: {variant.inventory}
+                          </p>
                         </div>
                       </div>
                     );
