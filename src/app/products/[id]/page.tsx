@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Star, Heart, Share2, Shield, Check, ArrowRight, ShoppingCart } from 'lucide-react';
+import { Star, Heart, Share2, Shield, Check, ArrowRight, ShoppingCart, Minus, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCartStore } from '@/store/cartStore';
-import { VariantSelector } from '@/components/store/VariantSelector';
 import { MainLayout } from '@/components/store/MainLayout';
 import { useToast } from '@/hooks/use-toast';
 
@@ -197,13 +196,12 @@ export default function ProductDetailPage() {
   const mockProduct = mockProducts.find(p => p.id === productId) || mockProducts[0];
   
   const [selectedImage, setSelectedImage] = useState(0);
-  const [selectedVariant, setSelectedVariant] = useState(mockProduct.variants.find(v => v.isDefault));
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [showVariantSelector, setShowVariantSelector] = useState(false);
-  const [showRepeatDialog, setShowRepeatDialog] = useState(false);
   const [shakeButton, setShakeButton] = useState<'add-to-cart' | 'buy-now' | null>(null);
   const [shakeVariants, setShakeVariants] = useState(false);
+  const [isInCart, setIsInCart] = useState(false);
   
   const { addItem, items } = useCartStore();
   const { toast } = useToast();
@@ -212,16 +210,24 @@ export default function ProductDetailPage() {
   const cartItemsForProduct = items.filter(item => item.productId === mockProduct.id);
   const totalQuantityInCart = cartItemsForProduct.reduce((sum, item) => sum + item.quantity, 0);
   
+  // Check if the currently selected variant is already in cart
+  const isCurrentVariantInCart = selectedVariant && 
+    cartItemsForProduct.some(item => item.variant.label === selectedVariant.label);
+  
   // For general operations, get the first item (for simplicity)
   const cartItem = cartItemsForProduct[0];
+  
+  // Update isInCart state when cart items or selected variant changes
+  useEffect(() => {
+    setIsInCart(isCurrentVariantInCart);
+  }, [isCurrentVariantInCart]);
 
   const handleAddToCart = () => {
-    // Check if product has multiple variants
+    // Check if user has selected a variant (for products with variants)
     const availableVariants = mockProduct.variants.filter(v => v.inventory > 0);
     
-    // If user hasn't selected a variant and there are multiple variants, show shake effect and toast
-    if (!selectedVariant && availableVariants.length > 1) {
-      setShakeButton('add-to-cart');
+    if (availableVariants.length > 1 && !selectedVariant) {
+      // If multiple variants exist and user hasn't selected one, show shake effect
       setShakeVariants(true);
       toast({
         title: "Please select a variant",
@@ -229,55 +235,49 @@ export default function ProductDetailPage() {
         variant: "destructive",
       });
       
-      // Remove shake effects after animation
+      // Remove shake effect after animation
       setTimeout(() => {
-        setShakeButton(null);
         setShakeVariants(false);
       }, 1000);
       return;
     }
     
-    // If only one variant available or user has selected a variant
+    // If only one variant or user has selected a variant
     const variantToAdd = selectedVariant || availableVariants[0];
     if (variantToAdd) {
-      // Check if this specific variant is already in cart
-      const existingVariantItem = cartItemsForProduct.find(item => 
-        item.variant.label === variantToAdd.label
-      );
+      // Add to cart
+      addItem({
+        productId: mockProduct.id,
+        name: mockProduct.name,
+        deity: mockProduct.deity,
+        image: mockProduct.images[0],
+        variant: {
+          label: variantToAdd.label,
+          price: variantToAdd.price,
+          sku: variantToAdd.sku,
+          discount: variantToAdd.discount
+        }
+      });
       
-      if (existingVariantItem) {
-        // If variant already exists, show dialog to ask if user wants to add more or select different
-        setShowRepeatDialog(true);
-      } else {
-        // If variant doesn't exist, add it directly
-        addItem({
-          productId: mockProduct.id,
-          name: mockProduct.name,
-          deity: mockProduct.deity,
-          image: mockProduct.images[0],
-          variant: {
-            label: variantToAdd.label,
-            price: variantToAdd.price,
-            sku: variantToAdd.sku,
-            discount: variantToAdd.discount
-          }
-        });
-        
-        toast({
-          title: "Added to cart",
-          description: `${mockProduct.name} added to cart`,
-        });
-      }
+      // Don't reset variant selection - keep it selected to show GO TO CART button
+      // setSelectedVariant(null); // Removed this line
+      
+      // Open cart after adding item
+      useCartStore.getState().openCart();
+      
+      toast({
+        title: "Added to cart",
+        description: `${mockProduct.name} added to cart`,
+      });
     }
   };
 
   const handleBuyNow = () => {
-    // Check if product has multiple variants
+    // Check if user has selected a variant (for products with variants)
     const availableVariants = mockProduct.variants.filter(v => v.inventory > 0);
     
-    // If user hasn't selected a variant and there are multiple variants, show shake effect and toast
-    if (!selectedVariant && availableVariants.length > 1) {
-      setShakeButton('buy-now');
+    if (availableVariants.length > 1 && !selectedVariant) {
+      // If multiple variants exist and user hasn't selected one, show shake effect
       setShakeVariants(true);
       toast({
         title: "Please select a variant",
@@ -285,131 +285,48 @@ export default function ProductDetailPage() {
         variant: "destructive",
       });
       
-      // Remove shake effects after animation
+      // Remove shake effect after animation
       setTimeout(() => {
-        setShakeButton(null);
         setShakeVariants(false);
       }, 1000);
       return;
     }
     
-    // If only one variant available or user has selected a variant
+    // If only one variant or user has selected a variant
     const variantToAdd = selectedVariant || availableVariants[0];
     if (variantToAdd) {
-      // Check if this specific variant is already in cart
-      const existingVariantItem = cartItemsForProduct.find(item => 
-        item.variant.label === variantToAdd.label
-      );
+      // Add to cart
+      addItem({
+        productId: mockProduct.id,
+        name: mockProduct.name,
+        deity: mockProduct.deity,
+        image: mockProduct.images[0],
+        variant: {
+          label: variantToAdd.label,
+          price: variantToAdd.price,
+          sku: variantToAdd.sku,
+          discount: variantToAdd.discount
+        }
+      });
       
-      if (existingVariantItem) {
-        // If variant already exists, show dialog to ask if user wants to add more or select different
-        setShowRepeatDialog(true);
-      } else {
-        // If variant doesn't exist, add it directly
-        addItem({
-          productId: mockProduct.id,
-          name: mockProduct.name,
-          deity: mockProduct.deity,
-          image: mockProduct.images[0],
-          variant: {
-            label: variantToAdd.label,
-            price: variantToAdd.price,
-            sku: variantToAdd.sku,
-            discount: variantToAdd.discount
-          }
-        });
-        
-        // Navigate to checkout (this will be implemented later)
-        setTimeout(() => {
-          // For now, just open cart
-          useCartStore.getState().openCart();
-        }, 500);
-      }
-    }
-  };
-
-  const handleVariantSelect = (variant: any) => {
-    setSelectedVariant(variant);
-    setShowVariantSelector(false);
-    
-    // Add to cart after variant selection
-    addItem({
-      productId: mockProduct.id,
-      name: mockProduct.name,
-      deity: mockProduct.deity,
-      image: mockProduct.images[0],
-      variant: {
-        label: variant.label,
-        price: variant.price,
-        sku: variant.sku,
-        discount: variant.discount
-      }
-    });
-    
-    toast({
-      title: "Added to cart",
-      description: `${mockProduct.name} added to cart`,
-    });
-  };
-
-  const handleIncrementQuantity = () => {
-    if (totalQuantityInCart === 0) {
-      // If no items in cart, use the add to cart flow
-      handleAddToCart();
-    } else {
-      // If items already exist, increment the first item's quantity (standard ecommerce behavior)
-      if (cartItem) {
-        useCartStore.getState().updateQuantity(cartItem.id, cartItem.quantity + 1);
-        toast({
-          title: "Quantity updated",
-          description: `${mockProduct.name} quantity increased to ${cartItem.quantity + 1}`,
-        });
-      }
-    }
-  };
-
-  const handleDecrementQuantity = () => {
-    if (cartItem && cartItem.quantity > 1) {
-      // Decrement the first item's quantity
-      useCartStore.getState().updateQuantity(cartItem.id, cartItem.quantity - 1);
+      // Don't reset variant selection - keep it selected to show GO TO CART button
+      // setSelectedVariant(null); // Removed this line
+      
       toast({
-        title: "Quantity updated",
-        description: `${mockProduct.name} quantity decreased to ${cartItem.quantity - 1}`,
+        title: "Added to cart",
+        description: `${mockProduct.name} added to cart`,
       });
-    } else if (cartItem && cartItem.quantity === 1) {
-      // Remove the item if quantity is 1
-      useCartStore.getState().removeItem(cartItem.id);
-      toast({
-        title: "Item removed",
-        description: `${mockProduct.name} removed from cart`,
-      });
+      
+      // Navigate to checkout (this will be implemented later)
+      setTimeout(() => {
+        // For now, just open cart
+        useCartStore.getState().openCart();
+      }, 500);
     }
   };
 
-  const handleRepeat = () => {
-    // Simply increment the first item's quantity (standard ecommerce behavior)
-    if (cartItem) {
-      useCartStore.getState().updateQuantity(cartItem.id, cartItem.quantity + 1);
-      toast({
-        title: "Quantity updated",
-        description: `${mockProduct.name} quantity increased to ${cartItem.quantity + 1}`,
-      });
-    }
-    setShowRepeatDialog(false);
-  };
-
-  const handleSelectDifferentVariant = () => {
-    setShowRepeatDialog(false);
-    // Shake the variant boxes instead of opening popup
-    setShakeVariants(true);
-    toast({
-      title: "Select a variant",
-      description: "Please choose a variant from the options above",
-      variant: "destructive",
-    });
-    
-    // Remove shake effect after animation
-    setTimeout(() => setShakeVariants(false), 1000);
+  const handleGoToCart = () => {
+    useCartStore.getState().openCart();
   };
 
   const formatPrice = (price: number, discount: number = 0) => {
@@ -715,60 +632,57 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Variant Selector Modal */}
-      <VariantSelector
-        isOpen={showVariantSelector}
-        onClose={() => setShowVariantSelector(false)}
-        variants={mockProduct.variants}
-        productName={mockProduct.name}
-        productImage={mockProduct.images[0]}
-        onVariantSelect={handleVariantSelect}
-      />
-
-      {/* Repeat or Select Different Variant Dialog */}
-      <Dialog open={showRepeatDialog} onOpenChange={setShowRepeatDialog}>
-        <DialogContent className="sm:max-w-[90%] sm:rounded-lg max-sm:bottom-0 max-sm:left-0 max-sm:right-0 max-sm:rounded-t-lg max-sm:max-w-none max-sm:translate-y-0">
-          <DialogHeader>
-            <DialogTitle>Add more items?</DialogTitle>
-            <DialogDescription>
-              You already have {totalQuantityInCart} item{totalQuantityInCart > 1 ? 's' : ''} in cart. Would you like to add more or select a different variant?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex flex-col sm:flex-row gap-2">
-            <Button onClick={handleSelectDifferentVariant} variant="outline" className="sm:flex-1" style={{ borderColor: '#846549', color: '#846549' }}>
-              Select Different Variant
-            </Button>
-            <Button onClick={handleRepeat} className="sm:flex-1" style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}>
-              Add More
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Fixed Bottom Action Buttons */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50" style={{ borderColor: '#846549' }}>
         <div className="container mx-auto px-4 py-3">
           <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              onClick={handleAddToCart}
-              variant="outline"
-              className={`flex-1 ${shakeButton === 'add-to-cart' ? 'animate-shake' : ''}`}
-              size="lg"
-              style={{ borderColor: '#846549', color: '#846549' }}
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Add to Cart
-            </Button>
-            <Button
-              onClick={handleBuyNow}
-              variant="outline"
-              className={`flex-1 ${shakeButton === 'buy-now' ? 'animate-shake' : ''}`}
-              size="lg"
-              style={{ borderColor: '#846549', color: '#846549' }}
-            >
-              Buy Now
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
+            {!isInCart ? (
+              <>
+                <Button
+                  onClick={handleAddToCart}
+                  variant="outline"
+                  className={`flex-1 ${shakeButton === 'add-to-cart' ? 'animate-shake' : ''}`}
+                  size="lg"
+                  style={{ borderColor: '#846549', color: '#846549' }}
+                >
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Add to Cart
+                </Button>
+                <Button
+                  onClick={handleBuyNow}
+                  variant="outline"
+                  className={`flex-1 ${shakeButton === 'buy-now' ? 'animate-shake' : ''}`}
+                  size="lg"
+                  style={{ borderColor: '#846549', color: '#846549' }}
+                >
+                  Buy Now
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </>
+            ) : (
+              <>
+                {/* Go to Cart Button */}
+                <Button
+                  onClick={handleGoToCart}
+                  className="flex-1"
+                  size="lg"
+                  style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
+                >
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Go to Cart
+                </Button>
+                <Button
+                  onClick={handleBuyNow}
+                  variant="outline"
+                  className="flex-1"
+                  size="lg"
+                  style={{ borderColor: '#846549', color: '#846549' }}
+                >
+                  Buy Now
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

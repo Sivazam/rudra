@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useCartStore } from '@/store/cartStore';
 import { VariantSelector } from './VariantSelector';
+import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
 interface Product {
@@ -51,6 +52,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const [isAdding, setIsAdding] = useState(false);
   
   const { items, addItem, updateQuantity } = useCartStore();
+  const { toast } = useToast();
 
   // Check if this product is already in cart - sum quantities of ALL variants
   const cartItemsForProduct = items.filter(item => item.productId === product.id);
@@ -99,6 +101,9 @@ export function ProductCard({ product }: ProductCardProps) {
       setIsAdding(false);
       setShowVariantSelector(false);
       
+      // Open cart after adding item
+      useCartStore.getState().openCart();
+      
       toast({
         title: "Added to cart",
         description: `${product.name} added to cart`,
@@ -107,20 +112,57 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   const handleQuantityChange = (newQuantity: number) => {
-    if (cartItem) {
-      if (newQuantity > totalQuantityInCart) {
-        // This is an increment operation
-        const mockVariants = product.hasVariants === false ? [getDefaultVariant(product)] : getMockVariants(product.id);
-        if (mockVariants.length > 1) {
-          // If multiple variants exist, show dialog to choose
-          setShowRepeatDialog(true);
-        } else {
-          // If only one variant, just increment
+    if (newQuantity > totalQuantityInCart) {
+      // This is an increment operation
+      const mockVariants = product.hasVariants === false ? [getDefaultVariant(product)] : getMockVariants(product.id);
+      if (mockVariants.length > 1) {
+        // If multiple variants exist, show dialog to choose
+        setShowRepeatDialog(true);
+      } else {
+        // If only one variant, just increment the first item's quantity
+        if (cartItem) {
           useCartStore.getState().updateQuantity(cartItem.id, newQuantity);
+          
+          // Open cart after updating quantity
+          useCartStore.getState().openCart();
+          
+          toast({
+            title: "Quantity updated",
+            description: `${product.name} quantity increased to ${newQuantity}`,
+          });
         }
-      } else if (newQuantity > 0) {
-        // This is a decrement operation
-        useCartStore.getState().updateQuantity(cartItem.id, newQuantity);
+      }
+    } else if (newQuantity > 0) {
+      // This is a decrement operation - find the most recent cart item and decrement it
+      if (cartItemsForProduct.length > 0) {
+        // Get the most recently added item (last in array)
+        const mostRecentItem = cartItemsForProduct[cartItemsForProduct.length - 1];
+        if (mostRecentItem.quantity > 1) {
+          // Decrement the quantity
+          useCartStore.getState().updateQuantity(mostRecentItem.id, mostRecentItem.quantity - 1);
+          toast({
+            title: "Quantity updated",
+            description: `${product.name} quantity decreased to ${mostRecentItem.quantity - 1}`,
+          });
+        } else {
+          // Remove the item if quantity would be 0
+          useCartStore.getState().removeItem(mostRecentItem.id);
+          toast({
+            title: "Item removed",
+            description: `${product.name} removed from cart`,
+          });
+        }
+      }
+    } else if (newQuantity === 0) {
+      // Remove the item when quantity reaches 0
+      if (cartItemsForProduct.length > 0) {
+        // Get the most recently added item (last in array)
+        const mostRecentItem = cartItemsForProduct[cartItemsForProduct.length - 1];
+        useCartStore.getState().removeItem(mostRecentItem.id);
+        toast({
+          title: "Item removed",
+          description: `${product.name} removed from cart`,
+        });
       }
     }
   };
@@ -130,6 +172,9 @@ export function ProductCard({ product }: ProductCardProps) {
     if (cartItem) {
       useCartStore.getState().updateQuantity(cartItem.id, cartItem.quantity + 1);
       setShowRepeatDialog(false);
+      
+      // Open cart after updating quantity
+      useCartStore.getState().openCart();
       
       toast({
         title: "Quantity updated",
@@ -238,18 +283,19 @@ export function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
           
-          {/* Add to Cart Button */}
-          <Button
-            onClick={handleAddToCart}
-            disabled={isAdding}
-            className="w-full mt-3"
-            variant="outline"
-            style={{ borderColor: '#846549', color: '#846549' }}
-          >
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            {isAdding ? 'Adding...' : 'ADD TO CART'}
-          </Button>
-  
+          {/* Add to Cart Button OR Counter */}
+          {totalQuantityInCart === 0 ? (
+            <Button
+              onClick={handleAddToCart}
+              disabled={isAdding}
+              className="w-full mt-3"
+              variant="outline"
+              style={{ borderColor: '#846549', color: '#846549' }}
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              {isAdding ? 'Adding...' : 'ADD TO CART'}
+            </Button>
+          ) : (
             <div className="flex items-center justify-center space-x-2 mt-3">
               <Button
                 variant="outline"
@@ -272,6 +318,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
+          )}
         </div>
       </div>
       
