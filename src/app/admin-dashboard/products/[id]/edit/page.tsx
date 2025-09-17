@@ -24,6 +24,7 @@ interface ProductVariant {
   id: string;
   label: string;
   price: number;
+  originalPrice?: number;
   sku: string;
   discount: number;
   stock: number;
@@ -86,7 +87,7 @@ export default function EditProductPage() {
     status: 'draft',
     isBestseller: false,
     variants: [
-      { id: '1', label: 'Standard', price: 0, sku: '', discount: 0, stock: 0 }
+      { id: '1', label: 'Standard', price: 0, originalPrice: undefined, sku: '', discount: 0, stock: 0 }
     ]
   });
 
@@ -112,7 +113,7 @@ export default function EditProductPage() {
                 tags: product.tags || [],
                 status: product.status,
                 isBestseller: product.isBestseller,
-                variants: product.variants || [{ id: '1', label: 'Standard', price: 0, sku: '', discount: 0, stock: 0 }]
+                variants: product.variants || [{ id: '1', label: 'Standard', price: 0, originalPrice: undefined, sku: '', discount: 0, stock: 0 }]
               });
               setImages(product.images || []);
               if (product.wearGuide?.image) {
@@ -205,6 +206,7 @@ export default function EditProductPage() {
       id: Date.now().toString(),
       label: '',
       price: 0,
+      originalPrice: undefined,
       sku: '',
       discount: 0,
       stock: 0
@@ -562,6 +564,17 @@ export default function EditProductPage() {
                         min="0"
                         step="0.01"
                         required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Original Price</Label>
+                      <Input
+                        type="number"
+                        value={variant.originalPrice || ''}
+                        onChange={(e) => updateVariant(variant.id, 'originalPrice', e.target.value ? Number(e.target.value) : undefined)}
+                        placeholder="0"
+                        min="0"
+                        step="0.01"
                       />
                     </div>
                     <div className="space-y-2">
