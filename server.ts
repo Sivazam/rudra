@@ -3,6 +3,7 @@ import { setupSocket } from '@/lib/socket';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import next from 'next';
+import bodyParser from 'body-parser';
 
 const dev = process.env.NODE_ENV !== 'production';
 const currentPort = 3000;
@@ -28,6 +29,21 @@ async function createCustomServer() {
       if (req.url?.startsWith('/api/socketio')) {
         return;
       }
+      
+      // Handle large payload requests for API routes
+      if (req.url?.startsWith('/api/')) {
+        // Increase the payload size limit for API routes
+        req.headers['content-length'] = req.headers['content-length'] || '0';
+        const contentLength = parseInt(req.headers['content-length'] as string, 10);
+        
+        // Allow larger payloads (up to 50MB)
+        if (contentLength > 50 * 1024 * 1024) {
+          res.writeHead(413, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Payload too large' }));
+          return;
+        }
+      }
+      
       handle(req, res);
     });
 

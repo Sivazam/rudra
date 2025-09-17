@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { firestoreService, storageService } from '@/lib/firebase';
 import { CategoryService } from '@/lib/services/categoryService';
+import { config, parseLargeFormData } from './config';
+
+// Export config for Next.js to handle larger payloads
+export { config };
 
 // GET /api/admin/products - Get all products
 export async function GET(request: NextRequest) {
@@ -31,7 +35,8 @@ export async function POST(request: NextRequest) {
   try {
     console.log('Admin API: Creating new product - START');
     
-    const formData = await request.formData();
+    // Use the custom form data parser to handle large payloads
+    const formData = await parseLargeFormData(request);
     console.log('Admin API: FormData parsed successfully');
     
     // Extract basic product data
@@ -191,7 +196,8 @@ export async function PUT(request: NextRequest) {
   try {
     console.log('Admin API: Updating product');
     
-    const formData = await request.formData();
+    // Use the custom form data parser to handle large payloads
+    const formData = await parseLargeFormData(request);
     
     // Extract product data
     const id = formData.get('id') as string;
