@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
@@ -10,12 +10,25 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Phone } from 'lucide-react';
 import { MainLayout } from '@/components/store/MainLayout';
+import { isUserAuthenticated } from '@/lib/auth';
 
 export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    // Check if user is already authenticated
+    const authenticated = isUserAuthenticated();
+    console.log('Login page - User authentication status:', authenticated);
+    
+    if (authenticated) {
+      console.log('User already authenticated, redirecting to home');
+      router.push('/');
+      return;
+    }
+  }, [router]);
 
   const setupRecaptcha = () => {
     if (!window.recaptchaVerifier) {

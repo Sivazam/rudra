@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, query, where, orderBy, limit, addDoc, serverTimestamp } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: "AIzaSyADTcaTlnTWepqB6bFuJH6WkXSh3lUVxso",
@@ -14,6 +15,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 
 // Firestore utility functions
 export const firestoreService = {
@@ -105,6 +107,69 @@ export const firestoreService = {
     
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+};
+
+// Firebase Storage utility functions
+export const storageService = {
+  // Upload file to Firebase Storage
+  uploadFile: async (file: File, path: string): Promise<string> => {
+    try {
+      console.log(`Storage: Uploading file to ${path}`);
+      const storageRef = ref(storage, path);
+      const snapshot = await uploadBytes(storageRef, file);
+      console.log(`Storage: File uploaded successfully`);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+      console.log(`Storage: Download URL obtained: ${downloadURL}`);
+      return downloadURL;
+    } catch (error) {
+      console.error('Storage: Error uploading file:', error);
+      throw new Error(`Failed to upload file: ${(error as any).message || 'Unknown error'}`);
+    }
+  },
+
+  // Upload multiple files
+  uploadFiles: async (files: File[], basePath: string): Promise<string[]> => {
+    try {
+      const uploadPromises = files.map(async (file, index) => {
+        const fileExtension = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${index}.${fileExtension}`;
+        const path = `${basePath}/${fileName}`;
+        return await storageService.uploadFile(file, path);
+      });
+      
+      const downloadURLs = await Promise.all(uploadPromises);
+      console.log(`Storage: ${downloadURLs.length} files uploaded successfully`);
+      return downloadURLs;
+    } catch (error) {
+      console.error('Storage: Error uploading files:', error);
+      throw error;
+    }
+  },
+
+  // Delete file from Firebase Storage
+  deleteFile: async (path: string): Promise<void> => {
+    try {
+      console.log(`Storage: Deleting file from ${path}`);
+      const storageRef = ref(storage, path);
+      await deleteObject(storageRef);
+      console.log(`Storage: File deleted successfully`);
+    } catch (error) {
+      console.error('Storage: Error deleting file:', error);
+      throw new Error(`Failed to delete file: ${(error as any).message || 'Unknown error'}`);
+    }
+  },
+
+  // Delete multiple files
+  deleteFiles: async (paths: string[]): Promise<void> => {
+    try {
+      const deletePromises = paths.map(path => storageService.deleteFile(path));
+      await Promise.all(deletePromises);
+      console.log(`Storage: ${paths.length} files deleted successfully`);
+    } catch (error) {
+      console.error('Storage: Error deleting files:', error);
+      throw error;
+    }
   }
 };
 

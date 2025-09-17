@@ -1,222 +1,365 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Edit, Trash2, Upload } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Save, 
+  X,
+  Image as ImageIcon,
+  FolderOpen,
+  Package
+} from 'lucide-react';
+import Link from 'next/link';
 
 interface Category {
-  _id: string;
+  id: string;
   name: string;
-  slug: string;
-  iconUrl: string;
+  description: string;
+  image: string;
+  productCount: number;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([
-    { _id: '1', name: 'Rudraksha', slug: 'rudraksha', iconUrl: '/icons/rudraksha.png' },
-    { _id: '2', name: 'Malas', slug: 'malas', iconUrl: '/icons/malas.png' },
-    { _id: '3', name: 'Bracelets', slug: 'bracelets', iconUrl: '/icons/bracelets.png' },
-  ]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    slug: '',
-    iconUrl: ''
+    description: '',
+    image: '',
+    status: 'active' as 'active' | 'inactive'
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    setLoading(true);
+    try {
+      // Mock data - replace with actual API call
+      const mockCategories: Category[] = [
+        {
+          id: '1',
+          name: 'Rudraksha',
+          description: 'Sacred rudraksha beads and malas',
+          image: '/categories/rudraksha.png',
+          productCount: 45,
+          status: 'active',
+          createdAt: '2024-01-01',
+          updatedAt: '2024-01-15'
+        },
+        {
+          id: '2',
+          name: 'Malas',
+          description: 'Traditional prayer beads and malas',
+          image: '/categories/malas.png',
+          productCount: 32,
+          status: 'active',
+          createdAt: '2024-01-02',
+          updatedAt: '2024-01-14'
+        },
+        {
+          id: '3',
+          name: 'Idols',
+          description: 'Hindu deities and spiritual idols',
+          image: '/categories/idols.png',
+          productCount: 28,
+          status: 'active',
+          createdAt: '2024-01-03',
+          updatedAt: '2024-01-13'
+        },
+        {
+          id: '4',
+          name: 'Yantras',
+          description: 'Sacred geometric yantras',
+          image: '/categories/yantras.png',
+          productCount: 15,
+          status: 'inactive',
+          createdAt: '2024-01-04',
+          updatedAt: '2024-01-12'
+        }
+      ];
+      setCategories(mockCategories);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingCategory) {
-      // Update existing category
-      setCategories(categories.map(cat => 
-        cat._id === editingCategory._id 
-          ? { ...cat, ...formData }
-          : cat
-      ));
-    } else {
-      // Add new category
-      const newCategory: Category = {
-        _id: Date.now().toString(),
-        ...formData
-      };
-      setCategories([...categories, newCategory]);
+    try {
+      if (editingCategory) {
+        // Update category
+        const updatedCategories = categories.map(cat => 
+          cat.id === editingCategory.id 
+            ? { ...cat, ...formData, updatedAt: new Date().toISOString().split('T')[0] }
+            : cat
+        );
+        setCategories(updatedCategories);
+      } else {
+        // Create new category
+        const newCategory: Category = {
+          id: Date.now().toString(),
+          ...formData,
+          productCount: 0,
+          createdAt: new Date().toISOString().split('T')[0],
+          updatedAt: new Date().toISOString().split('T')[0]
+        };
+        setCategories([...categories, newCategory]);
+      }
+      
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving category:', error);
     }
-    
-    setIsDialogOpen(false);
-    setEditingCategory(null);
-    setFormData({ name: '', slug: '', iconUrl: '' });
   };
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
     setFormData({
       name: category.name,
-      slug: category.slug,
-      iconUrl: category.iconUrl
+      description: category.description,
+      image: category.image,
+      status: category.status
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setCategories(categories.filter(cat => cat._id !== id));
-  };
-
-  const handleIconUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // In a real app, you would upload this to a storage service
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setFormData({ ...formData, iconUrl: e.target?.result as string });
-      };
-      reader.readAsDataURL(file);
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this category?')) {
+      try {
+        setCategories(categories.filter(cat => cat.id !== id));
+      } catch (error) {
+        console.error('Error deleting category:', error);
+      }
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+      image: '',
+      status: 'active'
+    });
+    setEditingCategory(null);
+  };
+
+  const getStatusColor = (status: string) => {
+    return status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+  };
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Categories</h1>
-          <p className="text-gray-600">Manage product categories</p>
-        </div>
-        
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-orange-600 hover:bg-orange-700">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Category
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingCategory ? 'Edit Category' : 'Add New Category'}
-              </DialogTitle>
-              <DialogDescription>
-                {editingCategory ? 'Update category information' : 'Create a new product category'}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="name">Category Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="slug">Slug</Label>
-                <Input
-                  id="slug"
-                  value={formData.slug}
-                  onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
-                  required
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="icon">Category Icon</Label>
-                <div className="flex items-center space-x-4">
-                  <Input
-                    id="icon"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleIconUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById('icon')?.click()}
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload Icon
-                  </Button>
-                  {formData.iconUrl && (
-                    <img 
-                      src={formData.iconUrl} 
-                      alt="Category icon" 
-                      className="w-10 h-10 object-cover rounded"
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
+            <p className="text-gray-600">Manage your product categories</p>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-orange-600 hover:bg-orange-700" onClick={resetForm}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Category
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingCategory ? 'Edit Category' : 'Add New Category'}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingCategory 
+                    ? 'Update the category information below.'
+                    : 'Create a new product category.'
+                  }
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit}>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="name" className="text-right">
+                      Name
+                    </Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      className="col-span-3"
+                      required
                     />
-                  )}
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="description" className="text-right">
+                      Description
+                    </Label>
+                    <Input
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                      className="col-span-3"
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="image" className="text-right">
+                      Image URL
+                    </Label>
+                    <Input
+                      id="image"
+                      value={formData.image}
+                      onChange={(e) => setFormData({...formData, image: e.target.value})}
+                      className="col-span-3"
+                      placeholder="/categories/category-name.png"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="status" className="text-right">
+                      Status
+                    </Label>
+                    <Select value={formData.status} onValueChange={(value: 'active' | 'inactive') => setFormData({...formData, status: value})}>
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+                <DialogFooter>
+                  <Button type="submit" className="bg-orange-600 hover:bg-orange-700">
+                    <Save className="h-4 w-4 mr-2" />
+                    {editingCategory ? 'Update' : 'Create'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Categories</CardTitle>
+              <FolderOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{categories.length}</div>
+              <p className="text-xs text-muted-foreground">
+                {categories.filter(c => c.status === 'active').length} active
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {categories.reduce((sum, cat) => sum + cat.productCount, 0)}
               </div>
-              
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" className="bg-orange-600 hover:bg-orange-700">
-                  {editingCategory ? 'Update' : 'Create'}
-                </Button>
+              <p className="text-xs text-muted-foreground">
+                Across all categories
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Categories</CardTitle>
+              <div className="h-2 w-2 rounded-full bg-green-600"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {categories.filter(c => c.status === 'active').length}
               </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>All Categories</CardTitle>
-          <CardDescription>List of all product categories</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Icon</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Slug</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {categories.map((category) => (
-                <TableRow key={category._id}>
-                  <TableCell>
-                    <img 
-                      src={category.iconUrl} 
-                      alt={category.name} 
-                      className="w-8 h-8 object-cover rounded"
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{category.name}</TableCell>
-                  <TableCell className="text-gray-600">{category.slug}</TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
+              <p className="text-xs text-muted-foreground">
+                {categories.filter(c => c.status === 'inactive').length} inactive
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Categories List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>All Categories</CardTitle>
+            <CardDescription>
+              Manage your product categories and their settings
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-8">Loading categories...</div>
+            ) : (
+              <div className="space-y-4">
+                {categories.map((category) => (
+                  <div key={category.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <ImageIcon className="h-6 w-6 text-gray-400" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">{category.name}</h3>
+                        <p className="text-sm text-gray-500">{category.description}</p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <Badge className={getStatusColor(category.status)}>
+                            {category.status}
+                          </Badge>
+                          <span className="text-xs text-gray-500">
+                            {category.productCount} products
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={() => handleEdit(category)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={() => handleDelete(category._id)}
+                        onClick={() => handleDelete(category.id)}
+                        className="text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </AdminLayout>
   );
 }

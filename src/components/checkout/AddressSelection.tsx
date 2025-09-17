@@ -16,7 +16,9 @@ interface Address {
   id?: string;
   name: string;
   phone: string;
+  email?: string;
   doorNo: string;
+  city: string;
   pincode: string;
   landmark: string;
   addressType: 'home' | 'office' | 'other';
@@ -38,7 +40,9 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
   const [newAddress, setNewAddress] = useState<Address>({
     name: '',
     phone: '+91',
+    email: '',
     doorNo: '',
+    city: '',
     pincode: '',
     landmark: '',
     addressType: 'home',
@@ -49,6 +53,40 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
   useEffect(() => {
     loadAddresses();
   }, []);
+
+  // Prefill form with current user data when showing add form
+  useEffect(() => {
+    if (showAddForm && !editingAddress) {
+      const currentUser = getCurrentUser();
+      if (currentUser) {
+        // Try to get user details from userService to get email and name
+        userService.getUserByPhoneNumber(currentUser.phoneNumber).then(user => {
+          if (user) {
+            setNewAddress(prev => ({
+              ...prev,
+              name: user.name || prev.name,
+              email: user.email || prev.email,
+              phone: user.phoneNumber || prev.phone,
+              city: user.city || prev.city
+            }));
+          } else {
+            // Fallback to just phone number from auth token
+            setNewAddress(prev => ({
+              ...prev,
+              phone: currentUser.phoneNumber || prev.phone
+            }));
+          }
+        }).catch(error => {
+          console.log('Error fetching user details:', error);
+          // Fallback to just phone number from auth token
+          setNewAddress(prev => ({
+            ...prev,
+            phone: currentUser.phoneNumber || prev.phone
+          }));
+        });
+      }
+    }
+  }, [showAddForm, editingAddress]);
 
   const loadAddresses = async () => {
     try {
@@ -97,7 +135,9 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
           setNewAddress({
             name: '',
             phone: '+91',
+            email: '',
             doorNo: '',
+            city: '',
             pincode: '',
             landmark: '',
             addressType: 'home',
@@ -172,8 +212,8 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
   };
 
   const validateAddress = (address: Address): boolean => {
-    // Required fields: name, phone (with +91), doorNo, pincode
-    const requiredFields = ['name', 'phone', 'doorNo', 'pincode'];
+    // Required fields: name, phone (with +91), doorNo, city, pincode
+    const requiredFields = ['name', 'phone', 'doorNo', 'city', 'pincode'];
     
     // If address type is 'other', customAddressName is also required
     if (address.addressType === 'other') {
@@ -197,6 +237,14 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
       return false;
     }
     
+    // Email validation (optional field, but if provided must be valid)
+    if (address.email && address.email.trim() !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(address.email)) {
+        return false;
+      }
+    }
+    
     return true;
   };
 
@@ -206,13 +254,24 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
       return 'Please enter a name to save this address as (e.g., "Mom\'s House")';
     }
     
+    // Check email validation
+    if (address.email && address.email.trim() !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(address.email)) {
+        return 'Please enter a valid email address';
+      }
+    }
+    
     // Check other required fields
-    const requiredFields = ['name', 'phone', 'doorNo', 'pincode'];
+    const requiredFields = ['name', 'phone', 'doorNo', 'city', 'pincode'];
     for (const field of requiredFields) {
       const value = address[field as keyof Address];
       if (!value || value.toString().trim() === '') {
         if (field === 'name') {
           return 'Please enter the recipient\'s full name';
+        }
+        if (field === 'city') {
+          return 'Please enter the city';
         }
         return `Please fill in the ${field} field`;
       }
@@ -235,6 +294,9 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
     const parts = [address.doorNo];
     if (address.landmark) {
       parts.push(`Near ${address.landmark}`);
+    }
+    if (address.city) {
+      parts.push(address.city);
     }
     return parts.join(', ');
   };
@@ -308,6 +370,9 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                         <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
                           <span className="font-medium">{address.name}</span>
                           <span className="text-sm text-gray-600">{address.phone}</span>
+                          {address.email && (
+                            <span className="text-sm text-blue-600">{address.email}</span>
+                          )}
                           {address.isDefault && (
                             <Badge variant="secondary" className="text-xs self-start sm:self-auto">
                               Default
@@ -432,6 +497,23 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
             </div>
             
             <div>
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                value={editingAddress ? (editingAddress.email || '') : newAddress.email}
+                onChange={(e) => {
+                  if (editingAddress) {
+                    setEditingAddress({ ...editingAddress, email: e.target.value });
+                  } else {
+                    setNewAddress({ ...newAddress, email: e.target.value });
+                  }
+                }}
+                placeholder="Enter email address (optional)"
+              />
+            </div>
+            
+            <div>
               <Label htmlFor="doorNo">Door No/Flat No/Building Name *</Label>
               <Input
                 id="doorNo"
@@ -449,6 +531,22 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="city">City *</Label>
+                <Input
+                  id="city"
+                  value={editingAddress ? (editingAddress.city || '') : newAddress.city}
+                  onChange={(e) => {
+                    if (editingAddress) {
+                      setEditingAddress({ ...editingAddress, city: e.target.value });
+                    } else {
+                      setNewAddress({ ...newAddress, city: e.target.value });
+                    }
+                  }}
+                  placeholder="Enter city"
+                  required
+                />
+              </div>
               <div>
                 <Label htmlFor="pincode">Pincode *</Label>
                 <Input

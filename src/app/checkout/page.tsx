@@ -16,12 +16,18 @@ import { isUserAuthenticated, getCurrentUser } from '@/lib/auth';
 import Link from 'next/link';
 
 interface ShippingAddress {
+  id?: string;
   name: string;
   phone: string;
-  address: string;
+  email?: string;
+  doorNo: string;
   city: string;
-  state: string;
   pincode: string;
+  landmark: string;
+  addressType: 'home' | 'office' | 'other';
+  customAddressName?: string;
+  isDefault?: boolean;
+  createdAt?: string;
 }
 
 export default function CheckoutPage() {
@@ -76,6 +82,23 @@ export default function CheckoutPage() {
     };
   }, [router]);
 
+  // Debug validation state - moved to top with other hooks
+  useEffect(() => {
+    const isValid = validateForm();
+    console.log('Validation state changed:', {
+      hasShippingAddress: !!shippingAddress,
+      isValid,
+      shippingAddress: shippingAddress ? {
+        name: shippingAddress.name,
+        phone: shippingAddress.phone,
+        email: shippingAddress.email,
+        doorNo: shippingAddress.doorNo,
+        city: shippingAddress.city,
+        pincode: shippingAddress.pincode
+      } : null
+    });
+  }, [shippingAddress]);
+
   if (items.length === 0) {
     return (
       <MainLayout>
@@ -117,16 +140,55 @@ export default function CheckoutPage() {
 
   const handleAddressSelect = (address: ShippingAddress) => {
     console.log('Address selected:', address);
+    console.log('Address validation check:', {
+      hasName: !!address.name,
+      hasPhone: !!address.phone,
+      hasEmail: !!address.email,
+      hasDoorNo: !!address.doorNo,
+      hasCity: !!address.city,
+      hasPincode: !!address.pincode,
+      phoneValid: address.phone && address.phone.startsWith('+91') && address.phone.length >= 5,
+      pincodeValid: address.pincode && /^\d{6}$/.test(address.pincode)
+    });
     setShippingAddress(address);
   };
 
-  const validateForm = (): boolean => {
-    if (!shippingAddress) return false;
-    return Object.values(shippingAddress).every(value => {
-      if (value === undefined || value === null) return false;
-      return value.toString().trim() !== '';
-    });
-  };
+  // Use function declaration instead of const to make it hoisted
+  function validateForm(): boolean {
+    console.log('Validating form with shippingAddress:', shippingAddress);
+    
+    if (!shippingAddress) {
+      console.log('Validation failed: No shipping address');
+      return false;
+    }
+    
+    // Check required fields for the new address structure
+    const requiredFields = ['name', 'phone', 'doorNo', 'city', 'pincode'];
+    
+    for (const field of requiredFields) {
+      const value = shippingAddress[field as keyof ShippingAddress];
+      console.log(`Checking field ${field}:`, value);
+      if (!value || value.toString().trim() === '') {
+        console.log(`Validation failed: Field ${field} is empty`);
+        return false;
+      }
+    }
+    
+    // Additional validation for phone format
+    if (!shippingAddress.phone.startsWith('+91') || shippingAddress.phone.length < 5) {
+      console.log('Validation failed: Invalid phone format', shippingAddress.phone);
+      return false;
+    }
+    
+    // Pincode must be 6 digits
+    if (!/^\d{6}$/.test(shippingAddress.pincode)) {
+      console.log('Validation failed: Invalid pincode format', shippingAddress.pincode);
+      return false;
+    }
+    
+    console.log('Validation passed');
+    return true;
+  }
 
   const handlePlaceOrder = async () => {
     if (!validateForm()) {
@@ -147,12 +209,25 @@ export default function CheckoutPage() {
       console.log('Cart items:', items);
 
       // Validate shipping address before sending
-      if (!shippingAddress || !shippingAddress.name || !shippingAddress.phone || !shippingAddress.address) {
+      if (!shippingAddress || !shippingAddress.name || !shippingAddress.phone || !shippingAddress.doorNo) {
         console.error('Invalid shipping address:', shippingAddress);
         throw new Error('Please select a valid shipping address');
       }
 
       console.log('Sending shipping address to API:', shippingAddress);
+
+      // Transform address structure to match API expectations
+      const transformedShippingAddress = {
+        name: shippingAddress.name,
+        phone: shippingAddress.phone,
+        email: shippingAddress.email || '',
+        address: shippingAddress.doorNo,
+        city: shippingAddress.city,
+        state: '', // Not available in new structure
+        pincode: shippingAddress.pincode
+      };
+
+      console.log('Transformed shipping address for API:', transformedShippingAddress);
 
       // Create Razorpay order
       const response = await fetch('/api/payment/create-order', {
@@ -162,9 +237,9 @@ export default function CheckoutPage() {
         },
         body: JSON.stringify({
           items,
-          shippingAddress,
+          shippingAddress: transformedShippingAddress,
           customerInfo: {
-            email: '', // Optional field
+            email: shippingAddress.email || '', // Use address email or fallback to empty
             phone: shippingAddress.phone
           }
         }),
@@ -297,8 +372,10 @@ export default function CheckoutPage() {
   };
 
   const subtotal = getTotalPrice();
-  const shipping = 0; // Free shipping
+  const shippingCost = subtotal >= 999 ? 0 : 99; // Match backend shipping calculation
+  const shipping = shippingCost;
   const total = subtotal + shipping;
+  const remainingForFreeShipping = subtotal < 999 ? 999 - subtotal : 0;
 
   return (
     <MainLayout>
@@ -389,8 +466,26 @@ export default function CheckoutPage() {
                   
                   <div className="flex justify-between text-sm">
                     <span>Shipping</span>
-                    <span className="text-green-600">Free</span>
+                    <div className="text-right">
+                      {shipping === 0 ? (
+                        <>
+                          <span className="text-gray-400 line-through">₹99</span>
+                          <span className="text-green-600 ml-2">Free</span>
+                        </>
+                      ) : (
+                        <span className="text-gray-600">{formatPrice(shipping)}</span>
+                      )}
+                    </div>
                   </div>
+                  
+                  {remainingForFreeShipping > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span></span>
+                      <span className="text-orange-600 font-medium">
+                        Add {formatPrice(remainingForFreeShipping)} more for FREE delivery
+                      </span>
+                    </div>
+                  )}
                   
                   <Separator />
                   
@@ -403,6 +498,11 @@ export default function CheckoutPage() {
                 <p className="text-xs text-gray-500 text-center mt-2">
                   By placing this order, you agree to our Terms & Conditions
                 </p>
+                {shipping > 0 && (
+                  <p className="text-xs text-green-600 text-center mt-1">
+                    Free shipping on orders above {formatPrice(999)}
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>

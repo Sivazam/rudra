@@ -1,162 +1,94 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
-import connectDB from '@/lib/mongodb';
-import { Product } from '@/lib/models';
+import { firestoreService, storageService } from '@/lib/firebase';
 
-// JWT secret handling with error prevention
-const getJwtSecret = (): string => {
-  try {
-    const secret = process.env.JWT_SECRET || 'your-secret-key';
-    if (typeof secret !== 'string') {
-      console.error('JWT_SECRET is not a string, using fallback');
-      return 'your-secret-key';
-    }
-    return secret;
-  } catch (error) {
-    console.error('Error accessing JWT_SECRET:', error);
-    return 'your-secret-key';
-  }
-};
-
-// Buffer-based secret handling to avoid instanceof issues
-const getSecretBuffer = (): Buffer => {
-  const secret = getJwtSecret();
-  try {
-    return Buffer.from(secret);
-  } catch (error) {
-    console.error('Error creating buffer from secret:', error);
-    return Buffer.from('your-secret-key');
-  }
-};
-
-async function verifyAdmin(request: NextRequest) {
-  const token = request.cookies.get('auth-token')?.value;
-  if (!token) {
-    return null;
-  }
-
-  try {
-    // Try multiple verification approaches
-    try {
-      const secretBuffer = getSecretBuffer();
-      return jwt.verify(token, secretBuffer);
-    } catch (error) {
-      console.warn('Buffer verification failed, trying string approach');
-      const secretString = getJwtSecret();
-      return jwt.verify(token, secretString, { algorithms: ['HS256'] });
-    }
-  } catch (error) {
-    return null;
-  }
-}
-
+// GET /api/admin/products - Get all products
 export async function GET(request: NextRequest) {
   try {
-    const admin = await verifyAdmin(request);
-    if (!admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    await connectDB();
-
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const search = searchParams.get('search');
-
-    let query: any = {};
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { deity: { $regex: search, $options: 'i' } }
-      ];
-    }
-
-    const skip = (page - 1) * limit;
-
-    const products = await Product.find(query)
-      .populate('category', 'name')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
-
-    const total = await Product.countDocuments(query);
-
+    console.log('Admin API: Getting all products');
+    
+    const products = await firestoreService.getAll('products', {
+      orderBy: { field: 'createdAt', direction: 'desc' }
+    });
+    
+    console.log(`Admin API: Found ${products.length} products`);
+    
     return NextResponse.json({
-      products,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
+      success: true,
+      data: products
     });
   } catch (error) {
-    console.error('Error fetching admin products:', error);
+    console.error('Admin API: Error getting products:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch products' },
+      { success: false, error: 'Failed to fetch products' },
       { status: 500 }
     );
   }
 }
 
+// POST /api/admin/products - Create new product
 export async function POST(request: NextRequest) {
   try {
-    const admin = await verifyAdmin(request);
-    if (!admin) {
+    console.log('Admin API: Creating new product');
+    
+    const formData = await request.formData();
+    
+    // Extract basic product data
+    const name = formData.get('name') as string;
+    const deity = formData.get('deity') as string;
+    const description = formData.get('description') as string;
+    const category = formData.get('category') as string;
+    const status = formData.get('status') as string;
+    const isBestseller = formData.get('isBestseller') === 'true';
+    const tags = JSON.parse(formData.get('tags') as string || '[]');
+    const variants = JSON.parse(formData.get('variants') as string || '[]');
+    
+    if (!name || !deity || !description || !category) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const {
-      name,
-      slug,
-      category,
-      description,
-      spiritualMeaning,
-      deity,
-      images,
-      metadata,
-      status
-    } = await request.json();
-
-    if (!name || !slug || !category || !description || !deity || !images || !metadata) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
+        { success: false, error: 'Name, deity, description, and category are required' },
         { status: 400 }
       );
     }
-
-    await connectDB();
-
-    const product = new Product({
+    
+    // Handle image uploads
+    const images = formData.getAll('images') as File[];
+    let imageUrls: string[] = [];
+    
+    if (images.length > 0) {
+      console.log(`Admin API: Uploading ${images.length} images`);
+      imageUrls = await storageService.uploadFiles(images, 'products/rudra');
+    }
+    
+    // Create product data
+    const productData = {
       name,
-      slug,
-      category,
-      description,
-      spiritualMeaning,
       deity,
-      images,
-      metadata,
-      status: status || 'active'
-    });
-
-    await product.save();
-
-    return NextResponse.json(
-      { message: 'Product created successfully', product },
-      { status: 201 }
-    );
+      description,
+      category,
+      image: imageUrls[0] || '',
+      images: imageUrls,
+      variants: variants.map((v: any) => ({
+        ...v,
+        id: v.id || Date.now().toString() + Math.random()
+      })),
+      tags,
+      status,
+      isBestseller,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    const productId = await firestoreService.create('products', productData);
+    
+    console.log(`Admin API: Product created with ID ${productId}`);
+    
+    return NextResponse.json({
+      success: true,
+      data: { id: productId, ...productData }
+    }, { status: 201 });
   } catch (error) {
-    console.error('Error creating product:', error);
+    console.error('Admin API: Error creating product:', error);
     return NextResponse.json(
-      { error: 'Failed to create product' },
+      { success: false, error: 'Failed to create product' },
       { status: 500 }
     );
   }

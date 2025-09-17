@@ -70,6 +70,13 @@ export function SlideInCart() {
     };
   };
 
+  // Calculate shipping costs and totals
+  const subtotal = getTotalPrice();
+  const shippingCost = subtotal >= 999 ? 0 : 99;
+  const shipping = shippingCost;
+  const total = subtotal + shipping;
+  const remainingForFreeShipping = subtotal < 999 ? 999 - subtotal : 0;
+
   const handleProceedToCheckout = () => {
     console.log('handleProceedToCheckout called');
     console.log('isUserAuthenticated:', isUserAuthenticated());
@@ -232,16 +239,33 @@ export function SlideInCart() {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span style={{ color: '#6b7280' }}>Subtotal</span>
-                  <span style={{ color: '#755e3e' }}>₹{getTotalPrice().toLocaleString()}</span>
+                  <span style={{ color: '#755e3e' }}>₹{subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span style={{ color: '#6b7280' }}>Shipping</span>
-                  <span style={{ color: 'rgba(160,82,16,255)' }}>Free</span>
+                  <div className="text-right">
+                    {shipping === 0 ? (
+                      <>
+                        <span className="text-gray-400 line-through text-xs">₹99</span>
+                        <span className="text-green-600 ml-1 text-xs">Free</span>
+                      </>
+                    ) : (
+                      <span style={{ color: '#6b7280' }}>₹{shipping.toLocaleString()}</span>
+                    )}
+                  </div>
                 </div>
+                {remainingForFreeShipping > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span></span>
+                    <span className="text-orange-600 font-medium text-xs">
+                      Add ₹{remainingForFreeShipping.toLocaleString()} more for FREE delivery
+                    </span>
+                  </div>
+                )}
                 <Separator />
                 <div className="flex justify-between font-semibold text-base">
                   <span style={{ color: '#755e3e' }}>Total</span>
-                  <span style={{ color: '#755e3e' }}>₹{getTotalPrice().toLocaleString()}</span>
+                  <span style={{ color: '#755e3e' }}>₹{total.toLocaleString()}</span>
                 </div>
               </div>
               

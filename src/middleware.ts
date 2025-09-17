@@ -34,12 +34,13 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Protected routes
-  const protectedRoutes = ['/admin'];
+  const protectedRoutes = ['/admin/', '/admin'];
   const authRoutes = ['/auth/login', '/auth/verify'];
+  const adminRoutes = ['/admin/login'];
 
   // Check if the path is protected
   const isProtectedRoute = protectedRoutes.some(route => 
-    pathname.startsWith(route)
+    pathname === route || (route.endsWith('/') && pathname.startsWith(route))
   );
 
   // Check if the path is auth route
@@ -47,9 +48,36 @@ export function middleware(request: NextRequest) {
     pathname.startsWith(route)
   );
 
+  // Check if the path is admin route
+  const isAdminRoute = adminRoutes.some(route => 
+    pathname.startsWith(route)
+  );
+
   // If accessing protected route without token, redirect to login
   if (isProtectedRoute && !token) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
+  }
+
+  // Admin authentication check
+  if (isProtectedRoute && token) {
+    try {
+      // Check if it's an admin route (excluding login)
+      if (pathname.startsWith('/admin/') || pathname === '/admin') {
+        // For now, we'll use a simple token check
+        // In production, you should verify admin claims or check admin role in token
+        const adminToken = request.cookies.get('admin-auth')?.value;
+        
+        if (!adminToken) {
+          console.log('Middleware: Admin token not found, redirecting to admin login');
+          return NextResponse.redirect(new URL('/admin/login', request.url));
+        }
+        
+        console.log('Middleware: Admin token verified');
+      }
+    } catch (error) {
+      console.log('Middleware: Admin token verification failed, redirecting to admin login');
+      return NextResponse.redirect(new URL('/admin/login', request.url));
+    }
   }
 
   // If accessing auth route with token, redirect to home

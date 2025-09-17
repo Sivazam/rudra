@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Shield, ArrowLeft } from 'lucide-react';
 import { MainLayout } from '@/components/store/MainLayout';
+import { isUserAuthenticated } from '@/lib/auth';
 
 export default function VerifyPage() {
   const [otp, setOtp] = useState('');
@@ -20,6 +21,21 @@ export default function VerifyPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Check if user is already authenticated
+    const checkAuth = () => {
+      const authenticated = isUserAuthenticated();
+      console.log('Verify page - User authentication status:', authenticated);
+      
+      if (authenticated) {
+        console.log('User already authenticated, redirecting to home');
+        router.push('/');
+        return;
+      }
+    };
+
+    // Check authentication first
+    checkAuth();
+
     const storedPhone = sessionStorage.getItem('phoneNumber');
     console.log('Retrieved phone from session storage:', storedPhone);
     
