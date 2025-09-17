@@ -3,7 +3,8 @@ import { CategoryService } from './categoryService';
 
 export interface Variant {
   id: string;
-  name: string;
+  name?: string;
+  label?: string;
   price: number;
   originalPrice?: number;
   discount: number;

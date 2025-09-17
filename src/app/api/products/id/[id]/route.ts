@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ProductService } from '@/lib/services/productService';
-import VariantService from '@/lib/services/variantService';
 
 export async function GET(
   request: NextRequest,
@@ -19,31 +18,28 @@ export async function GET(
       );
     }
 
-    // Try to get variants for the product, but handle errors gracefully
+    // Use variants from the product document
     let variants = [];
     let defaultVariant = null;
     
-    try {
-      const variantServiceInstance = new VariantService();
-      variants = await variantServiceInstance.getVariantsByProductId(productId);
-      const availableVariants = variants.filter(v => v.inventory > 0);
-      defaultVariant = availableVariants.find(v => v.isDefault) || availableVariants[0] || null;
-      
+    if (product.variants && product.variants.length > 0) {
       // Transform variants to match the expected format
-      variants = availableVariants.map(variant => ({
+      variants = product.variants.map(variant => ({
         id: variant.id,
-        name: variant.label,
+        name: variant.name || variant.label, // Handle both name and label properties
         price: variant.price,
-        originalPrice: variant.price, // No original price in variant
+        originalPrice: variant.originalPrice || variant.price,
         discount: variant.discount,
-        stock: variant.inventory,
-        sku: variant.sku,
-        inventory: variant.inventory,
-        isDefault: variant.isDefault
+        stock: variant.stock,
+        sku: variant.sku || '',
+        inventory: variant.stock,
+        isDefault: variant.isDefault || false
       }));
-    } catch (error) {
-      console.warn('Error fetching variants, using product data:', error);
-      // If variants fail to load, create a default variant from product data
+      
+      // Find default variant
+      defaultVariant = variants.find(v => v.isDefault) || variants[0] || null;
+    } else {
+      // If no variants, create a default variant from product data
       variants = [{
         id: `default-${productId}`,
         name: 'Default',

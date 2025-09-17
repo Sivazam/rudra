@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { firestoreService, storageService } from '@/lib/firebase';
+import { CategoryService } from '@/lib/services/categoryService';
 
 // GET /api/admin/products - Get all products
 export async function GET(request: NextRequest) {
@@ -28,9 +29,10 @@ export async function GET(request: NextRequest) {
 // POST /api/admin/products - Create new product
 export async function POST(request: NextRequest) {
   try {
-    console.log('Admin API: Creating new product');
+    console.log('Admin API: Creating new product - START');
     
     const formData = await request.formData();
+    console.log('Admin API: FormData parsed successfully');
     
     // Extract basic product data
     const name = formData.get('name') as string;
@@ -47,38 +49,60 @@ export async function POST(request: NextRequest) {
     const wearGuide = formData.get('wearGuide') ? JSON.parse(formData.get('wearGuide') as string) : undefined;
     const careGuide = formData.get('careGuide') ? JSON.parse(formData.get('careGuide') as string) : undefined;
     
+    console.log('Admin API: Basic data extracted - Name:', name, 'Category:', category);
+    
     if (!name || !deity || !description || !category) {
+      console.log('Admin API: Validation failed - missing required fields');
       return NextResponse.json(
         { success: false, error: 'Name, deity, description, and category are required' },
         { status: 400 }
       );
     }
     
-    // Handle image uploads
-    const images = formData.getAll('images') as File[];
+    // Handle image uploads with try-catch for better error handling
+    const images = formData.getAll('newImages') as File[];
     let imageUrls: string[] = [];
     
     if (images.length > 0) {
-      console.log(`Admin API: Uploading ${images.length} images`);
-      imageUrls = await storageService.uploadFiles(images, 'products/rudra');
+      try {
+        console.log(`Admin API: Uploading ${images.length} images`);
+        imageUrls = await storageService.uploadFiles(images, 'products/rudra');
+        console.log('Admin API: Images uploaded successfully');
+      } catch (uploadError) {
+        console.error('Admin API: Error uploading images:', uploadError);
+        return NextResponse.json(
+          { success: false, error: 'Failed to upload images: ' + (uploadError as Error).message },
+          { status: 500 }
+        );
+      }
     }
     
-    // Handle guide image uploads
+    // Handle guide image uploads with try-catch
     const wearGuideImageFile = formData.get('wearGuideImage') as File;
     const careGuideImageFile = formData.get('careGuideImage') as File;
     let wearGuideImageUrl = '';
     let careGuideImageUrl = '';
     
     if (wearGuideImageFile && wearGuideImageFile.size > 0) {
-      console.log('Admin API: Uploading wear guide image');
-      const uploadedUrls = await storageService.uploadFiles([wearGuideImageFile], 'products/guides');
-      wearGuideImageUrl = uploadedUrls[0];
+      try {
+        console.log('Admin API: Uploading wear guide image');
+        const uploadedUrls = await storageService.uploadFiles([wearGuideImageFile], 'products/guides');
+        wearGuideImageUrl = uploadedUrls[0];
+      } catch (uploadError) {
+        console.error('Admin API: Error uploading wear guide image:', uploadError);
+        // Don't fail the whole request for guide images
+      }
     }
     
     if (careGuideImageFile && careGuideImageFile.size > 0) {
-      console.log('Admin API: Uploading care guide image');
-      const uploadedUrls = await storageService.uploadFiles([careGuideImageFile], 'products/guides');
-      careGuideImageUrl = uploadedUrls[0];
+      try {
+        console.log('Admin API: Uploading care guide image');
+        const uploadedUrls = await storageService.uploadFiles([careGuideImageFile], 'products/guides');
+        careGuideImageUrl = uploadedUrls[0];
+      } catch (uploadError) {
+        console.error('Admin API: Error uploading care guide image:', uploadError);
+        // Don't fail the whole request for guide images
+      }
     }
     
     // Update wearGuide and careGuide with image URLs
@@ -89,20 +113,41 @@ export async function POST(request: NextRequest) {
       careGuide.image = careGuideImageUrl;
     }
     
-    // Create product data
-    const productData = {
+    // Calculate total stock from variants
+    const totalStock = variants.reduce((sum, variant) => sum + (variant.stock || 0), 0);
+    
+    // Calculate main price, original price, and discount from first variant
+    const mainPrice = variants.length > 0 ? variants[0].price : 0;
+    const mainOriginalPrice = variants.length > 0 ? variants[0].originalPrice : null;
+    const mainDiscount = variants.length > 0 ? variants[0].discount : 0;
+
+    // Get category name
+    const categoryData = await CategoryService.getById(category);
+    const categoryName = categoryData ? categoryData.name : 'Unknown Category';
+
+    // Generate unique SKUs for variants that don't have them
+    const variantsWithSkus = variants.map((v: any, index: number) => ({
+      ...v,
+      id: v.id || Date.now().toString() + Math.random(),
+      sku: v.sku || `SKU${index + 1}`
+    }));
+
+    // Create product data with proper handling of undefined/null values
+    const productData: any = {
       name,
       deity,
       description,
       spiritualMeaning,
       origin,
       category,
+      categoryName, // Add category name for frontend compatibility
+      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), // Add slug for frontend compatibility
       image: imageUrls[0] || '',
       images: imageUrls,
-      variants: variants.map((v: any) => ({
-        ...v,
-        id: v.id || Date.now().toString() + Math.random()
-      })),
+      price: mainPrice, // Add price for frontend compatibility
+      discount: mainDiscount, // Add discount for frontend compatibility
+      stock: totalStock, // Add stock for frontend compatibility
+      variants: variantsWithSkus,
       tags,
       specifications,
       wearGuide,
@@ -112,7 +157,13 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
+
+    // Only add originalPrice if it's not null/undefined
+    if (mainOriginalPrice !== null && mainOriginalPrice !== undefined && mainOriginalPrice > 0) {
+      productData.originalPrice = mainOriginalPrice;
+    }
     
+    console.log('Admin API: Creating product in Firestore...');
     const productId = await firestoreService.create('products', productData);
     
     console.log(`Admin API: Product created with ID ${productId}`);
@@ -123,8 +174,13 @@ export async function POST(request: NextRequest) {
     }, { status: 201 });
   } catch (error) {
     console.error('Admin API: Error creating product:', error);
+    console.error('Admin API: Error details:', {
+      message: (error as Error).message,
+      stack: (error as Error).stack,
+      name: (error as Error).name
+    });
     return NextResponse.json(
-      { success: false, error: 'Failed to create product' },
+      { success: false, error: 'Failed to create product: ' + (error as Error).message },
       { status: 500 }
     );
   }
@@ -229,20 +285,49 @@ export async function PUT(request: NextRequest) {
       .filter((url: string) => !imagesToDelete.includes(url))
       .concat(newImageUrls);
     
-    // Create product data
-    const productData = {
+    // Calculate total stock from variants if variants are being updated
+    let totalStock = existingProduct.stock || 0;
+    let mainPrice = existingProduct.price || 0;
+    let mainOriginalPrice = existingProduct.originalPrice;
+    let mainDiscount = existingProduct.discount || 0;
+    
+    if (variants && variants.length > 0) {
+      totalStock = variants.reduce((sum, variant) => sum + (variant.stock || 0), 0);
+      mainPrice = variants[0].price;
+      mainOriginalPrice = variants[0].originalPrice;
+      mainDiscount = variants[0].discount;
+    }
+
+    // Get category name if category is being updated
+    let categoryName = existingProduct.categoryName || 'Unknown Category';
+    if (category && category !== existingProduct.category) {
+      const categoryData = await CategoryService.getById(category);
+      categoryName = categoryData ? categoryData.name : 'Unknown Category';
+    }
+
+    // Generate unique SKUs for variants that don't have them
+    const variantsWithSkus = variants.map((v: any, index: number) => ({
+      ...v,
+      id: v.id || Date.now().toString() + Math.random(),
+      sku: v.sku || `SKU${index + 1}`
+    }));
+
+    // Create product data with proper handling of undefined/null values
+    const productData: any = {
       name,
       deity,
       description,
       spiritualMeaning,
       origin,
       category,
+      categoryName, // Add category name for frontend compatibility
+      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'), // Add slug for frontend compatibility
       image: updatedImages[0] || existingProduct.image,
       images: updatedImages,
-      variants: variants.map((v: any) => ({
-        ...v,
-        id: v.id || Date.now().toString() + Math.random()
-      })),
+      price: mainPrice, // Add price for frontend compatibility
+      discount: mainDiscount, // Add discount for frontend compatibility
+      stock: totalStock, // Add stock for frontend compatibility
+      variants: variantsWithSkus,
       tags,
       specifications,
       wearGuide,
@@ -251,6 +336,11 @@ export async function PUT(request: NextRequest) {
       isBestseller,
       updatedAt: new Date().toISOString()
     };
+
+    // Only add originalPrice if it's not null/undefined and greater than 0
+    if (mainOriginalPrice !== null && mainOriginalPrice !== undefined && mainOriginalPrice > 0) {
+      productData.originalPrice = mainOriginalPrice;
+    }
     
     await firestoreService.update('products', id, productData);
     

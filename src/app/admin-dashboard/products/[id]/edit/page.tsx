@@ -150,6 +150,30 @@ export default function EditProductPage() {
     });
   };
 
+  const handleWearGuideImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setWearGuideImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setWearGuideImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCareGuideImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setCareGuideImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setCareGuideImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const removeImage = (index: number) => {
     const imageToRemove = images[index];
     if (!imageToRemove.startsWith('data:')) {
@@ -223,6 +247,84 @@ export default function EditProductPage() {
     setFormData(prev => ({
       ...prev,
       specifications: prev.specifications?.filter((_, i) => i !== index) || []
+    }));
+  };
+
+  const addWearGuideStep = () => {
+    if (newWearGuideStep.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        wearGuide: {
+          title: prev.wearGuide?.title || 'Rudraksha Wear Guide',
+          steps: [...(prev.wearGuide?.steps || []), newWearGuideStep.trim()],
+          image: prev.wearGuide?.image || wearGuideImage
+        }
+      }));
+      setNewWearGuideStep('');
+    }
+  };
+
+  const removeWearGuideStep = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      wearGuide: prev.wearGuide ? {
+        ...prev.wearGuide,
+        steps: prev.wearGuide.steps.filter((_, i) => i !== index)
+      } : undefined
+    }));
+  };
+
+  const updateWearGuideTitle = (title: string) => {
+    setFormData(prev => ({
+      ...prev,
+      wearGuide: prev.wearGuide ? {
+        ...prev.wearGuide,
+        title,
+        image: prev.wearGuide?.image || wearGuideImage
+      } : {
+        title,
+        steps: [],
+        image: wearGuideImage
+      }
+    }));
+  };
+
+  const addCareGuideStep = () => {
+    if (newCareGuideStep.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        careGuide: {
+          title: prev.careGuide?.title || 'Rudraksha Care Guide',
+          steps: [...(prev.careGuide?.steps || []), newCareGuideStep.trim()],
+          image: prev.careGuide?.image || careGuideImage
+        }
+      }));
+      setNewCareGuideStep('');
+    }
+  };
+
+  const removeCareGuideStep = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      careGuide: prev.careGuide ? {
+        ...prev.careGuide,
+        steps: prev.careGuide.steps.filter((_, i) => i !== index)
+      } : undefined
+    }));
+  };
+
+  const updateCareGuideTitle = (title: string) => {
+    setFormData(prev => ({
+      ...prev,
+      careGuide: prev.careGuide ? {
+        ...prev.careGuide,
+        title,
+        image: prev.careGuide?.image || careGuideImage
+      } : {
+        title,
+        steps: [],
+        image: careGuideImage
+      }
     }));
   };
 
@@ -501,6 +603,243 @@ export default function EditProductPage() {
                 <Plus className="h-4 w-4 mr-2" />
                 Add Variant
               </Button>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Specifications</CardTitle>
+              <CardDescription>
+                Add key specifications as bullet points
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  value={newSpecification}
+                  onChange={(e) => setNewSpecification(e.target.value)}
+                  placeholder="Add a specification..."
+                  onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecification())}
+                />
+                <Button type="button" onClick={addSpecification}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              {formData.specifications && formData.specifications.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Current Specifications</Label>
+                  <div className="space-y-2">
+                    {formData.specifications.map((spec, index) => (
+                      <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                        <span className="flex-1 text-sm">• {spec}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeSpecification(index)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Wear Guide</CardTitle>
+              <CardDescription>
+                Add wear guide with image and step-by-step instructions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="wearGuideTitle">Guide Title</Label>
+                <Input
+                  id="wearGuideTitle"
+                  value={formData.wearGuide?.title || 'Rudraksha Wear Guide'}
+                  onChange={(e) => updateWearGuideTitle(e.target.value)}
+                  placeholder="e.g., Rudraksha Wear Guide"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Guide Image</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  {wearGuideImage ? (
+                    <div className="space-y-2">
+                      <img
+                        src={wearGuideImage}
+                        alt="Wear Guide"
+                        className="max-h-32 mx-auto object-contain rounded-lg"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setWearGuideImage('');
+                          setWearGuideImageFile(null);
+                        }}
+                      >
+                        Remove Image
+                      </Button>
+                    </div>
+                  ) : (
+                    <div>
+                      <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                      <Label htmlFor="wear-guide-image-upload" className="cursor-pointer">
+                        <span className="text-sm text-gray-600">Click to upload wear guide image</span>
+                        <Input
+                          id="wear-guide-image-upload"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleWearGuideImageUpload}
+                          className="hidden"
+                        />
+                      </Label>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Steps</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={newWearGuideStep}
+                    onChange={(e) => setNewWearGuideStep(e.target.value)}
+                    placeholder="Add a step..."
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addWearGuideStep())}
+                  />
+                  <Button type="button" onClick={addWearGuideStep}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {formData.wearGuide?.steps && formData.wearGuide.steps.length > 0 && (
+                  <div className="space-y-2 mt-2">
+                    {formData.wearGuide.steps.map((step, index) => (
+                      <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
+                        <span className="flex-shrink-0 w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xs font-medium">
+                          {index + 1}
+                        </span>
+                        <span className="flex-1 text-sm">{step}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeWearGuideStep(index)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Care Guide</CardTitle>
+              <CardDescription>
+                Add care guide with image and step-by-step instructions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="careGuideTitle">Guide Title</Label>
+                <Input
+                  id="careGuideTitle"
+                  value={formData.careGuide?.title || 'Rudraksha Care Guide'}
+                  onChange={(e) => updateCareGuideTitle(e.target.value)}
+                  placeholder="e.g., Rudraksha Care Guide"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Guide Image</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  {careGuideImage ? (
+                    <div className="space-y-2">
+                      <img
+                        src={careGuideImage}
+                        alt="Care Guide"
+                        className="max-h-32 mx-auto object-contain rounded-lg"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setCareGuideImage('');
+                          setCareGuideImageFile(null);
+                        }}
+                      >
+                        Remove Image
+                      </Button>
+                    </div>
+                  ) : (
+                    <div>
+                      <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                      <Label htmlFor="care-guide-image-upload" className="cursor-pointer">
+                        <span className="text-sm text-gray-600">Click to upload care guide image</span>
+                        <Input
+                          id="care-guide-image-upload"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleCareGuideImageUpload}
+                          className="hidden"
+                        />
+                      </Label>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Steps</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={newCareGuideStep}
+                    onChange={(e) => setNewCareGuideStep(e.target.value)}
+                    placeholder="Add a step..."
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCareGuideStep())}
+                  />
+                  <Button type="button" onClick={addCareGuideStep}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {formData.careGuide?.steps && formData.careGuide.steps.length > 0 && (
+                  <div className="space-y-2 mt-2">
+                    {formData.careGuide.steps.map((step, index) => (
+                      <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
+                        <span className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium">
+                          {index + 1}
+                        </span>
+                        <span className="flex-1 text-sm">{step}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeCareGuideStep(index)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>

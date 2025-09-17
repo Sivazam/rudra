@@ -23,7 +23,8 @@ interface Product {
   hasVariants?: boolean;
   variants?: Array<{
     id: string;
-    name: string;
+    name?: string;
+    label?: string;
     price: number;
     originalPrice?: number;
     discount: number;
@@ -51,7 +52,7 @@ const transformVariants = (product: Product) => {
   }
   
   return product.variants.map(variant => ({
-    label: variant.name,
+    label: variant.name || variant.label || 'Unnamed Variant',
     price: variant.price,
     sku: variant.sku,
     discount: variant.discount,
@@ -142,7 +143,7 @@ export function ProductCard({ product }: ProductCardProps) {
     setTimeout(() => {
       addItem({
         productId: product.id,
-        variantId: variant.sku,
+        variantId: variant.label, // Use variant.label instead of variant.sku since SKU is empty
         name: product.name,
         deity: product.deity,
         image: product.image,
@@ -239,9 +240,10 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   const handleRepeat = () => {
-    // Simply increment the first item's quantity (standard ecommerce behavior)
-    if (cartItem) {
-      useCartStore.getState().updateQuantity(cartItem.id, cartItem.quantity + 1);
+    // Increment the most recently added item's quantity
+    if (cartItemsForProduct.length > 0) {
+      const mostRecentItem = cartItemsForProduct[cartItemsForProduct.length - 1];
+      useCartStore.getState().updateQuantity(mostRecentItem.id, mostRecentItem.quantity + 1);
       setShowRepeatDialog(false);
       
       // Open cart after updating quantity
@@ -249,7 +251,7 @@ export function ProductCard({ product }: ProductCardProps) {
       
       toast({
         title: "Quantity updated",
-        description: `${product.name} quantity increased to ${cartItem.quantity + 1}`,
+        description: `${product.name} quantity increased to ${mostRecentItem.quantity + 1}`,
       });
     }
   };

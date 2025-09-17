@@ -16,7 +16,8 @@ interface Category {
 
 interface Variant {
   id: string;
-  name: string;
+  name?: string;
+  label?: string;
   price: number;
   originalPrice?: number;
   discount: number;
@@ -119,6 +120,8 @@ export function DataStoreProvider({ children }: DataStoreProviderProps) {
   const addProduct = async (productData: Omit<Product, 'id' | 'createdAt' | 'slug'>, imageFiles?: File[]) => {
     try {
       await ProductService.create(productData, imageFiles);
+      // Add a small delay to ensure Firestore consistency before refreshing data
+      await new Promise(resolve => setTimeout(resolve, 1000));
       await loadData(); // Refresh data after creation
     } catch (error) {
       console.error('Error adding product:', error);
@@ -129,6 +132,8 @@ export function DataStoreProvider({ children }: DataStoreProviderProps) {
   const updateProduct = async (id: string, productData: Partial<Product>, newImageFiles?: File[], imagesToDelete?: string[]) => {
     try {
       await ProductService.update(id, productData, newImageFiles, imagesToDelete);
+      // Add a small delay to ensure Firestore consistency before refreshing data
+      await new Promise(resolve => setTimeout(resolve, 1000));
       await loadData(); // Refresh data after update
     } catch (error) {
       console.error('Error updating product:', error);
@@ -139,6 +144,8 @@ export function DataStoreProvider({ children }: DataStoreProviderProps) {
   const deleteProduct = async (id: string) => {
     try {
       await ProductService.delete(id);
+      // Add a small delay to ensure Firestore consistency before refreshing data
+      await new Promise(resolve => setTimeout(resolve, 1000));
       await loadData(); // Refresh data after deletion
     } catch (error) {
       console.error('Error deleting product:', error);

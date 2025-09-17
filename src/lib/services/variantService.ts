@@ -40,8 +40,8 @@ class VariantService {
   async getVariantsByProductId(productId: string): Promise<IVariant[]> {
     try {
       return await firestoreService.getAll(this.collection, {
-        where: { field: 'productId', operator: '==', value: productId },
-        orderBy: { field: 'price', direction: 'asc' }
+        where: { field: 'productId', operator: '==', value: productId }
+        // Removed orderBy to avoid index requirement
       });
     } catch (error) {
       console.error('Error getting variants by product:', error);
@@ -52,16 +52,14 @@ class VariantService {
   // Get default variant for product
   async getDefaultVariant(productId: string): Promise<IVariant | null> {
     try {
+      // First get all variants for the product
       const variants = await firestoreService.getAll(this.collection, {
-        where: { 
-          field: 'productId', 
-          operator: '==', 
-          value: productId 
-        },
-        where: { field: 'isDefault', operator: '==', value: true }
+        where: { field: 'productId', operator: '==', value: productId }
       });
       
-      return variants.length > 0 ? variants[0] : null;
+      // Then filter for default variant
+      const defaultVariant = variants.find(v => v.isDefault);
+      return defaultVariant || null;
     } catch (error) {
       console.error('Error getting default variant:', error);
       throw error;
@@ -140,3 +138,4 @@ class VariantService {
 
 export const variantService = new VariantService();
 export default variantService;
+export { VariantService };

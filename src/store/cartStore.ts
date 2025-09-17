@@ -56,7 +56,7 @@ export const useCartStore = create<CartStore>()(
           });
         } else {
           set({
-            items: [...currentItems, { ...item, id: Date.now().toString(), quantity: 1, variantId: item.variant.sku }],
+            items: [...currentItems, { ...item, id: Date.now().toString(), quantity: 1, variantId: item.variant.label }],
           });
         }
       },

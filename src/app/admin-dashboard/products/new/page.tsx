@@ -24,6 +24,7 @@ interface ProductVariant {
   id: string;
   label: string;
   price: number;
+  originalPrice?: number;
   sku: string;
   discount: number;
   stock: number;
@@ -81,7 +82,7 @@ export default function NewProductPage() {
     status: 'draft',
     isBestseller: false,
     variants: [
-      { id: '1', label: 'Standard', price: 0, sku: '', discount: 0, stock: 0 }
+      { id: '1', label: 'Standard', price: 0, originalPrice: undefined, sku: '', discount: 0, stock: 0 }
     ]
   });
 
@@ -150,6 +151,7 @@ export default function NewProductPage() {
       id: Date.now().toString(),
       label: '',
       price: 0,
+      originalPrice: undefined,
       sku: '',
       discount: 0,
       stock: 0
@@ -275,9 +277,19 @@ export default function NewProductPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Form submission started');
     setLoading(true);
 
+    // Basic validation
+    if (!formData.name || !formData.deity || !formData.description || !formData.category) {
+      console.error('Missing required fields:', { name: formData.name, deity: formData.deity, description: formData.description, category: formData.category });
+      alert('Please fill in all required fields (Name, Deity, Description, Category)');
+      setLoading(false);
+      return;
+    }
+
     try {
+      console.log('Creating FormData...');
       const formDataObj = new FormData();
       
       formDataObj.append('name', formData.name);
@@ -316,13 +328,18 @@ export default function NewProductPage() {
         formDataObj.append('careGuideImage', careGuideImageFile);
       }
 
+      console.log('Sending request to /api/admin/products...');
       const response = await fetch('/api/admin/products', {
         method: 'POST',
         body: formDataObj,
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       if (response.ok) {
         const result = await response.json();
+        console.log('Response result:', result);
         if (result.success) {
           router.push('/admin-dashboard/products');
         } else {
@@ -330,12 +347,14 @@ export default function NewProductPage() {
           alert('Failed to create product: ' + result.error);
         }
       } else {
-        console.error('Failed to create product');
-        alert('Failed to create product');
+        console.error('Failed to create product - response not ok');
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        alert('Failed to create product: Server responded with ' + response.status);
       }
     } catch (error) {
       console.error('Error creating product:', error);
-      alert('Failed to create product');
+      alert('Failed to create product: ' + (error as Error).message);
     } finally {
       setLoading(false);
     }
@@ -379,7 +398,11 @@ export default function NewProductPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <form 
+          id="product-form" 
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 xl:grid-cols-3 gap-6"
+        >
           <div className="xl:col-span-2 space-y-6">
             <Card>
               <CardHeader>
@@ -510,7 +533,7 @@ export default function NewProductPage() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                       <div className="space-y-2">
                         <Label>Variant Name *</Label>
                         <Input
@@ -530,6 +553,17 @@ export default function NewProductPage() {
                           min="0"
                           step="0.01"
                           required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Original Price</Label>
+                        <Input
+                          type="number"
+                          value={variant.originalPrice || ''}
+                          onChange={(e) => updateVariant(variant.id, 'originalPrice', e.target.value ? Number(e.target.value) : undefined)}
+                          placeholder="0"
+                          min="0"
+                          step="0.01"
                         />
                       </div>
                       <div className="space-y-2">
@@ -571,6 +605,243 @@ export default function NewProductPage() {
                   <Plus className="h-4 w-4 mr-2" />
                   Add Variant
                 </Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Product Specifications</CardTitle>
+                <CardDescription>
+                  Add key specifications as bullet points
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    value={newSpecification}
+                    onChange={(e) => setNewSpecification(e.target.value)}
+                    placeholder="Add a specification..."
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSpecification())}
+                  />
+                  <Button type="button" onClick={addSpecification}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {formData.specifications && formData.specifications.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Current Specifications</Label>
+                    <div className="space-y-2">
+                      {formData.specifications.map((spec, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                          <span className="flex-1 text-sm">• {spec}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeSpecification(index)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Wear Guide</CardTitle>
+                <CardDescription>
+                  Add wear guide with image and step-by-step instructions
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="wearGuideTitle">Guide Title</Label>
+                  <Input
+                    id="wearGuideTitle"
+                    value={formData.wearGuide?.title || 'Rudraksha Wear Guide'}
+                    onChange={(e) => updateWearGuideTitle(e.target.value)}
+                    placeholder="e.g., Rudraksha Wear Guide"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Guide Image</Label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                    {wearGuideImage ? (
+                      <div className="space-y-2">
+                        <img
+                          src={wearGuideImage}
+                          alt="Wear Guide"
+                          className="max-h-32 mx-auto object-contain rounded-lg"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setWearGuideImage('');
+                            setWearGuideImageFile(null);
+                          }}
+                        >
+                          Remove Image
+                        </Button>
+                      </div>
+                    ) : (
+                      <div>
+                        <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                        <Label htmlFor="wear-guide-image-upload" className="cursor-pointer">
+                          <span className="text-sm text-gray-600">Click to upload wear guide image</span>
+                          <Input
+                            id="wear-guide-image-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleWearGuideImageUpload}
+                            className="hidden"
+                          />
+                        </Label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Steps</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newWearGuideStep}
+                      onChange={(e) => setNewWearGuideStep(e.target.value)}
+                      placeholder="Add a step..."
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addWearGuideStep())}
+                    />
+                    <Button type="button" onClick={addWearGuideStep}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  {formData.wearGuide?.steps && formData.wearGuide.steps.length > 0 && (
+                    <div className="space-y-2 mt-2">
+                      {formData.wearGuide.steps.map((step, index) => (
+                        <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
+                          <span className="flex-shrink-0 w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-xs font-medium">
+                            {index + 1}
+                          </span>
+                          <span className="flex-1 text-sm">{step}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeWearGuideStep(index)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Care Guide</CardTitle>
+                <CardDescription>
+                  Add care guide with image and step-by-step instructions
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="careGuideTitle">Guide Title</Label>
+                  <Input
+                    id="careGuideTitle"
+                    value={formData.careGuide?.title || 'Rudraksha Care Guide'}
+                    onChange={(e) => updateCareGuideTitle(e.target.value)}
+                    placeholder="e.g., Rudraksha Care Guide"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Guide Image</Label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                    {careGuideImage ? (
+                      <div className="space-y-2">
+                        <img
+                          src={careGuideImage}
+                          alt="Care Guide"
+                          className="max-h-32 mx-auto object-contain rounded-lg"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setCareGuideImage('');
+                            setCareGuideImageFile(null);
+                          }}
+                        >
+                          Remove Image
+                        </Button>
+                      </div>
+                    ) : (
+                      <div>
+                        <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                        <Label htmlFor="care-guide-image-upload" className="cursor-pointer">
+                          <span className="text-sm text-gray-600">Click to upload care guide image</span>
+                          <Input
+                            id="care-guide-image-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleCareGuideImageUpload}
+                            className="hidden"
+                          />
+                        </Label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Steps</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={newCareGuideStep}
+                      onChange={(e) => setNewCareGuideStep(e.target.value)}
+                      placeholder="Add a step..."
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addCareGuideStep())}
+                    />
+                    <Button type="button" onClick={addCareGuideStep}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  {formData.careGuide?.steps && formData.careGuide.steps.length > 0 && (
+                    <div className="space-y-2 mt-2">
+                      {formData.careGuide.steps.map((step, index) => (
+                        <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
+                          <span className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium">
+                            {index + 1}
+                          </span>
+                          <span className="flex-1 text-sm">{step}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeCareGuideStep(index)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -650,7 +921,7 @@ export default function NewProductPage() {
               </CardContent>
             </Card>
           </div>
-        </div>
+        </form>
       )}
     </div>
   );

@@ -12,6 +12,16 @@ interface Product {
   reviews: number;
   image: string;
   badge?: string;
+  hasVariants?: boolean;
+  variants?: Array<{
+    id: string;
+    name: string;
+    price: number;
+    originalPrice?: number;
+    discount: number;
+    stock: number;
+    sku: string;
+  }>;
 }
 
 interface ProductGridProps {

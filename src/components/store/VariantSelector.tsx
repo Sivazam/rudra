@@ -19,7 +19,6 @@ interface VariantSelectorProps {
   onClose: () => void;
   variants: Variant[];
   productName: string;
-  productImage?: string;
   onVariantSelect: (variant: Variant) => void;
 }
 
@@ -27,8 +26,7 @@ export function VariantSelector({
   isOpen, 
   onClose, 
   variants, 
-  productName, 
-  productImage,
+  productName,
   onVariantSelect 
 }: VariantSelectorProps) {
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
@@ -41,6 +39,17 @@ export function VariantSelector({
     }
   };
 
+  // Reset selection when drawer closes
+  useEffect(() => {
+    if (!isOpen) {
+      // Don't reset immediately, let the animation complete
+      const timer = setTimeout(() => {
+        setSelectedVariant(null);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
   const formatPrice = (price: number, discount: number = 0) => {
     const discountedPrice = price - (price * discount) / 100;
     return {
@@ -50,15 +59,17 @@ export function VariantSelector({
     };
   };
 
-  // Auto-select first available variant when drawer opens
+  // Auto-select default variant when drawer opens
   useEffect(() => {
     if (isOpen && variants.length > 0) {
       const availableVariants = variants.filter(v => v.inventory > 0);
-      if (availableVariants.length > 0 && !selectedVariant) {
-        setSelectedVariant(availableVariants[0]);
+      if (availableVariants.length > 0) {
+        // Find the default variant, or fall back to first available
+        const defaultVariant = availableVariants.find(v => v.isDefault) || availableVariants[0];
+        setSelectedVariant(defaultVariant);
       }
     }
-  }, [isOpen, variants, selectedVariant]);
+  }, [isOpen]); // Remove selectedVariant from dependencies to avoid conflicts
 
   const availableVariants = variants.filter(v => v.inventory > 0);
   const hasAvailableVariants = availableVariants.length > 0;
@@ -72,19 +83,6 @@ export function VariantSelector({
         </DrawerHeader>
         
         <div className="flex-1 overflow-hidden flex flex-col">
-          {/* Product Image */}
-          {productImage && (
-            <div className="px-6 py-4">
-              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                <img
-                  src={productImage}
-                  alt={productName}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-          )}
-          
           {/* Variant Options */}
           <div className="flex-1 overflow-y-auto px-6">
             <div className="space-y-4">
@@ -112,14 +110,10 @@ export function VariantSelector({
                             ? 'border-gray-200 bg-gray-50 cursor-not-allowed'
                             : 'border-gray-200 hover:border-orange-400'
                         }`}
-                        style={{
-                          borderColor: isSelected ? 'rgba(156,86,26,255)' : isOutOfStock ? '#d1d5db' : '#d1d5db',
-                          backgroundColor: isSelected ? '#fef3c7' : isOutOfStock ? '#f9fafb' : 'white'
-                        }}
                       >
                         <div className="space-y-1">
                           <div className="flex items-center justify-between">
-                            <span className={`font-medium text-xs ${isOutOfStock ? 'text-gray-400' : ''}`} style={{ color: isOutOfStock ? '#9ca3af' : '#755e3e' }}>
+                            <span className={`font-medium text-xs ${isOutOfStock ? 'text-gray-400' : 'text-amber-900'}`}>
                               {variant.label}
                             </span>
                             <div className="flex space-x-1">
@@ -133,13 +127,16 @@ export function VariantSelector({
                           </div>
                           
                           <div className="flex items-center justify-between">
-                            <span className={`text-sm font-bold ${isOutOfStock ? 'text-gray-400' : ''}`} style={{ color: isOutOfStock ? '#9ca3af' : '#755e3e' }}>
+                            <span className={`text-sm font-bold ${isOutOfStock ? 'text-gray-400' : 'text-amber-900'}`}>
                               {pricing.current}
                             </span>
-                            <div className="w-3 h-3 rounded-full border-2 flex-shrink-0" style={{
-                              borderColor: isSelected ? 'rgba(156,86,26,255)' : isOutOfStock ? '#d1d5db' : '#d1d5db',
-                              backgroundColor: isSelected ? 'rgba(156,86,26,255)' : isOutOfStock ? '#e5e7eb' : 'white'
-                            }}>
+                            <div className="w-3 h-3 rounded-full border-2 flex-shrink-0 ${
+                              isSelected 
+                                ? 'border-orange-600 bg-orange-600' 
+                                : isOutOfStock
+                                ? 'border-gray-300 bg-gray-200'
+                                : 'border-gray-300 bg-white'
+                            }">
                               {isSelected && (
                                 <div className="w-full h-full flex items-center justify-center">
                                   <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
@@ -161,7 +158,7 @@ export function VariantSelector({
                             </div>
                           )}
                           
-                          <p className="text-xs" style={{ color: '#846549' }}>
+                          <p className="text-xs text-amber-800">
                             SKU: {variant.sku} | Stock: {variant.inventory}
                           </p>
                         </div>
@@ -178,8 +175,7 @@ export function VariantSelector({
             <Button 
               onClick={handleAddToCart}
               disabled={!selectedVariant || selectedVariant.inventory === 0}
-              className="w-full"
-              style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
+              className="w-full bg-amber-700 hover:bg-amber-800 text-white"
             >
               Add to Cart
             </Button>

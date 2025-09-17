@@ -375,9 +375,9 @@ export default function ProductDetailPage() {
             <div className="space-y-3">
               <h3 className="text-lg font-semibold" style={{ color: '#755e3e' }}>Select Variant</h3>
               <RadioGroup
-                value={selectedVariant?.label || ''}
+                value={selectedVariant?.id || ''}
                 onValueChange={(value) => {
-                  const variant = product.variants.find(v => v.label === value);
+                  const variant = product.variants.find(v => v.id === value);
                   setSelectedVariant(variant);
                 }}
                 className={`grid grid-cols-2 sm:grid-cols-4 gap-2 ${shakeVariants ? 'animate-shake' : ''}`}
@@ -385,18 +385,18 @@ export default function ProductDetailPage() {
                 {product.variants.map((variant) => {
                   const pricing = formatPrice(variant.price, variant.discount);
                   return (
-                    <div key={variant.label} className="relative">
+                    <div key={variant.id} className="relative">
                       <RadioGroupItem
-                        value={variant.label}
-                        id={variant.label}
+                        value={variant.id}
+                        id={variant.id}
                         className="peer sr-only"
                       />
                       <Label
-                        htmlFor={variant.label}
+                        htmlFor={variant.id}
                         className="flex flex-col p-3 border-2 rounded-lg cursor-pointer transition-all peer-data-[state=checked]:border-orange-600 peer-data-[state=checked]:bg-orange-50 hover:border-orange-400 min-h-[80px]"
                       >
                         <div className="flex justify-between items-start mb-1">
-                          <span className="font-medium text-xs" style={{ color: '#755e3e' }}>{variant.label}</span>
+                          <span className="font-medium text-xs" style={{ color: '#755e3e' }}>{variant.name}</span>
                           <div className="flex space-x-1">
                             {variant.isDefault && (
                               <Badge variant="secondary" className="text-xs px-1 py-0">Default</Badge>
@@ -477,7 +477,7 @@ export default function ProductDetailPage() {
         {/* Product Details Tabs */}
         <div className="mt-12 mb-24"> {/* Added mb-24 to account for fixed buttons */}
           <Tabs defaultValue="description" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-0">
               <TabsTrigger value="description">Description</TabsTrigger>
               {product.spiritualMeaning && (
                 <TabsTrigger value="spiritual">Spiritual Meaning</TabsTrigger>
