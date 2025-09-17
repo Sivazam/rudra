@@ -469,9 +469,10 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Form */}
+            <div className="lg:col-span-2 space-y-6">
             {/* Basic Information */}
             <Card>
               <CardHeader>
@@ -964,6 +965,20 @@ export default function EditProductPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Submit Button */}
+            <Card>
+              <CardContent className="pt-6">
+                <Button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full bg-orange-600 hover:bg-orange-700"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Sidebar */}
@@ -974,16 +989,6 @@ export default function EditProductPage() {
                 <CardTitle>Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button 
-                  type="submit" 
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className="w-full bg-orange-600 hover:bg-orange-700"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </Button>
-                
                 <Link href="/admin/products">
                   <Button variant="outline" className="w-full">
                     Cancel
@@ -1033,6 +1038,7 @@ export default function EditProductPage() {
             </Card>
           </div>
         </div>
+      </form>
       </div>
     </AdminLayout>
   );

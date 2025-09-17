@@ -151,32 +151,15 @@ export function SlideInCart() {
                       
                       {/* Product Details */}
                       <div className="flex-1 space-y-1">
-                        <div>
-                          <h3 className="font-medium text-sm" style={{ color: '#755e3e' }}>{item.name}</h3>
-                          <p className="text-xs opacity-75" style={{ color: '#846549' }}>{item.deity}</p>
-                          <p className="text-xs opacity-60" style={{ color: '#846549' }}>{item.variant.label}</p>
-                        </div>
-                        
-                        {/* Price */}
-                        <div className="flex items-center space-x-2">
-                          <span className="font-semibold text-sm" style={{ color: '#755e3e' }}>
-                            {pricing.current}
-                          </span>
-                          {pricing.original && (
-                            <span className="text-xs line-through opacity-60" style={{ color: '#846549' }}>
-                              {pricing.original}
-                            </span>
-                          )}
-                          {item.variant.discount > 0 && (
-                            <Badge className="bg-red-600 hover:bg-red-700 text-xs px-1 py-0">
-                              {item.variant.discount}% OFF
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        {/* Quantity Controls */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-1">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-sm" style={{ color: '#755e3e' }}>{item.name}</h3>
+                            <p className="text-xs opacity-75" style={{ color: '#846549' }}>{item.deity}</p>
+                            <p className="text-xs opacity-60" style={{ color: '#846549' }}>{item.variant.label}</p>
+                          </div>
+                          
+                          {/* Quantity Controls */}
+                          <div className="flex items-center space-x-1 ml-2">
                             <Button
                               variant="outline"
                               size="icon"
@@ -198,6 +181,25 @@ export function SlideInCart() {
                             >
                               <PlusIcon className="h-3 w-3" />
                             </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Price and Remove */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-semibold text-sm" style={{ color: '#755e3e' }}>
+                              {pricing.current}
+                            </span>
+                            {pricing.original && (
+                              <span className="text-xs line-through opacity-60" style={{ color: '#846549' }}>
+                                {pricing.original}
+                              </span>
+                            )}
+                            {item.variant.discount > 0 && (
+                              <Badge className="bg-red-600 hover:bg-red-700 text-xs px-1 py-0">
+                                {item.variant.discount}% OFF
+                              </Badge>
+                            )}
                           </div>
                           
                           <Button

@@ -118,33 +118,16 @@ export default function CartPage() {
                           
                           {/* Product Details */}
                           <div className="flex-1 space-y-2">
-                            <div>
-                              <h3 className="font-semibold text-base sm:text-base" style={{ color: '#755e3e' }}>{item.name}</h3>
-                              <p className="text-sm" style={{ color: '#846549' }}>{item.deity}</p>
-                              <p className="text-sm opacity-75" style={{ color: '#846549' }}>{item.variant.label}</p>
-                            </div>
-                            
-                            {/* Price */}
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-1 sm:space-y-0">
-                              <span className="font-bold text-lg" style={{ color: '#755e3e' }}>
-                                {pricing.current}
-                              </span>
-                              {pricing.original && (
-                                <span className="text-sm line-through opacity-60" style={{ color: '#846549' }}>
-                                  {pricing.original}
-                                </span>
-                              )}
-                              {item.variant.discount > 0 && (
-                                <Badge className="bg-red-600 hover:bg-red-700 self-start sm:self-auto">
-                                  {item.variant.discount}% OFF
-                                </Badge>
-                              )}
-                            </div>
-                            
-                            {/* Quantity Controls */}
-                            <div className="flex flex-col space-y-3">
-                              <div className="flex items-center space-x-3">
-                                <span className="text-sm font-medium" style={{ color: '#6b7280' }}>Quantity:</span>
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-base sm:text-base" style={{ color: '#755e3e' }}>{item.name}</h3>
+                                <p className="text-sm" style={{ color: '#846549' }}>{item.deity}</p>
+                                <p className="text-sm opacity-75" style={{ color: '#846549' }}>{item.variant.label}</p>
+                              </div>
+                              
+                              {/* Quantity Controls */}
+                              <div className="flex items-center space-x-2 ml-4">
+                                <span className="text-sm font-medium" style={{ color: '#6b7280' }}>Qty:</span>
                                 <div className="flex items-center space-x-2">
                                   <Button
                                     variant="outline"
@@ -169,23 +152,39 @@ export default function CartPage() {
                                   </Button>
                                 </div>
                               </div>
-                              
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                            </div>
+                            
+                            {/* Price and Actions */}
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-1 sm:space-y-0">
+                                <span className="font-bold text-lg" style={{ color: '#755e3e' }}>
+                                  {pricing.current}
+                                </span>
+                                {pricing.original && (
+                                  <span className="text-sm line-through opacity-60" style={{ color: '#846549' }}>
+                                    {pricing.original}
+                                  </span>
+                                )}
+                                {item.variant.discount > 0 && (
+                                  <Badge className="bg-red-600 hover:bg-red-700 self-start sm:self-auto">
+                                    {item.variant.discount}% OFF
+                                  </Badge>
+                                )}
                                 <span className="text-sm font-medium" style={{ color: '#755e3e' }}>
                                   = ₹{Math.round(item.variant.price - (item.variant.price * item.variant.discount) / 100) * item.quantity}
                                 </span>
-                                
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeItem(item.id)}
-                                  style={{ color: '#f20600' }}
-                                  className="self-start sm:self-auto"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Remove
-                                </Button>
                               </div>
+                              
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeItem(item.id)}
+                                style={{ color: '#f20600' }}
+                                className="self-start sm:self-auto"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Remove
+                              </Button>
                             </div>
                           </div>
                         </div>

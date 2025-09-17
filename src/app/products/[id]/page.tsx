@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useCartStore } from '@/store/cartStore';
 import { MainLayout } from '@/components/store/MainLayout';
 import { useToast } from '@/hooks/use-toast';
+import { useGlobalLoader } from '@/hooks/useGlobalLoader';
 
 interface Product {
   id: string;
@@ -71,10 +72,12 @@ export default function ProductDetailPage() {
   
   const { addItem, items } = useCartStore();
   const { toast } = useToast();
+  const { showLoader, hideLoader } = useGlobalLoader();
 
   // Fetch product data
   useEffect(() => {
     const fetchProduct = async () => {
+      showLoader('api');
       try {
         const response = await fetch(`/api/products/id/${productId}`);
         if (response.ok) {
@@ -91,13 +94,14 @@ export default function ProductDetailPage() {
         console.error('Error fetching product:', error);
       } finally {
         setLoading(false);
+        hideLoader('api');
       }
     };
 
     if (productId) {
       fetchProduct();
     }
-  }, [productId]);
+  }, [productId, showLoader, hideLoader]);
 
   // Check if this product is already in cart - sum quantities of ALL variants
   const cartItemsForProduct = product ? items.filter(item => item.productId === product.id) : [];
@@ -233,11 +237,7 @@ export default function ProductDetailPage() {
     return (
       <MainLayout>
         <div className="min-h-screen" style={{ backgroundColor: '#f4f0eb' }}>
-          <div className="container mx-auto px-4 py-8">
-            <div className="text-center">
-              <p>Loading product...</p>
-            </div>
-          </div>
+          {/* Global loader will be shown by the provider */}
         </div>
       </MainLayout>
     );
@@ -267,11 +267,17 @@ export default function ProductDetailPage() {
           <nav className="flex items-center space-x-2 text-sm">
             <a href="/" className="hover:opacity-80 transition-colors" style={{ color: 'rgba(156,86,26,255)' }}>Home</a>
             <span>/</span>
-          <a href="/categories" className="hover:opacity-80 transition-colors" style={{ color: 'rgba(156,86,26,255)' }}>Rudraksha</a>
-          <span>/</span>
-          <span style={{ color: '#846549' }}>{product.name}</span>
-        </nav>
-      </div>
+            <a 
+              href={`/?category=${encodeURIComponent(product.categoryName)}`} 
+              className="hover:opacity-80 transition-colors" 
+              style={{ color: 'rgba(156,86,26,255)' }}
+            >
+              {product.categoryName}
+            </a>
+            <span>/</span>
+            <span style={{ color: '#846549' }}>{product.name}</span>
+          </nav>
+        </div>
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -416,14 +422,9 @@ export default function ProductDetailPage() {
                             </span>
                           </div>
                           
-                          <div className="w-3 h-3 rounded-full border-2 flex-shrink-0" style={{
-                            borderColor: 'rgba(156,86,26,255)',
-                            backgroundColor: 'white'
-                          }}>
-                            <div className="w-full h-full flex items-center justify-center opacity-0 peer-data-[state=checked]:opacity-100">
-                              <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
-                            </div>
-                          </div>
+                          <div className="w-3 h-3 rounded-full flex-shrink-0 opacity-0 peer-data-[state=checked]:opacity-100" style={{
+                            backgroundColor: 'rgba(156,86,26,255)'
+                          }}></div>
                         </div>
                         
                         {pricing.savings && (

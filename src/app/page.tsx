@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { CategoryCarousel } from '@/components/store/CategoryCarousel';
 import { ProductGrid } from '@/components/store/ProductGrid';
 import { ProductCard } from '@/components/store/ProductCard';
 import { BannerCarousel } from '@/components/store/BannerCarousel';
 import { MainLayout } from '@/components/store/MainLayout';
+import { PageTransitionWrapper } from '@/components/ui/PageTransitionWrapper';
 import { useDataStore, getStoredCategories, getStoredProducts } from '@/lib/data-store';
+import { useGlobalLoader } from '@/hooks/useGlobalLoader';
 
 interface Banner {
   id: string;
@@ -73,11 +76,35 @@ const mockBanners: Banner[] = [
 ];
 
 export default function Home() {
+  const searchParams = useSearchParams();
   const { categories, products, loading } = useDataStore();
+  const { showLoader, hideLoader } = useGlobalLoader();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [storeCategories, setStoreCategories] = useState<StoreCategory[]>([]);
   const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+
+  // Handle category from URL parameter
+  useEffect(() => {
+    const categoryParam = searchParams.get('category');
+    if (categoryParam && storeCategories.length > 0) {
+      const categoryExists = storeCategories.some(cat => cat.name === categoryParam);
+      if (categoryExists) {
+        setSelectedCategory(categoryParam);
+      }
+    }
+  }, [searchParams, storeCategories]);
+
+  // Show loader when data is loading
+  useEffect(() => {
+    if (loading && !initialLoadComplete) {
+      showLoader('api');
+    } else if (!loading && storeCategories.length > 0 && storeProducts.length > 0 && !initialLoadComplete) {
+      hideLoader('api');
+      setInitialLoadComplete(true);
+    }
+  }, [loading, storeCategories.length, storeProducts.length, initialLoadComplete, showLoader, hideLoader]);
 
   // Transform admin categories to store format
   useEffect(() => {
@@ -122,6 +149,8 @@ export default function Home() {
       const savedCategories = getStoredCategories();
       const savedProducts = getStoredProducts();
       
+      let hasData = false;
+      
       if (savedCategories.length > 0) {
         const transformedCategories = savedCategories.map(cat => ({
           id: cat.id,
@@ -129,6 +158,7 @@ export default function Home() {
           image: cat.image || '/categories/default.png'
         }));
         setStoreCategories(transformedCategories);
+        hasData = true;
       }
       
       if (savedProducts.length > 0) {
@@ -146,9 +176,16 @@ export default function Home() {
           variants: product.variants // Pass the actual variants
         }));
         setStoreProducts(transformedProducts);
+        hasData = true;
+      }
+      
+      // If we have data from localStorage, hide the loader
+      if (hasData && !initialLoadComplete) {
+        hideLoader('api');
+        setInitialLoadComplete(true);
       }
     }
-  }, [loading]);
+  }, [loading, initialLoadComplete, hideLoader]);
 
   const filteredProducts = storeProducts.filter(product => {
     const matchesCategory = selectedCategory === 'All' || product.deity === selectedCategory;
@@ -158,34 +195,36 @@ export default function Home() {
   });
 
   return (
-    <MainLayout onSearch={setSearchQuery}>
-      {/* Banner Carousel */}
-      <BannerCarousel banners={mockBanners} />
-      
-      <div className="container mx-auto px-4 py-8">
-        {/* Category Carousel */}
-        <CategoryCarousel 
-          categories={storeCategories}
-          selectedCategory={selectedCategory}
-          onCategorySelect={setSelectedCategory}
-        />
+    <PageTransitionWrapper>
+      <MainLayout onSearch={setSearchQuery}>
+        {/* Banner Carousel */}
+        <BannerCarousel banners={mockBanners} />
         
-        {/* Results Info */}
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Showing {filteredProducts.length} results
-          </h3>
-          <select className="border border-gray-300 rounded-md px-3 py-1 text-sm">
-            <option>Sort by: Featured</option>
-            <option>Price: Low to High</option>
-            <option>Price: High to Low</option>
-            <option>Rating: High to Low</option>
-          </select>
+        <div className="container mx-auto px-4 py-8">
+          {/* Category Carousel */}
+          <CategoryCarousel 
+            categories={storeCategories}
+            selectedCategory={selectedCategory}
+            onCategorySelect={setSelectedCategory}
+          />
+          
+          {/* Results Info */}
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Showing {filteredProducts.length} results
+            </h3>
+            <select className="border border-gray-300 rounded-md px-3 py-1 text-sm">
+              <option>Sort by: Featured</option>
+              <option>Price: Low to High</option>
+              <option>Price: High to Low</option>
+              <option>Rating: High to Low</option>
+            </select>
+          </div>
+          
+          {/* Product Grid */}
+          <ProductGrid products={filteredProducts} />
         </div>
-        
-        {/* Product Grid */}
-        <ProductGrid products={filteredProducts} />
-      </div>
-    </MainLayout>
+      </MainLayout>
+    </PageTransitionWrapper>
   );
 }

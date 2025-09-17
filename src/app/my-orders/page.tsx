@@ -202,8 +202,13 @@ export default function MyOrdersPage() {
     }
   };
 
-  const getProductImage = (itemName: string) => {
-    // Map product names to their images
+  const getProductImage = (item: { name: string; image?: string }) => {
+    // First try to use the image from the order item if it exists
+    if (item.image) {
+      return item.image;
+    }
+    
+    // Fallback to hardcoded mapping
     const imageMap: { [key: string]: string } = {
       '10 Mukhi Lord Vishnu': '/products/10-mukhi.jpg',
       '9 Mukhi Goddess Durga': '/products/9-mukhi.jpg',
@@ -223,7 +228,7 @@ export default function MyOrdersPage() {
       'Test Product': '/products/10-mukhi.jpg'
     };
     
-    return imageMap[itemName] || '/products/10-mukhi.jpg';
+    return imageMap[item.name] || '/products/10-mukhi.jpg';
   };
 
   const OrderOverviewCard = ({ order }: { order: Order }) => (
@@ -275,7 +280,7 @@ export default function MyOrdersPage() {
               {order.items.slice(0, 4).map((item, index) => (
                 <div key={index} className="relative">
                   <img
-                    src={getProductImage(item.name)}
+                    src={getProductImage(item)}
                     alt={item.name}
                     className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg border"
                   />
@@ -321,7 +326,7 @@ export default function MyOrdersPage() {
           {order.items.map((item, index) => (
             <div key={index} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
               <img
-                src={getProductImage(item.name)}
+                src={getProductImage(item)}
                 alt={item.name}
                 className="w-12 h-12 object-cover rounded-lg"
               />

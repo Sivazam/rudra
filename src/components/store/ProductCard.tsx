@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useCartStore } from '@/store/cartStore';
 import { VariantSelector } from './VariantSelector';
 import { useToast } from '@/hooks/use-toast';
+import { ImageWithLoader } from '@/components/ui/ImageWithLoader';
 import Link from 'next/link';
 
 interface Product {
@@ -275,7 +276,7 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Product Image - Fixed height */}
         <div className="relative aspect-square overflow-hidden flex-shrink-0">
           <Link href={`/products/${product.id}`}>
-            <img
+            <ImageWithLoader
               src={product.image}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
