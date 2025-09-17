@@ -36,11 +36,16 @@ export async function POST(request: NextRequest) {
     const name = formData.get('name') as string;
     const deity = formData.get('deity') as string;
     const description = formData.get('description') as string;
+    const spiritualMeaning = formData.get('spiritualMeaning') as string;
+    const origin = formData.get('origin') as string;
     const category = formData.get('category') as string;
     const status = formData.get('status') as string;
     const isBestseller = formData.get('isBestseller') === 'true';
     const tags = JSON.parse(formData.get('tags') as string || '[]');
     const variants = JSON.parse(formData.get('variants') as string || '[]');
+    const specifications = formData.get('specifications') ? JSON.parse(formData.get('specifications') as string) : undefined;
+    const wearGuide = formData.get('wearGuide') ? JSON.parse(formData.get('wearGuide') as string) : undefined;
+    const careGuide = formData.get('careGuide') ? JSON.parse(formData.get('careGuide') as string) : undefined;
     
     if (!name || !deity || !description || !category) {
       return NextResponse.json(
@@ -58,11 +63,39 @@ export async function POST(request: NextRequest) {
       imageUrls = await storageService.uploadFiles(images, 'products/rudra');
     }
     
+    // Handle guide image uploads
+    const wearGuideImageFile = formData.get('wearGuideImage') as File;
+    const careGuideImageFile = formData.get('careGuideImage') as File;
+    let wearGuideImageUrl = '';
+    let careGuideImageUrl = '';
+    
+    if (wearGuideImageFile && wearGuideImageFile.size > 0) {
+      console.log('Admin API: Uploading wear guide image');
+      const uploadedUrls = await storageService.uploadFiles([wearGuideImageFile], 'products/guides');
+      wearGuideImageUrl = uploadedUrls[0];
+    }
+    
+    if (careGuideImageFile && careGuideImageFile.size > 0) {
+      console.log('Admin API: Uploading care guide image');
+      const uploadedUrls = await storageService.uploadFiles([careGuideImageFile], 'products/guides');
+      careGuideImageUrl = uploadedUrls[0];
+    }
+    
+    // Update wearGuide and careGuide with image URLs
+    if (wearGuide && wearGuideImageUrl) {
+      wearGuide.image = wearGuideImageUrl;
+    }
+    if (careGuide && careGuideImageUrl) {
+      careGuide.image = careGuideImageUrl;
+    }
+    
     // Create product data
     const productData = {
       name,
       deity,
       description,
+      spiritualMeaning,
+      origin,
       category,
       image: imageUrls[0] || '',
       images: imageUrls,
@@ -71,6 +104,9 @@ export async function POST(request: NextRequest) {
         id: v.id || Date.now().toString() + Math.random()
       })),
       tags,
+      specifications,
+      wearGuide,
+      careGuide,
       status,
       isBestseller,
       createdAt: new Date().toISOString(),
@@ -89,6 +125,197 @@ export async function POST(request: NextRequest) {
     console.error('Admin API: Error creating product:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to create product' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/admin/products - Update product
+export async function PUT(request: NextRequest) {
+  try {
+    console.log('Admin API: Updating product');
+    
+    const formData = await request.formData();
+    
+    // Extract product data
+    const id = formData.get('id') as string;
+    const name = formData.get('name') as string;
+    const deity = formData.get('deity') as string;
+    const description = formData.get('description') as string;
+    const spiritualMeaning = formData.get('spiritualMeaning') as string;
+    const origin = formData.get('origin') as string;
+    const category = formData.get('category') as string;
+    const status = formData.get('status') as string;
+    const isBestseller = formData.get('isBestseller') === 'true';
+    const tags = JSON.parse(formData.get('tags') as string || '[]');
+    const variants = JSON.parse(formData.get('variants') as string || '[]');
+    const imagesToDelete = JSON.parse(formData.get('imagesToDelete') as string || '[]');
+    const specifications = formData.get('specifications') ? JSON.parse(formData.get('specifications') as string) : undefined;
+    const wearGuide = formData.get('wearGuide') ? JSON.parse(formData.get('wearGuide') as string) : undefined;
+    const careGuide = formData.get('careGuide') ? JSON.parse(formData.get('careGuide') as string) : undefined;
+    
+    if (!id || !name || !deity || !description || !category) {
+      return NextResponse.json(
+        { success: false, error: 'ID, name, deity, description, and category are required' },
+        { status: 400 }
+      );
+    }
+    
+    // Get existing product to handle image deletions
+    const existingProduct = await firestoreService.getById('products', id);
+    if (!existingProduct) {
+      return NextResponse.json(
+        { success: false, error: 'Product not found' },
+        { status: 404 }
+      );
+    }
+    
+    // Handle image deletions
+    if (imagesToDelete.length > 0) {
+      for (const imageUrl of imagesToDelete) {
+        try {
+          if (!imageUrl.startsWith('/')) {
+            const urlObj = new URL(imageUrl);
+            const imagePath = urlObj.pathname.split('/o/')[1]?.split('?')[0];
+            if (imagePath) {
+              const decodedPath = decodeURIComponent(imagePath);
+              await storageService.deleteFile(decodedPath);
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to delete image:', imageUrl, error);
+        }
+      }
+    }
+    
+    // Handle new image uploads
+    const newImages = formData.getAll('newImages') as File[];
+    let newImageUrls: string[] = [];
+    
+    if (newImages.length > 0) {
+      console.log(`Admin API: Uploading ${newImages.length} new images`);
+      newImageUrls = await storageService.uploadFiles(newImages, 'products/rudra');
+    }
+    
+    // Handle guide image uploads
+    const wearGuideImageFile = formData.get('wearGuideImage') as File;
+    const careGuideImageFile = formData.get('careGuideImage') as File;
+    let wearGuideImageUrl = '';
+    let careGuideImageUrl = '';
+    
+    if (wearGuideImageFile && wearGuideImageFile.size > 0) {
+      console.log('Admin API: Uploading wear guide image');
+      const uploadedUrls = await storageService.uploadFiles([wearGuideImageFile], 'products/guides');
+      wearGuideImageUrl = uploadedUrls[0];
+    }
+    
+    if (careGuideImageFile && careGuideImageFile.size > 0) {
+      console.log('Admin API: Uploading care guide image');
+      const uploadedUrls = await storageService.uploadFiles([careGuideImageFile], 'products/guides');
+      careGuideImageUrl = uploadedUrls[0];
+    }
+    
+    // Update wearGuide and careGuide with image URLs
+    if (wearGuide && wearGuideImageUrl) {
+      wearGuide.image = wearGuideImageUrl;
+    }
+    if (careGuide && careGuideImageUrl) {
+      careGuide.image = careGuideImageUrl;
+    }
+    
+    // Combine existing images (not deleted) with new images
+    const existingImages = existingProduct.images || [];
+    const updatedImages = existingImages
+      .filter((url: string) => !imagesToDelete.includes(url))
+      .concat(newImageUrls);
+    
+    // Create product data
+    const productData = {
+      name,
+      deity,
+      description,
+      spiritualMeaning,
+      origin,
+      category,
+      image: updatedImages[0] || existingProduct.image,
+      images: updatedImages,
+      variants: variants.map((v: any) => ({
+        ...v,
+        id: v.id || Date.now().toString() + Math.random()
+      })),
+      tags,
+      specifications,
+      wearGuide,
+      careGuide,
+      status,
+      isBestseller,
+      updatedAt: new Date().toISOString()
+    };
+    
+    await firestoreService.update('products', id, productData);
+    
+    console.log(`Admin API: Product ${id} updated`);
+    
+    return NextResponse.json({
+      success: true,
+      data: { id, ...productData }
+    });
+  } catch (error) {
+    console.error('Admin API: Error updating product:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update product' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/admin/products - Delete product
+export async function DELETE(request: NextRequest) {
+  try {
+    console.log('Admin API: Deleting product');
+    
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'Product ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    // Get product to check for image deletions
+    const product = await firestoreService.getById('products', id);
+    if (product && product.images) {
+      // Delete all product images from Firebase Storage
+      for (const imageUrl of product.images) {
+        try {
+          if (!imageUrl.startsWith('/')) {
+            const urlObj = new URL(imageUrl);
+            const imagePath = urlObj.pathname.split('/o/')[1]?.split('?')[0];
+            if (imagePath) {
+              const decodedPath = decodeURIComponent(imagePath);
+              await storageService.deleteFile(decodedPath);
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to delete product image:', imageUrl, error);
+        }
+      }
+    }
+    
+    await firestoreService.delete('products', id);
+    
+    console.log(`Admin API: Product ${id} deleted`);
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Product deleted successfully'
+    });
+  } catch (error) {
+    console.error('Admin API: Error deleting product:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete product' },
       { status: 500 }
     );
   }

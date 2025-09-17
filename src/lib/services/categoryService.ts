@@ -144,3 +144,7 @@ export class CategoryService {
     }
   }
 }
+
+// Create default export instance
+const categoryService = new CategoryService();
+export default categoryService;

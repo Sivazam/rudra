@@ -1,6 +1,6 @@
 import orderService, { IOrder, IOrderItem, ICustomerInfo } from './orderService';
-import productService, { IProduct, IProductMetadata } from './productService';
-import categoryService, { ICategory } from './categoryService';
+import productService, { Product, Variant } from './productService';
+import categoryService, { Category } from './categoryService';
 import variantService, { IVariant } from './variantService';
 import discountService, { IDiscount } from './discountService';
 import userService, { IUser } from './userService';
@@ -14,12 +14,12 @@ export {
   
   // Product Service
   productService,
-  type IProduct,
-  type IProductMetadata,
+  type Product,
+  type Variant,
   
   // Category Service
   categoryService,
-  type ICategory,
+  type Category,
   
   // Variant Service
   variantService,

@@ -69,65 +69,17 @@ export default function ProductsPage() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      // Mock data - replace with actual API call
-      const mockProducts: Product[] = [
-        {
-          id: '1',
-          name: '5 Mukhi Rudraksha',
-          deity: 'Lord Shiva',
-          description: 'Original 5-faced rudraksha bead with certificate',
-          category: 'Rudraksha',
-          image: '/products/5-mukhi.jpg',
-          images: ['/products/5-mukhi.jpg', '/products/5-mukhi-1.jpg', '/products/5-mukhi-2.jpg'],
-          variants: [
-            { id: 'v1', label: 'Small', price: 500, sku: '5M-S', discount: 0, stock: 25 },
-            { id: 'v2', label: 'Medium', price: 800, sku: '5M-M', discount: 10, stock: 15 },
-            { id: 'v3', label: 'Large', price: 1200, sku: '5M-L', discount: 15, stock: 8 }
-          ],
-          tags: ['bestseller', 'certified', 'original'],
-          status: 'active',
-          isBestseller: true,
-          createdAt: '2024-01-01',
-          updatedAt: '2024-01-15'
-        },
-        {
-          id: '2',
-          name: 'Tulsi Mala',
-          deity: 'Lord Vishnu',
-          description: 'Pure tulsi wood mala with 108+1 beads',
-          category: 'Malas',
-          image: '/products/tulsi.jpg',
-          images: ['/products/tulsi.jpg'],
-          variants: [
-            { id: 'v4', label: 'Standard', price: 300, sku: 'TM-S', discount: 0, stock: 50 },
-            { id: 'v5', label: 'Premium', price: 450, sku: 'TM-P', discount: 5, stock: 20 }
-          ],
-          tags: ['popular', 'traditional'],
-          status: 'active',
-          isBestseller: false,
-          createdAt: '2024-01-02',
-          updatedAt: '2024-01-14'
-        },
-        {
-          id: '3',
-          name: '7 Mukhi Rudraksha',
-          deity: 'Goddess Lakshmi',
-          description: '7-faced rudraksha for wealth and prosperity',
-          category: 'Rudraksha',
-          image: '/products/7-mukhi.jpg',
-          images: ['/products/7-mukhi.jpg'],
-          variants: [
-            { id: 'v6', label: 'Small', price: 700, sku: '7M-S', discount: 0, stock: 18 },
-            { id: 'v7', label: 'Medium', price: 1100, sku: '7M-M', discount: 12, stock: 12 }
-          ],
-          tags: ['wealth', 'prosperity', 'bestseller'],
-          status: 'active',
-          isBestseller: true,
-          createdAt: '2024-01-03',
-          updatedAt: '2024-01-13'
+      const response = await fetch('/api/admin/products');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setProducts(result.data);
+        } else {
+          console.error('Error fetching products:', result.error);
         }
-      ];
-      setProducts(mockProducts);
+      } else {
+        console.error('Failed to fetch products');
+      }
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -160,22 +112,70 @@ export default function ProductsPage() {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this product?')) {
       try {
-        setProducts(products.filter(product => product.id !== id));
+        const response = await fetch(`/api/admin/products?id=${id}`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            // Refresh the products list
+            await fetchProducts();
+          } else {
+            console.error('Error deleting product:', result.error);
+            alert('Failed to delete product: ' + result.error);
+          }
+        } else {
+          console.error('Failed to delete product');
+          alert('Failed to delete product');
+        }
       } catch (error) {
         console.error('Error deleting product:', error);
+        alert('Failed to delete product');
       }
     }
   };
 
   const toggleBestseller = async (id: string) => {
     try {
-      setProducts(products.map(product =>
-        product.id === id 
-          ? { ...product, isBestseller: !product.isBestseller, updatedAt: new Date().toISOString().split('T')[0] }
-          : product
-      ));
+      const product = products.find(p => p.id === id);
+      if (product) {
+        const response = await fetch('/api/admin/products', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id,
+            name: product.name,
+            deity: product.deity,
+            description: product.description,
+            category: product.category,
+            status: product.status,
+            isBestseller: !product.isBestseller,
+            tags: product.tags,
+            variants: product.variants,
+            imagesToDelete: []
+          }),
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            // Refresh the products list
+            await fetchProducts();
+          } else {
+            console.error('Error updating bestseller status:', result.error);
+            alert('Failed to update bestseller status: ' + result.error);
+          }
+        } else {
+          console.error('Failed to update bestseller status');
+          alert('Failed to update bestseller status');
+        }
+      }
     } catch (error) {
       console.error('Error updating bestseller status:', error);
+      alert('Failed to update bestseller status');
     }
   };
 

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,11 +56,16 @@ interface ProductFormData {
   variants: ProductVariant[];
 }
 
-export default function NewProductPage() {
+export default function EditProductPage() {
+  const params = useParams();
   const router = useRouter();
+  const productId = params.id as string;
+  
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [images, setImages] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagesToDelete, setImagesToDelete] = useState<string[]>([]);
   const [newTag, setNewTag] = useState('');
   const [newSpecification, setNewSpecification] = useState('');
   const [newWearGuideStep, setNewWearGuideStep] = useState('');
@@ -73,6 +78,11 @@ export default function NewProductPage() {
     name: '',
     deity: '',
     description: '',
+    spiritualMeaning: '',
+    origin: '',
+    specifications: [],
+    wearGuide: undefined,
+    careGuide: undefined,
     category: '',
     tags: [],
     status: 'draft',
@@ -83,6 +93,53 @@ export default function NewProductPage() {
   });
 
   const categories = ['Rudraksha', 'Malas', 'Idols', 'Yantras', 'Bracelets', 'Pendants', 'Puja Items', 'Gemstones'];
+
+  // Fetch product data
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await fetch(`/api/admin/products`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            const product = result.data.find((p: any) => p.id === productId);
+            if (product) {
+              setFormData({
+                name: product.name,
+                deity: product.deity,
+                description: product.description,
+                spiritualMeaning: product.spiritualMeaning || '',
+                origin: product.origin || '',
+                specifications: product.specifications || [],
+                wearGuide: product.wearGuide || undefined,
+                careGuide: product.careGuide || undefined,
+                category: product.category,
+                tags: product.tags || [],
+                status: product.status,
+                isBestseller: product.isBestseller,
+                variants: product.variants || [{ id: '1', label: 'Standard', price: 0, sku: '', discount: 0, stock: 0 }]
+              });
+              setImages(product.images || []);
+              if (product.wearGuide?.image) {
+                setWearGuideImage(product.wearGuide.image);
+              }
+              if (product.careGuide?.image) {
+                setCareGuideImage(product.careGuide.image);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching product:', error);
+      } finally {
+        setFetching(false);
+      }
+    };
+
+    if (productId) {
+      fetchProduct();
+    }
+  }, [productId]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -123,6 +180,11 @@ export default function NewProductPage() {
   };
 
   const removeImage = (index: number) => {
+    const imageToRemove = images[index];
+    if (!imageToRemove.startsWith('data:')) {
+      // This is an existing image URL, mark it for deletion
+      setImagesToDelete(prev => [...prev, imageToRemove]);
+    }
     setImages(prev => prev.filter((_, i) => i !== index));
     setImageFiles(prev => prev.filter((_, i) => i !== index));
   };
@@ -311,6 +373,7 @@ export default function NewProductPage() {
       const formDataObj = new FormData();
       
       // Add basic product data
+      formDataObj.append('id', productId);
       formDataObj.append('name', formData.name);
       formDataObj.append('deity', formData.deity);
       formDataObj.append('description', formData.description);
@@ -325,6 +388,7 @@ export default function NewProductPage() {
       formDataObj.append('isBestseller', formData.isBestseller.toString());
       formDataObj.append('tags', JSON.stringify(formData.tags));
       formDataObj.append('variants', JSON.stringify(formData.variants));
+      formDataObj.append('imagesToDelete', JSON.stringify(imagesToDelete));
       
       // Add new fields
       if (formData.specifications) {
@@ -337,9 +401,9 @@ export default function NewProductPage() {
         formDataObj.append('careGuide', JSON.stringify(formData.careGuide));
       }
       
-      // Add image files
+      // Add new image files
       imageFiles.forEach((file, index) => {
-        formDataObj.append('images', file);
+        formDataObj.append('newImages', file);
       });
 
       // Add guide images
@@ -351,7 +415,7 @@ export default function NewProductPage() {
       }
 
       const response = await fetch('/api/admin/products', {
-        method: 'POST',
+        method: 'PUT',
         body: formDataObj,
       });
 
@@ -361,20 +425,33 @@ export default function NewProductPage() {
           // Redirect to products list
           router.push('/admin/products');
         } else {
-          console.error('Error creating product:', result.error);
-          alert('Failed to create product: ' + result.error);
+          console.error('Error updating product:', result.error);
+          alert('Failed to update product: ' + result.error);
         }
       } else {
-        console.error('Failed to create product');
-        alert('Failed to create product');
+        console.error('Failed to update product');
+        alert('Failed to update product');
       }
     } catch (error) {
-      console.error('Error creating product:', error);
-      alert('Failed to create product');
+      console.error('Error updating product:', error);
+      alert('Failed to update product');
     } finally {
       setLoading(false);
     }
   };
+
+  if (fetching) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Package className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+            <p className="text-gray-600">Loading product...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -387,8 +464,8 @@ export default function NewProductPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Add New Product</h1>
-            <p className="text-gray-600">Create a new product with variants</p>
+            <h1 className="text-2xl font-bold text-gray-900">Edit Product</h1>
+            <p className="text-gray-600">Update product information and variants</p>
           </div>
         </div>
 
@@ -400,7 +477,7 @@ export default function NewProductPage() {
               <CardHeader>
                 <CardTitle>Basic Information</CardTitle>
                 <CardDescription>
-                  Enter the basic details for the new product
+                  Update the basic details for the product
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -502,6 +579,99 @@ export default function NewProductPage() {
                     Mark as Bestseller
                   </Label>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Product Variants */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Product Variants</CardTitle>
+                    <CardDescription>
+                      Manage different variants like sizes, types, etc.
+                    </CardDescription>
+                  </div>
+                  <Button type="button" variant="outline" onClick={addVariant}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Variant
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {formData.variants.map((variant, index) => (
+                  <div key={variant.id} className="border rounded-lg p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">Variant {index + 1}</h4>
+                      {formData.variants.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeVariant(variant.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="space-y-2">
+                        <Label>Label *</Label>
+                        <Input
+                          value={variant.label}
+                          onChange={(e) => updateVariant(variant.id, 'label', e.target.value)}
+                          placeholder="e.g., Small"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Price (₹) *</Label>
+                        <Input
+                          type="number"
+                          value={variant.price}
+                          onChange={(e) => updateVariant(variant.id, 'price', Number(e.target.value))}
+                          placeholder="0"
+                          min="0"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Discount (%)</Label>
+                        <Input
+                          type="number"
+                          value={variant.discount}
+                          onChange={(e) => updateVariant(variant.id, 'discount', Number(e.target.value))}
+                          placeholder="0"
+                          min="0"
+                          max="100"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Stock *</Label>
+                        <Input
+                          type="number"
+                          value={variant.stock}
+                          onChange={(e) => updateVariant(variant.id, 'stock', Number(e.target.value))}
+                          placeholder="0"
+                          min="0"
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>SKU *</Label>
+                      <Input
+                        value={variant.sku}
+                        onChange={(e) => updateVariant(variant.id, 'sku', e.target.value)}
+                        placeholder="e.g., 5M-S"
+                        required
+                      />
+                    </div>
+                  </div>
+                ))}
               </CardContent>
             </Card>
 
@@ -696,105 +866,12 @@ export default function NewProductPage() {
               </CardContent>
             </Card>
 
-            {/* Product Variants */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Product Variants</CardTitle>
-                    <CardDescription>
-                      Add different variants like sizes, types, etc.
-                    </CardDescription>
-                  </div>
-                  <Button type="button" variant="outline" onClick={addVariant}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Variant
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {formData.variants.map((variant, index) => (
-                  <div key={variant.id} className="border rounded-lg p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Variant {index + 1}</h4>
-                      {formData.variants.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeVariant(variant.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="space-y-2">
-                        <Label>Label *</Label>
-                        <Input
-                          value={variant.label}
-                          onChange={(e) => updateVariant(variant.id, 'label', e.target.value)}
-                          placeholder="e.g., Small"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Price (₹) *</Label>
-                        <Input
-                          type="number"
-                          value={variant.price}
-                          onChange={(e) => updateVariant(variant.id, 'price', Number(e.target.value))}
-                          placeholder="0"
-                          min="0"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Discount (%)</Label>
-                        <Input
-                          type="number"
-                          value={variant.discount}
-                          onChange={(e) => updateVariant(variant.id, 'discount', Number(e.target.value))}
-                          placeholder="0"
-                          min="0"
-                          max="100"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Stock *</Label>
-                        <Input
-                          type="number"
-                          value={variant.stock}
-                          onChange={(e) => updateVariant(variant.id, 'stock', Number(e.target.value))}
-                          placeholder="0"
-                          min="0"
-                          required
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label>SKU *</Label>
-                      <Input
-                        value={variant.sku}
-                        onChange={(e) => updateVariant(variant.id, 'sku', e.target.value)}
-                        placeholder="e.g., 5M-S"
-                        required
-                      />
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
             {/* Images */}
             <Card>
               <CardHeader>
                 <CardTitle>Product Images</CardTitle>
                 <CardDescription>
-                  Upload high-quality images of the product
+                  Manage product images
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -864,13 +941,13 @@ export default function NewProductPage() {
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
+                  
                   <div className="flex flex-wrap gap-2">
-                    {formData.tags.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="flex items-center">
-                        <Tag className="h-3 w-3 mr-1" />
+                    {formData.tags.map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
                         {tag}
-                        <X
-                          className="h-3 w-3 ml-1 cursor-pointer"
+                        <X 
+                          className="h-3 w-3 cursor-pointer" 
                           onClick={() => removeTag(tag)}
                         />
                       </Badge>
@@ -883,78 +960,71 @@ export default function NewProductPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Actions */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Product Guidelines</CardTitle>
+                <CardTitle>Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-sm">Naming</h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Use clear, descriptive names that customers will understand.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm">Images</h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Use high-quality images with good lighting and clear backgrounds.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm">Pricing</h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Set competitive prices and offer discounts for promotions.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm">Inventory</h4>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Keep stock levels updated to avoid overselling.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start">
-                  <Package className="h-4 w-4 mr-2" />
-                  Save as Draft
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Star className="h-4 w-4 mr-2" />
-                  Preview Product
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Publish</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-sm text-gray-600">
-                  <p>When you're ready, publish this product to make it available in your store.</p>
-                </div>
                 <Button 
                   type="submit" 
-                  form="product-form"
+                  onClick={handleSubmit}
+                  disabled={loading}
                   className="w-full bg-orange-600 hover:bg-orange-700"
-                  disabled={loading || !formData.name || !formData.deity || !formData.category || !formData.description}
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  {loading ? 'Creating...' : 'Create Product'}
+                  {loading ? 'Saving...' : 'Save Changes'}
                 </Button>
+                
+                <Link href="/admin/products">
+                  <Button variant="outline" className="w-full">
+                    Cancel
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
+            {/* Status */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Current Status</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Status:</span>
+                    <Badge className={
+                      formData.status === 'active' ? 'bg-green-100 text-green-800' :
+                      formData.status === 'inactive' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }>
+                      {formData.status}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Bestseller:</span>
+                    {formData.isBestseller ? (
+                      <Badge className="bg-yellow-100 text-yellow-800">
+                        <Star className="h-3 w-3 mr-1" />
+                        Yes
+                      </Badge>
+                    ) : (
+                      <span className="text-sm text-gray-500">No</span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Variants:</span>
+                    <span className="text-sm font-medium">{formData.variants.length}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Images:</span>
+                    <span className="text-sm font-medium">{images.length}</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
         </div>
-
-        {/* Hidden form for submission */}
-        <form id="product-form" onSubmit={handleSubmit}></form>
       </div>
     </AdminLayout>
   );

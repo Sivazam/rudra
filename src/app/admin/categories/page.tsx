@@ -51,50 +51,17 @@ export default function CategoriesPage() {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      // Mock data - replace with actual API call
-      const mockCategories: Category[] = [
-        {
-          id: '1',
-          name: 'Rudraksha',
-          description: 'Sacred rudraksha beads and malas',
-          image: '/categories/rudraksha.png',
-          productCount: 45,
-          status: 'active',
-          createdAt: '2024-01-01',
-          updatedAt: '2024-01-15'
-        },
-        {
-          id: '2',
-          name: 'Malas',
-          description: 'Traditional prayer beads and malas',
-          image: '/categories/malas.png',
-          productCount: 32,
-          status: 'active',
-          createdAt: '2024-01-02',
-          updatedAt: '2024-01-14'
-        },
-        {
-          id: '3',
-          name: 'Idols',
-          description: 'Hindu deities and spiritual idols',
-          image: '/categories/idols.png',
-          productCount: 28,
-          status: 'active',
-          createdAt: '2024-01-03',
-          updatedAt: '2024-01-13'
-        },
-        {
-          id: '4',
-          name: 'Yantras',
-          description: 'Sacred geometric yantras',
-          image: '/categories/yantras.png',
-          productCount: 15,
-          status: 'inactive',
-          createdAt: '2024-01-04',
-          updatedAt: '2024-01-12'
+      const response = await fetch('/api/admin/categories');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setCategories(result.data);
+        } else {
+          console.error('Error fetching categories:', result.error);
         }
-      ];
-      setCategories(mockCategories);
+      } else {
+        console.error('Failed to fetch categories');
+      }
     } catch (error) {
       console.error('Error fetching categories:', error);
     } finally {
@@ -106,30 +73,43 @@ export default function CategoriesPage() {
     e.preventDefault();
     
     try {
-      if (editingCategory) {
-        // Update category
-        const updatedCategories = categories.map(cat => 
-          cat.id === editingCategory.id 
-            ? { ...cat, ...formData, updatedAt: new Date().toISOString().split('T')[0] }
-            : cat
-        );
-        setCategories(updatedCategories);
-      } else {
-        // Create new category
-        const newCategory: Category = {
-          id: Date.now().toString(),
-          ...formData,
-          productCount: 0,
-          createdAt: new Date().toISOString().split('T')[0],
-          updatedAt: new Date().toISOString().split('T')[0]
-        };
-        setCategories([...categories, newCategory]);
-      }
+      const url = editingCategory ? '/api/admin/categories' : '/api/admin/categories';
+      const method = editingCategory ? 'PUT' : 'POST';
       
-      setIsDialogOpen(false);
-      resetForm();
+      const body = {
+        ...(editingCategory && { id: editingCategory.id }),
+        name: formData.name,
+        description: formData.description,
+        image: formData.image,
+        status: formData.status
+      };
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          // Refresh the categories list
+          await fetchCategories();
+          setIsDialogOpen(false);
+          resetForm();
+        } else {
+          console.error('Error saving category:', result.error);
+          alert('Failed to save category: ' + result.error);
+        }
+      } else {
+        console.error('Failed to save category');
+        alert('Failed to save category');
+      }
     } catch (error) {
       console.error('Error saving category:', error);
+      alert('Failed to save category');
     }
   };
 
@@ -147,9 +127,26 @@ export default function CategoriesPage() {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this category?')) {
       try {
-        setCategories(categories.filter(cat => cat.id !== id));
+        const response = await fetch(`/api/admin/categories?id=${id}`, {
+          method: 'DELETE',
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            // Refresh the categories list
+            await fetchCategories();
+          } else {
+            console.error('Error deleting category:', result.error);
+            alert('Failed to delete category: ' + result.error);
+          }
+        } else {
+          console.error('Failed to delete category');
+          alert('Failed to delete category');
+        }
       } catch (error) {
         console.error('Error deleting category:', error);
+        alert('Failed to delete category');
       }
     }
   };

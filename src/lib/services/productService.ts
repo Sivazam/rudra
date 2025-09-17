@@ -250,3 +250,7 @@ export class ProductService {
     }
   }
 }
+
+// Create default export instance
+const productService = new ProductService();
+export default productService;

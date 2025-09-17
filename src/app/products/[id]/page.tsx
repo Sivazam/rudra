@@ -13,188 +13,54 @@ import { useCartStore } from '@/store/cartStore';
 import { MainLayout } from '@/components/store/MainLayout';
 import { useToast } from '@/hooks/use-toast';
 
-// Mock product data - will be replaced with API call
-const mockProducts = [
-  {
-    id: '1',
-    name: 'Natural 10 Mukhi Rudraksha',
-    subtitle: '(Nepali)',
-    deity: 'Lord Vishnu',
-    price: 8800,
-    originalPrice: 11000,
-    rating: 4.8,
-    reviews: 342,
-    images: [
-      '/products/10-mukhi-1.jpg',
-      '/products/10-mukhi-2.jpg',
-      '/products/10-mukhi-3.jpg',
-      '/products/10-mukhi-4.jpg',
-    ],
-    origin: 'Nepali',
-    description: 'Authentic 10 Mukhi Rudraksha bead from Nepal, blessed by Lord Vishnu. This powerful spiritual bead is known for bringing prosperity, protection, and spiritual growth to the wearer.',
-    spiritualMeaning: 'The 10 Mukhi Rudraksha represents the ten directions and ten incarnations of Lord Vishnu. It is believed to remove negative energies and bring harmony to life.',
-    specifications: [
-      'Aura Cleansing',
-      'Provides Protection',
-      'Enhances Spiritual Growth',
-      'Brings Prosperity',
-      'Removes Negative Energies',
-      'Improves Focus'
-    ],
-    wearGuide: {
-      title: 'Rudraksha Wear Guide',
-      steps: [
-        'Purify the Rudraksha by soaking it in clean water overnight',
-        'Choose an auspicious day (Monday or Thursday) for wearing',
-        'Perform a small puja or prayer before wearing',
-        'Wear it on a red or yellow thread',
-        'Chant "Om Namah Shivaya" 108 times',
-        'Remove during sleep, bath, and toilet visits'
-      ],
-      image: '/guides/wear-guide.jpg'
-    },
-    careGuide: {
-      title: 'Rudraksha Care Guide',
-      steps: [
-        'Clean with soft brush and clean water monthly',
-        'Avoid exposure to chemicals and perfumes',
-        'Remove before swimming or bathing',
-        'Store in a clean, dry place',
-        'Re-energize by placing in sunlight for 1 hour weekly',
-        'Avoid contact with sharp objects'
-      ],
-      image: '/guides/care-guide.jpg'
-    },
-    variants: [
-      { label: 'Regular', price: 8800, sku: '10M-REG-001', discount: 0, inventory: 25, isDefault: true },
-      { label: 'Medium', price: 12000, sku: '10M-MED-002', discount: 10, inventory: 15 },
-      { label: 'Ultra', price: 18000, sku: '10M-ULT-003', discount: 15, inventory: 8 },
-      { label: 'Rare', price: 25000, sku: '10M-RAR-004', discount: 20, inventory: 3 }
-    ]
-  },
-  {
-    id: '2',
-    name: 'Natural 9 Mukhi Rudraksha',
-    subtitle: '(Nepali)',
-    deity: 'Goddess Durga',
-    price: 1299,
-    originalPrice: 1599,
-    rating: 4.8,
-    reviews: 423,
-    images: [
-      '/products/9-mukhi.jpg',
-      '/products/9-mukhi-1.jpg',
-      '/products/9-mukhi-2.jpg',
-      '/products/9-mukhi-3.jpg',
-    ],
-    origin: 'Nepali',
-    description: 'Authentic 9 Mukhi Rudraksha bead representing Goddess Durga. This powerful bead is known for providing protection, courage, and removing obstacles.',
-    spiritualMeaning: 'The 9 Mukhi Rudraksha represents the nine forms of Goddess Durga. It is believed to provide protection from negative energies and enhance courage.',
-    specifications: [
-      'Goddess Durga Blessings',
-      'Removes Obstacles',
-      'Provides Protection',
-      'Enhances Courage',
-      'Improves Confidence',
-      'Spiritual Growth'
-    ],
-    wearGuide: {
-      title: 'Rudraksha Wear Guide',
-      steps: [
-        'Purify the Rudraksha by soaking it in clean water overnight',
-        'Choose an auspicious day (Tuesday or Friday) for wearing',
-        'Perform a small puja or prayer before wearing',
-        'Wear it on a red or yellow thread',
-        'Chant "Om Dum Durgayei Namaha" 108 times',
-        'Remove during sleep, bath, and toilet visits'
-      ],
-      image: '/guides/wear-guide.jpg'
-    },
-    careGuide: {
-      title: 'Rudraksha Care Guide',
-      steps: [
-        'Clean with soft brush and clean water monthly',
-        'Avoid exposure to chemicals and perfumes',
-        'Remove before swimming or bathing',
-        'Store in a clean, dry place',
-        'Re-energize by placing in sunlight for 1 hour weekly',
-        'Avoid contact with sharp objects'
-      ],
-      image: '/guides/care-guide.jpg'
-    },
-    variants: [
-      { label: 'Regular', price: 1299, sku: '9M-REG-001', discount: 0, inventory: 30, isDefault: true },
-      { label: 'Medium', price: 1899, sku: '9M-MED-002', discount: 5, inventory: 20 },
-      { label: 'Ultra', price: 2599, sku: '9M-ULT-003', discount: 10, inventory: 12 },
-      { label: 'Rare', price: 3499, sku: '9M-RAR-004', discount: 15, inventory: 6 }
-    ]
-  },
-  {
-    id: '3',
-    name: 'Natural 5 Mukhi Rudraksha',
-    subtitle: '(Indonesian)',
-    deity: 'Lord Shiva',
-    price: 799,
-    originalPrice: 999,
-    rating: 4.9,
-    reviews: 612,
-    images: [
-      '/products/5-mukhi.jpg',
-      '/products/5-mukhi-1.jpg',
-      '/products/5-mukhi-2.jpg',
-      '/products/5-mukhi-3.jpg',
-    ],
-    origin: 'Indonesian',
-    description: 'Authentic 5 Mukhi Rudraksha bead blessed by Lord Shiva. This is the most commonly available Rudraksha, known for bringing peace and spiritual growth.',
-    spiritualMeaning: 'The 5 Mukhi Rudraksha represents the five faces of Lord Shiva. It is believed to bring peace, prosperity, and spiritual enlightenment.',
-    specifications: [
-      'Lord Shiva Blessings',
-      'Brings Peace',
-      'Enhances Meditation',
-      'Improves Focus',
-      'Spiritual Growth',
-      'Removes Stress'
-    ],
-    wearGuide: {
-      title: 'Rudraksha Wear Guide',
-      steps: [
-        'Purify the Rudraksha by soaking it in clean water overnight',
-        'Choose an auspicious day (Monday) for wearing',
-        'Perform a small puja or prayer before wearing',
-        'Wear it on a red or yellow thread',
-        'Chant "Om Namah Shivaya" 108 times',
-        'Remove during sleep, bath, and toilet visits'
-      ],
-      image: '/guides/wear-guide.jpg'
-    },
-    careGuide: {
-      title: 'Rudraksha Care Guide',
-      steps: [
-        'Clean with soft brush and clean water monthly',
-        'Avoid exposure to chemicals and perfumes',
-        'Remove before swimming or bathing',
-        'Store in a clean, dry place',
-        'Re-energize by placing in sunlight for 1 hour weekly',
-        'Avoid contact with sharp objects'
-      ],
-      image: '/guides/care-guide.jpg'
-    },
-    variants: [
-      { label: 'Regular', price: 799, sku: '5M-REG-001', discount: 0, inventory: 50, isDefault: true },
-      { label: 'Medium', price: 1199, sku: '5M-MED-002', discount: 8, inventory: 35 },
-      { label: 'Ultra', price: 1599, sku: '5M-ULT-003', discount: 12, inventory: 20 },
-      { label: 'Rare', price: 2199, sku: '5M-RAR-004', discount: 18, inventory: 10 }
-    ]
-  }
-];
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  spiritualMeaning?: string;
+  deity: string;
+  price: number;
+  originalPrice?: number;
+  discount: number;
+  category: string;
+  categoryName: string;
+  images: string[];
+  variants: Array<{
+    id: string;
+    name: string;
+    price: number;
+    originalPrice?: number;
+    discount: number;
+    stock: number;
+    sku: string;
+    inventory: number;
+    isDefault?: boolean;
+  }>;
+  status: 'active' | 'inactive';
+  stock: number;
+  createdAt: string;
+  defaultVariant?: any;
+  origin?: string;
+  specifications?: string[];
+  wearGuide?: {
+    title: string;
+    steps: string[];
+    image?: string;
+  };
+  careGuide?: {
+    title: string;
+    steps: string[];
+    image?: string;
+  };
+}
 
 export default function ProductDetailPage() {
   const params = useParams();
   const productId = params.id as string;
   
-  // Find the product based on ID
-  const mockProduct = mockProducts.find(p => p.id === productId) || mockProducts[0];
-  
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
@@ -206,13 +72,40 @@ export default function ProductDetailPage() {
   const { addItem, items } = useCartStore();
   const { toast } = useToast();
 
+  // Fetch product data
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await fetch(`/api/products/id/${productId}`);
+        if (response.ok) {
+          const productData = await response.json();
+          setProduct(productData);
+          // Set default variant if available
+          if (productData.defaultVariant) {
+            setSelectedVariant(productData.defaultVariant);
+          }
+        } else {
+          console.error('Failed to fetch product');
+        }
+      } catch (error) {
+        console.error('Error fetching product:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (productId) {
+      fetchProduct();
+    }
+  }, [productId]);
+
   // Check if this product is already in cart - sum quantities of ALL variants
-  const cartItemsForProduct = items.filter(item => item.productId === mockProduct.id);
+  const cartItemsForProduct = product ? items.filter(item => item.productId === product.id) : [];
   const totalQuantityInCart = cartItemsForProduct.reduce((sum, item) => sum + item.quantity, 0);
   
   // Check if the currently selected variant is already in cart
   const isCurrentVariantInCart = selectedVariant && 
-    cartItemsForProduct.some(item => item.variant.label === selectedVariant.label);
+    cartItemsForProduct.some(item => item.variant.label === selectedVariant.name);
   
   // For general operations, get the first item (for simplicity)
   const cartItem = cartItemsForProduct[0];
@@ -223,8 +116,10 @@ export default function ProductDetailPage() {
   }, [isCurrentVariantInCart]);
 
   const handleAddToCart = () => {
+    if (!product) return;
+    
     // Check if user has selected a variant (for products with variants)
-    const availableVariants = mockProduct.variants.filter(v => v.inventory > 0);
+    const availableVariants = product.variants.filter(v => v.inventory > 0);
     
     if (availableVariants.length > 1 && !selectedVariant) {
       // If multiple variants exist and user hasn't selected one, show shake effect
@@ -247,34 +142,33 @@ export default function ProductDetailPage() {
     if (variantToAdd) {
       // Add to cart
       addItem({
-        productId: mockProduct.id,
-        name: mockProduct.name,
-        deity: mockProduct.deity,
-        image: mockProduct.images[0],
+        productId: product.id,
+        name: product.name,
+        deity: product.deity,
+        image: product.images[0],
         variant: {
-          label: variantToAdd.label,
+          label: variantToAdd.name,
           price: variantToAdd.price,
           sku: variantToAdd.sku,
           discount: variantToAdd.discount
         }
       });
       
-      // Don't reset variant selection - keep it selected to show GO TO CART button
-      // setSelectedVariant(null); // Removed this line
-      
       // Open cart after adding item
       useCartStore.getState().openCart();
       
       toast({
         title: "Added to cart",
-        description: `${mockProduct.name} added to cart`,
+        description: `${product.name} added to cart`,
       });
     }
   };
 
   const handleBuyNow = () => {
+    if (!product) return;
+    
     // Check if user has selected a variant (for products with variants)
-    const availableVariants = mockProduct.variants.filter(v => v.inventory > 0);
+    const availableVariants = product.variants.filter(v => v.inventory > 0);
     
     if (availableVariants.length > 1 && !selectedVariant) {
       // If multiple variants exist and user hasn't selected one, show shake effect
@@ -297,24 +191,21 @@ export default function ProductDetailPage() {
     if (variantToAdd) {
       // Add to cart
       addItem({
-        productId: mockProduct.id,
-        name: mockProduct.name,
-        deity: mockProduct.deity,
-        image: mockProduct.images[0],
+        productId: product.id,
+        name: product.name,
+        deity: product.deity,
+        image: product.images[0],
         variant: {
-          label: variantToAdd.label,
+          label: variantToAdd.name,
           price: variantToAdd.price,
           sku: variantToAdd.sku,
           discount: variantToAdd.discount
         }
       });
       
-      // Don't reset variant selection - keep it selected to show GO TO CART button
-      // setSelectedVariant(null); // Removed this line
-      
       toast({
         title: "Added to cart",
-        description: `${mockProduct.name} added to cart`,
+        description: `${product.name} added to cart`,
       });
       
       // Navigate to checkout (this will be implemented later)
@@ -338,7 +229,35 @@ export default function ProductDetailPage() {
     };
   };
 
-  const currentPricing = formatPrice(selectedVariant?.price || mockProduct.price, selectedVariant?.discount || 0);
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen" style={{ backgroundColor: '#f4f0eb' }}>
+          <div className="container mx-auto px-4 py-8">
+            <div className="text-center">
+              <p>Loading product...</p>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!product) {
+    return (
+      <MainLayout>
+        <div className="min-h-screen" style={{ backgroundColor: '#f4f0eb' }}>
+          <div className="container mx-auto px-4 py-8">
+            <div className="text-center">
+              <p>Product not found</p>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  const currentPricing = formatPrice(selectedVariant?.price || product.price, selectedVariant?.discount || 0);
 
   return (
     <MainLayout>
@@ -350,7 +269,7 @@ export default function ProductDetailPage() {
             <span>/</span>
           <a href="/categories" className="hover:opacity-80 transition-colors" style={{ color: 'rgba(156,86,26,255)' }}>Rudraksha</a>
           <span>/</span>
-          <span style={{ color: '#846549' }}>{mockProduct.name}</span>
+          <span style={{ color: '#846549' }}>{product.name}</span>
         </nav>
       </div>
 
@@ -361,15 +280,15 @@ export default function ProductDetailPage() {
             {/* Main Image */}
             <div className="aspect-square bg-white rounded-lg shadow-sm overflow-hidden">
               <img
-                src={mockProduct.images[selectedImage]}
-                alt={mockProduct.name}
+                src={product.images[selectedImage]}
+                alt={product.name}
                 className="w-full h-full object-cover"
               />
             </div>
             
             {/* Thumbnail Gallery */}
             <div className="grid grid-cols-4 gap-2">
-              {mockProduct.images.map((image, index) => (
+              {product.images.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImage(index)}
@@ -381,7 +300,7 @@ export default function ProductDetailPage() {
                 >
                   <img
                     src={image}
-                    alt={`${mockProduct.name} view ${index + 1}`}
+                    alt={`${product.name} view ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
                 </button>
@@ -396,9 +315,9 @@ export default function ProductDetailPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <h1 className="text-3xl font-bold mb-2" style={{ color: '#755e3e' }}>
-                    {mockProduct.name} {mockProduct.subtitle}
+                    {product.name} {product.subtitle}
                   </h1>
-                  <p className="text-lg mb-4" style={{ color: '#846549' }}>{mockProduct.deity}</p>
+                  <p className="text-lg mb-4" style={{ color: '#846549' }}>{product.deity}</p>
                 </div>
                 <Button
                   variant="ghost"
@@ -417,16 +336,16 @@ export default function ProductDetailPage() {
                     <Star
                       key={i}
                       className={`h-5 w-5 ${
-                        i < Math.floor(mockProduct.rating)
+                        i < Math.floor(product.rating)
                           ? 'fill-current'
                           : 'text-gray-300'
                       }`}
-                      style={{ color: i < Math.floor(mockProduct.rating) ? 'rgba(160,82,16,255)' : undefined }}
+                      style={{ color: i < Math.floor(product.rating) ? 'rgba(160,82,16,255)' : undefined }}
                     />
                   ))}
                 </div>
-                <span className="text-lg font-medium" style={{ color: '#755e3e' }}>{mockProduct.rating}</span>
-                <span style={{ color: '#846549' }}>({mockProduct.reviews} reviews)</span>
+                <span className="text-lg font-medium" style={{ color: '#755e3e' }}>{product.rating}</span>
+                <span style={{ color: '#846549' }}>({product.reviews} reviews)</span>
               </div>
             </div>
 
@@ -447,7 +366,9 @@ export default function ProductDetailPage() {
                   </Badge>
                 )}
               </div>
-              <p className="text-sm" style={{ color: '#846549' }}>Origin: {mockProduct.origin}</p>
+              {product.origin && (
+                <p className="text-sm" style={{ color: '#846549' }}>Origin: {product.origin}</p>
+              )}
             </div>
 
             {/* Variant Selection */}
@@ -456,12 +377,12 @@ export default function ProductDetailPage() {
               <RadioGroup
                 value={selectedVariant?.label || ''}
                 onValueChange={(value) => {
-                  const variant = mockProduct.variants.find(v => v.label === value);
+                  const variant = product.variants.find(v => v.label === value);
                   setSelectedVariant(variant);
                 }}
                 className={`grid grid-cols-2 sm:grid-cols-4 gap-2 ${shakeVariants ? 'animate-shake' : ''}`}
               >
-                {mockProduct.variants.map((variant) => {
+                {product.variants.map((variant) => {
                   const pricing = formatPrice(variant.price, variant.discount);
                   return (
                     <div key={variant.label} className="relative">
@@ -525,17 +446,19 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Specifications */}
-            <div>
-              <h3 className="text-lg font-semibold mb-3" style={{ color: '#755e3e' }}>Product Specifications</h3>
-              <div className="grid grid-cols-2 gap-3">
-                {mockProduct.specifications.map((spec, index) => (
-                  <div key={index} className="flex items-center space-x-2 p-3 bg-white rounded-lg border" style={{ borderColor: '#846549' }}>
-                    <Check className="h-5 w-5 flex-shrink-0" style={{ color: 'rgba(160,82,16,255)' }} />
-                    <span className="text-sm" style={{ color: '#846549' }}>{spec}</span>
-                  </div>
-                ))}
+            {product.specifications && product.specifications.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3" style={{ color: '#755e3e' }}>Product Specifications</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {product.specifications.map((spec, index) => (
+                    <div key={index} className="flex items-center space-x-2 p-3 bg-white rounded-lg border" style={{ borderColor: '#846549' }}>
+                      <Check className="h-5 w-5 flex-shrink-0" style={{ color: 'rgba(160,82,16,255)' }} />
+                      <span className="text-sm" style={{ color: '#846549' }}>{spec}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Additional Actions */}
             <div className="flex items-center space-x-4 pt-4 border-t" style={{ borderColor: '#846549' }}>
@@ -556,78 +479,109 @@ export default function ProductDetailPage() {
           <Tabs defaultValue="description" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="description">Description</TabsTrigger>
-              <TabsTrigger value="spiritual">Spiritual Meaning</TabsTrigger>
-              <TabsTrigger value="wear-guide">Wear Guide</TabsTrigger>
-              <TabsTrigger value="care-guide">Care Guide</TabsTrigger>
+              {product.spiritualMeaning && (
+                <TabsTrigger value="spiritual">Spiritual Meaning</TabsTrigger>
+              )}
+              {product.wearGuide && (
+                <TabsTrigger value="wear-guide">Wear Guide</TabsTrigger>
+              )}
+              {product.careGuide && (
+                <TabsTrigger value="care-guide">Care Guide</TabsTrigger>
+              )}
             </TabsList>
             
             <TabsContent value="description" className="mt-6">
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <h3 className="text-xl font-semibold mb-4">Product Description</h3>
                 <p className="text-gray-700 leading-relaxed">
-                  {mockProduct.description}
+                  {product.description}
                 </p>
               </div>
             </TabsContent>
             
-            <TabsContent value="spiritual" className="mt-6">
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h3 className="text-xl font-semibold mb-4">Spiritual Significance</h3>
-                <p className="text-gray-700 leading-relaxed">
-                  {mockProduct.spiritualMeaning}
-                </p>
-              </div>
-            </TabsContent>
+            {/* Spiritual Meaning Tab */}
+            {product.spiritualMeaning && (
+              <TabsContent value="spiritual" className="mt-6">
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <h3 className="text-xl font-semibold mb-4">Spiritual Significance</h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    {product.spiritualMeaning}
+                  </p>
+                </div>
+              </TabsContent>
+            )}
             
-            <TabsContent value="wear-guide" className="mt-6">
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h3 className="text-xl font-semibold mb-4">{mockProduct.wearGuide.title}</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <ol className="space-y-3">
-                      {mockProduct.wearGuide.steps.map((step, index) => (
-                        <li key={index} className="flex items-start space-x-3">
-                          <span className="flex-shrink-0 w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-medium">
-                            {index + 1}
-                          </span>
-                          <span className="text-gray-700">{step}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                  <div className="flex justify-center">
-                    <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <span className="text-gray-500">Wear Guide Image</span>
+            {/* Wear Guide Tab */}
+            {product.wearGuide && (
+              <TabsContent value="wear-guide" className="mt-6">
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <h3 className="text-xl font-semibold mb-4">{product.wearGuide.title}</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <ol className="space-y-3">
+                        {product.wearGuide.steps.map((step, index) => (
+                          <li key={index} className="flex items-start space-x-3">
+                            <span className="flex-shrink-0 w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-medium">
+                              {index + 1}
+                            </span>
+                            <span className="text-gray-700">{step}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                    <div className="flex justify-center">
+                      {product.wearGuide.image ? (
+                        <img
+                          src={product.wearGuide.image}
+                          alt="Wear Guide"
+                          className="w-full h-64 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <span className="text-gray-500">Wear Guide Image</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-              </div>
-            </TabsContent>
+              </TabsContent>
+            )}
             
-            <TabsContent value="care-guide" className="mt-6">
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h3 className="text-xl font-semibold mb-4">{mockProduct.careGuide.title}</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <ol className="space-y-3">
-                      {mockProduct.careGuide.steps.map((step, index) => (
-                        <li key={index} className="flex items-start space-x-3">
-                          <span className="flex-shrink-0 w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-medium">
-                            {index + 1}
-                          </span>
-                          <span className="text-gray-700">{step}</span>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                  <div className="flex justify-center">
-                    <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <span className="text-gray-500">Care Guide Image</span>
+          {/* Care Guide Tab */}
+            {product.careGuide && (
+              <TabsContent value="care-guide" className="mt-6">
+                <div className="bg-white rounded-lg p-6 shadow-sm">
+                  <h3 className="text-xl font-semibold mb-4">{product.careGuide.title}</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <ol className="space-y-3">
+                        {product.careGuide.steps.map((step, index) => (
+                          <li key={index} className="flex items-start space-x-3">
+                            <span className="flex-shrink-0 w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-medium">
+                              {index + 1}
+                            </span>
+                            <span className="text-gray-700">{step}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                    <div className="flex justify-center">
+                      {product.careGuide.image ? (
+                        <img
+                          src={product.careGuide.image}
+                          alt="Care Guide"
+                          className="w-full h-64 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <span className="text-gray-500">Care Guide Image</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
-              </div>
-            </TabsContent>
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </div>
