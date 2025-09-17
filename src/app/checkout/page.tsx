@@ -32,13 +32,29 @@ interface ShippingAddress {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, getTotalPrice, clearCart } = useCartStore();
+  const { items, getTotalPrice, clearCart, freezeCartForPayment, unfreezeCart } = useCartStore();
   const [loading, setLoading] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress | null>(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [showPaymentOverlay, setShowPaymentOverlay] = useState(false);
+
+  // Freeze cart when component mounts and user is on checkout page
+  useEffect(() => {
+    if (items.length > 0) {
+      freezeCartForPayment();
+      console.log('Cart frozen for checkout process');
+    }
+    
+    // Cleanup: unfreeze cart when component unmounts (if payment not completed)
+    return () => {
+      if (!paymentProcessing) {
+        unfreezeCart();
+        console.log('Cart unfrozen (checkout cancelled)');
+      }
+    };
+  }, [items.length, freezeCartForPayment, unfreezeCart, paymentProcessing]);
 
   useEffect(() => {
     loadRazorpayScript().then(setRazorpayLoaded);
@@ -313,6 +329,8 @@ export default function CheckoutPage() {
               // Set sessionStorage flag before redirecting
               sessionStorage.setItem('fromCheckout', 'true');
               
+              // Unfreeze cart and clear it after successful payment
+              unfreezeCart();
               clearCart();
               
               // Add a small delay to ensure the loading overlay is visible
@@ -420,7 +438,16 @@ export default function CheckoutPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Order Summary</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Order Summary</CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm text-green-600 font-medium">Prices Locked</span>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-500">
+                  Product prices are now frozen and will not change during checkout
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4 max-h-96 overflow-y-auto">

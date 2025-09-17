@@ -21,29 +21,44 @@ interface Product {
   image: string;
   badge?: string;
   hasVariants?: boolean;
+  variants?: Array<{
+    id: string;
+    name: string;
+    price: number;
+    originalPrice?: number;
+    discount: number;
+    stock: number;
+    sku: string;
+  }>;
 }
 
 interface ProductCardProps {
   product: Product;
 }
 
-// Mock variants for each product
-const getMockVariants = (productId: string) => [
-  { label: 'Regular', price: 1499, sku: `REG-${productId}`, discount: 0, inventory: 50, isDefault: true },
-  { label: 'Medium', price: 2499, sku: `MED-${productId}`, discount: 10, inventory: 30 },
-  { label: 'Ultra', price: 3999, sku: `ULT-${productId}`, discount: 15, inventory: 15 },
-  { label: 'Rare', price: 5999, sku: `RAR-${productId}`, discount: 20, inventory: 5 },
-];
-
-// Default variant for products without variants
-const getDefaultVariant = (product: Product) => ({
-  label: 'Default',
-  price: product.price,
-  sku: `DEF-${product.id}`,
-  discount: 0,
-  inventory: 100,
-  isDefault: true
-});
+// Transform product variants to variant selector format
+const transformVariants = (product: Product) => {
+  if (!product.variants || product.variants.length === 0) {
+    // If no variants, create a default variant from the main product
+    return [{
+      label: 'Default',
+      price: product.price,
+      sku: `DEF-${product.id}`,
+      discount: 0,
+      inventory: 100,
+      isDefault: true
+    }];
+  }
+  
+  return product.variants.map(variant => ({
+    label: variant.name,
+    price: variant.price,
+    sku: variant.sku,
+    discount: variant.discount,
+    inventory: variant.stock,
+    isDefault: variant.id === product.variants![0].id // Mark first variant as default
+  }));
+};
 
 export function ProductCard({ product }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -63,8 +78,15 @@ export function ProductCard({ product }: ProductCardProps) {
   const quantityInCart = cartItem?.quantity || 0;
 
   const handleAddToCart = () => {
-    // Check if product has multiple variants
-    const variants = product.hasVariants === false ? [getDefaultVariant(product)] : getMockVariants(product.id);
+    // Check if product has actual variants added by the user
+    if (!product.variants || product.variants.length === 0) {
+      // No variants added by user - add the main product directly
+      handleDirectAddToCart();
+      return;
+    }
+    
+    // Get the actual variants for this product
+    const variants = transformVariants(product);
     const availableVariants = variants.filter(v => v.inventory > 0);
     
     if (availableVariants.length === 1) {
@@ -74,10 +96,43 @@ export function ProductCard({ product }: ProductCardProps) {
       // If multiple variants available, show variant selector
       setShowVariantSelector(true);
     } else {
-      // No variants available, show error or handle accordingly
-      // For now, we'll still show the variant selector to display the out of stock state
-      setShowVariantSelector(true);
+      // No variants available, show error
+      toast({
+        title: "Out of stock",
+        description: `${product.name} is currently out of stock`,
+        variant: "destructive"
+      });
     }
+  };
+
+  const handleDirectAddToCart = () => {
+    setIsAdding(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      addItem({
+        productId: product.id,
+        variantId: `MAIN-${product.id}`,
+        name: product.name,
+        deity: product.deity,
+        image: product.image,
+        variant: {
+          label: 'Default',
+          price: product.price,
+          sku: `MAIN-${product.id}`,
+          discount: 0
+        }
+      });
+      setIsAdding(false);
+      
+      // Open cart after adding item
+      useCartStore.getState().openCart();
+      
+      toast({
+        title: "Added to cart",
+        description: `${product.name} added to cart`,
+      });
+    }, 500);
   };
 
   const handleVariantSelect = (variant: any) => {
@@ -114,8 +169,24 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleQuantityChange = (newQuantity: number) => {
     if (newQuantity > totalQuantityInCart) {
       // This is an increment operation
-      const mockVariants = product.hasVariants === false ? [getDefaultVariant(product)] : getMockVariants(product.id);
-      if (mockVariants.length > 1) {
+      if (!product.variants || product.variants.length === 0) {
+        // No variants - just increment the first item's quantity
+        if (cartItem) {
+          useCartStore.getState().updateQuantity(cartItem.id, newQuantity);
+          
+          // Open cart after updating quantity
+          useCartStore.getState().openCart();
+          
+          toast({
+            title: "Quantity updated",
+            description: `${product.name} quantity increased to ${newQuantity}`,
+          });
+        }
+        return;
+      }
+      
+      const variants = transformVariants(product);
+      if (variants.length > 1) {
         // If multiple variants exist, show dialog to choose
         setShowRepeatDialog(true);
       } else {
@@ -328,7 +399,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <VariantSelector
         isOpen={showVariantSelector}
         onClose={() => setShowVariantSelector(false)}
-        variants={product.hasVariants === false ? [getDefaultVariant(product)] : getMockVariants(product.id)}
+        variants={transformVariants(product)}
         productName={product.name}
         onVariantSelect={handleVariantSelect}
       />

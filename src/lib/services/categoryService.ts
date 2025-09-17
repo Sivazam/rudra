@@ -1,66 +1,86 @@
-import { firestoreService } from '@/lib/firebase';
+import { firestoreService, storageService } from '@/lib/firebase';
 
-export interface ICategory {
-  id?: string;
+export interface Category {
+  id: string;
   name: string;
-  slug: string;
-  iconUrl: string;
-  createdAt?: any;
-  updatedAt?: any;
+  description: string;
+  image: string;
+  productCount: number;
+  status: 'active' | 'inactive';
+  createdAt: string;
 }
 
-class CategoryService {
-  private collection = 'categories';
+export class CategoryService {
+  private static readonly COLLECTION_NAME = 'categories';
 
-  // Create a new category
-  async createCategory(categoryData: Omit<ICategory, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  // Get all categories
+  static async getAll(): Promise<Category[]> {
     try {
-      return await firestoreService.create(this.collection, categoryData);
+      const categories = await firestoreService.getAll(this.COLLECTION_NAME, {
+        orderBy: { field: 'createdAt', direction: 'desc' }
+      });
+      return categories as Category[];
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      return [];
+    }
+  }
+
+  // Get category by ID
+  static async getById(id: string): Promise<Category | null> {
+    try {
+      const category = await firestoreService.getById(this.COLLECTION_NAME, id);
+      return category as Category;
+    } catch (error) {
+      console.error('Error fetching category:', error);
+      return null;
+    }
+  }
+
+  // Create new category
+  static async create(categoryData: Omit<Category, 'id' | 'createdAt' | 'productCount'>, imageFile?: File): Promise<string> {
+    try {
+      let imageUrl = categoryData.image;
+      
+      // Upload image to Firebase Storage if provided
+      if (imageFile) {
+        const fileExtension = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}_category.${fileExtension}`;
+        imageUrl = await storageService.uploadFile(imageFile, `categories/${fileName}`);
+      }
+
+      const categoryToCreate = {
+        ...categoryData,
+        image: imageUrl,
+        productCount: 0
+      };
+
+      const categoryId = await firestoreService.create(this.COLLECTION_NAME, categoryToCreate);
+      return categoryId;
     } catch (error) {
       console.error('Error creating category:', error);
       throw error;
     }
   }
 
-  // Get category by ID
-  async getCategoryById(id: string): Promise<ICategory | null> {
-    try {
-      return await firestoreService.getById(this.collection, id);
-    } catch (error) {
-      console.error('Error getting category:', error);
-      throw error;
-    }
-  }
-
-  // Get category by slug
-  async getCategoryBySlug(slug: string): Promise<ICategory | null> {
-    try {
-      const categories = await firestoreService.getAll(this.collection, {
-        where: { field: 'slug', operator: '==', value: slug }
-      });
-      return categories.length > 0 ? categories[0] : null;
-    } catch (error) {
-      console.error('Error getting category by slug:', error);
-      throw error;
-    }
-  }
-
-  // Get all categories
-  async getAllCategories(): Promise<ICategory[]> {
-    try {
-      return await firestoreService.getAll(this.collection, {
-        orderBy: { field: 'name', direction: 'asc' }
-      });
-    } catch (error) {
-      console.error('Error getting all categories:', error);
-      throw error;
-    }
-  }
-
   // Update category
-  async updateCategory(id: string, updateData: Partial<ICategory>): Promise<void> {
+  static async update(id: string, categoryData: Partial<Category>, imageFile?: File): Promise<void> {
     try {
-      await firestoreService.update(this.collection, id, updateData);
+      let imageUrl = categoryData.image;
+      
+      // Upload new image to Firebase Storage if provided
+      if (imageFile) {
+        const fileExtension = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}_category.${fileExtension}`;
+        imageUrl = await storageService.uploadFile(imageFile, `categories/${fileName}`);
+      }
+
+      const categoryToUpdate = {
+        ...categoryData,
+        ...(imageUrl && { image: imageUrl })
+      };
+
+      await firestoreService.update(this.COLLECTION_NAME, id, categoryToUpdate);
     } catch (error) {
       console.error('Error updating category:', error);
       throw error;
@@ -68,38 +88,59 @@ class CategoryService {
   }
 
   // Delete category
-  async deleteCategory(id: string): Promise<void> {
+  static async delete(id: string): Promise<void> {
     try {
-      await firestoreService.delete(this.collection, id);
+      // Get category to check for image deletion
+      const category = await this.getById(id);
+      if (category && category.image && !category.image.startsWith('/')) {
+        // Delete image from Firebase Storage if it's a URL (not local path)
+        try {
+          // Extract path from URL and delete
+          const imageUrl = new URL(category.image);
+          const imagePath = imageUrl.pathname.split('/o/')[1]?.split('?')[0];
+          if (imagePath) {
+            const decodedPath = decodeURIComponent(imagePath);
+            await storageService.deleteFile(decodedPath);
+          }
+        } catch (error) {
+          console.warn('Failed to delete category image:', error);
+        }
+      }
+
+      await firestoreService.delete(this.COLLECTION_NAME, id);
     } catch (error) {
       console.error('Error deleting category:', error);
       throw error;
     }
   }
 
-  // Get category with product count
-  async getCategoriesWithProductCount(): Promise<(ICategory & { productCount: number })[]> {
+  // Update product count for category
+  static async updateProductCount(categoryId: string, increment: number): Promise<void> {
     try {
-      const categories = await this.getAllCategories();
-      const productService = (await import('./productService')).productService;
-      
-      const categoriesWithCount = await Promise.all(
-        categories.map(async (category) => {
-          const products = await productService.getProductsByCategory(category.slug);
-          return {
-            ...category,
-            productCount: products.length
-          };
-        })
-      );
-
-      return categoriesWithCount;
+      const category = await this.getById(categoryId);
+      if (category) {
+        const newProductCount = Math.max(0, category.productCount + increment);
+        await firestoreService.update(this.COLLECTION_NAME, categoryId, {
+          productCount: newProductCount
+        });
+      }
     } catch (error) {
-      console.error('Error getting categories with product count:', error);
+      console.error('Error updating category product count:', error);
       throw error;
     }
   }
-}
 
-export const categoryService = new CategoryService();
-export default categoryService;
+  // Get active categories only
+  static async getActive(): Promise<Category[]> {
+    try {
+      const categories = await firestoreService.getAll(this.COLLECTION_NAME, {
+        where: { field: 'status', operator: '==', value: 'active' },
+        orderBy: { field: 'name', direction: 'asc' }
+      });
+      return categories as Category[];
+    } catch (error) {
+      console.error('Error fetching active categories:', error);
+      return [];
+    }
+  }
+}

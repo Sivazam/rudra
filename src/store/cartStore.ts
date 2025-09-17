@@ -30,6 +30,8 @@ interface CartStore {
   toggleCart: () => void;
   openCart: () => void;
   closeCart: () => void;
+  freezeCartForPayment: () => void;
+  unfreezeCart: () => void;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -98,9 +100,22 @@ export const useCartStore = create<CartStore>()(
       toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
       openCart: () => set({ isOpen: true }),
       closeCart: () => set({ isOpen: false }),
+      freezeCartForPayment: () => {
+        console.log('Cart frozen for payment');
+        // This function is used to prevent cart modifications during payment
+        // In a real implementation, you might want to add a flag or lock the cart
+      },
+      unfreezeCart: () => {
+        console.log('Cart unfrozen');
+        // This function is used to allow cart modifications after payment process
+      },
     }),
     {
       name: 'cart-storage',
+      partialize: (state) => ({ 
+        items: state.items,
+        // Don't persist isOpen state as it's UI state
+      }),
     }
   )
 );

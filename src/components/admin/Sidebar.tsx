@@ -15,13 +15,13 @@ import {
 } from 'lucide-react';
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Banners', href: '/admin/banners', icon: Image },
-  { name: 'Categories', href: '/admin/categories', icon: Tags },
-  { name: 'Products', href: '/admin/products', icon: Package },
-  { name: 'Variants', href: '/admin/variants', icon: Layers },
-  { name: 'Discounts', href: '/admin/discounts', icon: Percent },
-  { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
+  { name: 'Dashboard', href: '/admin-dashboard', icon: LayoutDashboard },
+  { name: 'Banners', href: '/admin-dashboard/banners', icon: Image },
+  { name: 'Categories', href: '/admin-dashboard/categories', icon: Tags },
+  { name: 'Products', href: '/admin-dashboard/products', icon: Package },
+  { name: 'Variants', href: '/admin-dashboard/variants', icon: Layers },
+  { name: 'Discounts', href: '/admin-dashboard/discounts', icon: Percent },
+  { name: 'Orders', href: '/admin-dashboard/orders', icon: ShoppingCart },
 ];
 
 export function Sidebar() {
@@ -65,9 +65,9 @@ export function Sidebar() {
       <div className="absolute bottom-0 w-64 p-4 border-t border-gray-200">
         <button
           onClick={() => {
-            // Clear auth cookie and redirect to login
+            // Clear auth cookie and redirect to home
             document.cookie = 'auth-token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            window.location.href = '/auth/login';
+            window.location.href = '/';
           }}
           className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100 hover:text-gray-900"
         >

@@ -33,17 +33,17 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     // Clear admin auth
     localStorage.removeItem('admin-auth');
     sessionStorage.removeItem('admin-auth');
-    router.push('/admin/login');
+    router.push('/');
   };
 
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
-    { icon: Package, label: 'Products', href: '/admin/products' },
-    { icon: FolderOpen, label: 'Categories', href: '/admin/categories' },
-    { icon: ShoppingCart, label: 'Orders', href: '/admin/orders' },
-    { icon: Users, label: 'Customers', href: '/admin/customers' },
-    { icon: TrendingUp, label: 'Analytics', href: '/admin/analytics' },
-    { icon: Settings, label: 'Settings', href: '/admin/settings' },
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/admin-dashboard' },
+    { icon: Package, label: 'Products', href: '/admin-dashboard/products' },
+    { icon: FolderOpen, label: 'Categories', href: '/admin-dashboard/categories' },
+    { icon: ShoppingCart, label: 'Orders', href: '/admin-dashboard/orders' },
+    { icon: Users, label: 'Customers', href: '/admin-dashboard/customers' },
+    { icon: TrendingUp, label: 'Analytics', href: '/admin-dashboard/analytics' },
+    { icon: Settings, label: 'Settings', href: '/admin-dashboard/settings' },
   ];
 
   return (

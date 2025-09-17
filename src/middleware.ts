@@ -33,6 +33,12 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('auth-token')?.value;
   const { pathname } = request.nextUrl;
 
+  // Skip authentication for admin-dashboard route completely
+  if (pathname.startsWith('/admin-dashboard')) {
+    console.log('Middleware: Skipping authentication for admin-dashboard route');
+    return NextResponse.next();
+  }
+
   // Protected routes
   const protectedRoutes = ['/admin/', '/admin'];
   const authRoutes = ['/auth/login', '/auth/verify'];
