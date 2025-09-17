@@ -112,8 +112,8 @@ export async function DELETE(request: NextRequest) {
   try {
     console.log('Admin API: Deleting category');
     
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+    const body = await request.json();
+    const { id } = body;
     
     if (!id) {
       return NextResponse.json(

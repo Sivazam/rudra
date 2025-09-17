@@ -127,8 +127,12 @@ export default function CategoriesPage() {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this category?')) {
       try {
-        const response = await fetch(`/api/admin/categories?id=${id}`, {
+        const response = await fetch('/api/admin/categories', {
           method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id }),
         });
         
         if (response.ok) {

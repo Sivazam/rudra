@@ -697,15 +697,23 @@ export default function EditProductPage() {
                     </Button>
                   </div>
                   
-                  <div className="flex flex-wrap gap-2">
+                  <div className="space-y-2">
                     {formData.specifications?.map((spec, index) => (
-                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                        {spec}
-                        <X 
-                          className="h-3 w-3 cursor-pointer" 
+                      <div key={index} className="flex items-center space-x-3 p-3 bg-white rounded-lg border">
+                        <div className="w-5 h-5 rounded border-2 border-gray-300 flex items-center justify-center">
+                          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                        </div>
+                        <span className="text-sm flex-1">{spec}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={() => removeSpecification(index)}
-                        />
-                      </Badge>
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 </div>
