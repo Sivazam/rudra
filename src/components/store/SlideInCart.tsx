@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { isUserAuthenticated } from '@/lib/auth';
 import { useEffect, useState } from 'react';
+import { ImageWithLoader } from '@/components/ui/ImageWithLoader';
 
 export function SlideInCart() {
   const { 
@@ -143,7 +144,7 @@ export function SlideInCart() {
                   return (
                     <div key={item.id} className="flex space-x-3 p-3 border rounded-lg bg-white shadow-sm" style={{ borderColor: '#f3f4f6' }}>
                       {/* Product Image */}
-                      <img 
+                      <ImageWithLoader 
                         src={item.image} 
                         alt={item.name}
                         className="w-16 h-16 object-cover rounded-md"

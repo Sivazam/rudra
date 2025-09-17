@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { isUserAuthenticated } from '@/lib/auth';
 import { MainLayout } from '@/components/store/MainLayout';
+import { ImageWithLoader } from '@/components/ui/ImageWithLoader';
 
 export default function CartPage() {
   const { 
@@ -110,7 +111,7 @@ export default function CartPage() {
                       return (
                         <div key={item.id} className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 p-4 border rounded-lg" style={{ borderColor: '#f3f4f6' }}>
                           {/* Product Image */}
-                          <img 
+                          <ImageWithLoader 
                             src={item.image} 
                             alt={item.name}
                             className="w-full sm:w-24 h-48 sm:h-24 object-cover rounded-lg"

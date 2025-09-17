@@ -13,6 +13,7 @@ import { useCartStore } from '@/store/cartStore';
 import { MainLayout } from '@/components/store/MainLayout';
 import { useToast } from '@/hooks/use-toast';
 import { useGlobalLoader } from '@/hooks/useGlobalLoader';
+import { ImageWithLoader } from '@/components/ui/ImageWithLoader';
 
 interface Product {
   id: string;
@@ -285,10 +286,11 @@ export default function ProductDetailPage() {
           <div className="space-y-4">
             {/* Main Image */}
             <div className="aspect-square bg-white rounded-lg shadow-sm overflow-hidden">
-              <img
+              <ImageWithLoader
                 src={product.images[selectedImage]}
                 alt={product.name}
                 className="w-full h-full object-cover"
+                priority={true}
               />
             </div>
             
@@ -304,7 +306,7 @@ export default function ProductDetailPage() {
                       : 'border-gray-200 hover:border-orange-400'
                   }`}
                 >
-                  <img
+                  <ImageWithLoader
                     src={image}
                     alt={`${product.name} view ${index + 1}`}
                     className="w-full h-full object-cover"
@@ -532,7 +534,7 @@ export default function ProductDetailPage() {
                     </div>
                     <div className="flex justify-center">
                       {product.wearGuide.image ? (
-                        <img
+                        <ImageWithLoader
                           src={product.wearGuide.image}
                           alt="Wear Guide"
                           className="w-full h-64 object-cover rounded-lg"
@@ -568,7 +570,7 @@ export default function ProductDetailPage() {
                     </div>
                     <div className="flex justify-center">
                       {product.careGuide.image ? (
-                        <img
+                        <ImageWithLoader
                           src={product.careGuide.image}
                           alt="Care Guide"
                           className="w-full h-64 object-cover rounded-lg"

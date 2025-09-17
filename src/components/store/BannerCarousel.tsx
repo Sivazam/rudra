@@ -81,6 +81,7 @@ export function BannerCarousel({
                 fill
                 className="object-cover"
                 priority={index === 0}
+                loading={index === 0 ? 'eager' : 'lazy'}
               />
               {/* Optional: Overlay with text */}
               <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">

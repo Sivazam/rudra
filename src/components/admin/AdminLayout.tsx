@@ -54,8 +54,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Rudra Admin</h1>
-              <p className="text-sm text-gray-500">Store Management</p>
+              <h1 className="text-xl font-bold text-gray-900 font-spiritual">Sanathan</h1>
+              <h1 className="text-xl font-bold text-gray-900 font-spiritual">Rudraksha</h1>
+              <p className="text-sm text-gray-500">Admin Portal</p>
             </div>
             <Button
               variant="ghost"

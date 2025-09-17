@@ -8,6 +8,7 @@ export interface Category {
   productCount: number;
   status: 'active' | 'inactive';
   createdAt: string;
+  order?: number;
 }
 
 export class CategoryService {
@@ -16,10 +17,14 @@ export class CategoryService {
   // Get all categories
   static async getAll(): Promise<Category[]> {
     try {
-      const categories = await firestoreService.getAll(this.COLLECTION_NAME, {
-        orderBy: { field: 'createdAt', direction: 'desc' }
-      });
-      return categories as Category[];
+      const categories = await firestoreService.getAll(this.COLLECTION_NAME);
+      // Add default order field if it doesn't exist and sort by it
+      const categoriesWithOrder = categories.map((cat: any, index) => ({
+        ...cat,
+        order: cat.order || index + 1
+      }));
+      // Sort by order field
+      return categoriesWithOrder.sort((a, b) => a.order - b.order) as Category[];
     } catch (error) {
       console.error('Error fetching categories:', error);
       return [];
@@ -38,7 +43,7 @@ export class CategoryService {
   }
 
   // Create new category
-  static async create(categoryData: Omit<Category, 'id' | 'createdAt' | 'productCount'>, imageFile?: File): Promise<string> {
+  static async create(categoryData: Omit<Category, 'id' | 'createdAt' | 'productCount' | 'order'>, imageFile?: File): Promise<string> {
     try {
       let imageUrl = categoryData.image;
       
@@ -49,10 +54,15 @@ export class CategoryService {
         imageUrl = await storageService.uploadFile(imageFile, `categories/${fileName}`);
       }
 
+      // Get current categories count to set default order
+      const currentCategories = await this.getAll();
+      const defaultOrder = currentCategories.length > 0 ? Math.max(...currentCategories.map(c => c.order)) + 1 : 1;
+
       const categoryToCreate = {
         ...categoryData,
         image: imageUrl,
-        productCount: 0
+        productCount: 0,
+        order: defaultOrder
       };
 
       const categoryId = await firestoreService.create(this.COLLECTION_NAME, categoryToCreate);
@@ -134,13 +144,44 @@ export class CategoryService {
   static async getActive(): Promise<Category[]> {
     try {
       const categories = await firestoreService.getAll(this.COLLECTION_NAME, {
-        where: { field: 'status', operator: '==', value: 'active' },
-        orderBy: { field: 'name', direction: 'asc' }
+        where: { field: 'status', operator: '==', value: 'active' }
       });
-      return categories as Category[];
+      // Add default order field if it doesn't exist and sort by it
+      const categoriesWithOrder = categories.map((cat: any, index) => ({
+        ...cat,
+        order: cat.order || index + 1
+      }));
+      // Sort by order field
+      return categoriesWithOrder.sort((a, b) => a.order - b.order) as Category[];
     } catch (error) {
       console.error('Error fetching active categories:', error);
       return [];
+    }
+  }
+
+  // Update category order
+  static async updateOrder(categoryId: string, newOrder: number): Promise<void> {
+    try {
+      await firestoreService.update(this.COLLECTION_NAME, categoryId, {
+        order: newOrder
+      });
+    } catch (error) {
+      console.error('Error updating category order:', error);
+      throw error;
+    }
+  }
+
+  // Reorder categories (update multiple categories at once)
+  static async reorderCategories(categoryOrders: { id: string; order: number }[]): Promise<void> {
+    try {
+      // Update each category's order
+      const updatePromises = categoryOrders.map(({ id, order }) =>
+        this.updateOrder(id, order)
+      );
+      await Promise.all(updatePromises);
+    } catch (error) {
+      console.error('Error reordering categories:', error);
+      throw error;
     }
   }
 }

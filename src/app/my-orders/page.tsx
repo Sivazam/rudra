@@ -13,6 +13,7 @@ import { userService } from '@/lib/services';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { isUserAuthenticated, getCurrentUser } from '@/lib/auth';
 import { getUserIdentifier, standardizeUserId } from '@/lib/userUtils';
+import { ImageWithLoader } from '@/components/ui/ImageWithLoader';
 
 interface Order {
   id: string;
@@ -279,7 +280,7 @@ export default function MyOrdersPage() {
             <div className="flex flex-wrap gap-2 sm:ml-6 sm:flex-nowrap sm:space-x-2">
               {order.items.slice(0, 4).map((item, index) => (
                 <div key={index} className="relative">
-                  <img
+                  <ImageWithLoader
                     src={getProductImage(item)}
                     alt={item.name}
                     className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg border"
@@ -325,7 +326,7 @@ export default function MyOrdersPage() {
         <div className="space-y-3">
           {order.items.map((item, index) => (
             <div key={index} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
-              <img
+              <ImageWithLoader
                 src={getProductImage(item)}
                 alt={item.name}
                 className="w-12 h-12 object-cover rounded-lg"

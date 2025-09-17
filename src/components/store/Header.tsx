@@ -154,7 +154,9 @@ export function Header({ onSearch }: HeaderProps) {
             <SheetContent side="left" className="w-64 bg-white">
               <nav className="space-y-6 mt-6 px-4">
                 <Link href="/" className="block text-lg font-semibold text-black">
-                  Rudra Store
+                  <span className="font-spiritual">Sanathan</span>
+                  <br />
+                  <span className="font-spiritual">Rudraksha</span>
                 </Link>
                 
                 {/* User Information Section - Only show if authenticated */}
@@ -304,9 +306,13 @@ export function Header({ onSearch }: HeaderProps) {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(156,86,26,255)' }}>
-              <span className="text-white font-bold text-lg">R</span>
+              <span className="text-white font-bold text-lg">SR</span>
             </div>
-            <span className="text-xl font-bold hidden sm:block" style={{ color: '#755e3e' }}>Rudra Store</span>
+            <div className="hidden sm:block">
+              <span className="text-xl font-bold font-spiritual" style={{ color: '#755e3e' }}>Sanathan</span>
+              <br />
+              <span className="text-xl font-bold font-spiritual" style={{ color: '#755e3e' }}>Rudraksha</span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}

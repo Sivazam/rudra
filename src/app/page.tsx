@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
 import { CategoryCarousel } from '@/components/store/CategoryCarousel';
 import { ProductGrid } from '@/components/store/ProductGrid';
 import { ProductCard } from '@/components/store/ProductCard';
 import { BannerCarousel } from '@/components/store/BannerCarousel';
 import { MainLayout } from '@/components/store/MainLayout';
 import { PageTransitionWrapper } from '@/components/ui/PageTransitionWrapper';
+import { Card, CardContent } from '@/components/ui/card';
 import { useDataStore, getStoredCategories, getStoredProducts } from '@/lib/data-store';
 import { useGlobalLoader } from '@/hooks/useGlobalLoader';
 
@@ -76,7 +76,6 @@ const mockBanners: Banner[] = [
 ];
 
 export default function Home() {
-  const searchParams = useSearchParams();
   const { categories, products, loading } = useDataStore();
   const { showLoader, hideLoader } = useGlobalLoader();
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -85,22 +84,53 @@ export default function Home() {
   const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
+  // Always ensure "All" category is available as a fallback
+  useEffect(() => {
+    console.log('Emergency fallback check:', { 
+      storeCategoriesLength: storeCategories.length, 
+      loading, 
+      initialLoadComplete 
+    });
+    
+    // If no categories after loading is complete, add the "All" category
+    if (!loading && initialLoadComplete && storeCategories.length === 0) {
+      const allCategory: StoreCategory = {
+        id: 'all',
+        name: 'All',
+        image: '/categories/all.png'
+      };
+      console.log('Emergency fallback: Adding "All" category');
+      setStoreCategories([allCategory]);
+    }
+  }, [storeCategories.length, loading, initialLoadComplete]);
+
   // Handle category from URL parameter
   useEffect(() => {
-    const categoryParam = searchParams.get('category');
-    if (categoryParam && storeCategories.length > 0) {
-      const categoryExists = storeCategories.some(cat => cat.name === categoryParam);
-      if (categoryExists) {
-        setSelectedCategory(categoryParam);
+    // Only access searchParams on the client side
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const categoryParam = urlParams.get('category');
+      if (categoryParam && storeCategories.length > 0) {
+        const categoryExists = storeCategories.some(cat => cat.name === categoryParam);
+        if (categoryExists) {
+          setSelectedCategory(categoryParam);
+        }
       }
     }
-  }, [searchParams, storeCategories]);
+  }, [storeCategories]);
 
   // Show loader when data is loading
   useEffect(() => {
+    console.log('Loader logic:', { 
+      loading, 
+      initialLoadComplete, 
+      storeCategoriesLength: storeCategories.length, 
+      storeProductsLength: storeProducts.length 
+    });
     if (loading && !initialLoadComplete) {
       showLoader('api');
-    } else if (!loading && storeCategories.length > 0 && storeProducts.length > 0 && !initialLoadComplete) {
+    } else if (!loading && !initialLoadComplete) {
+      // Hide loader even if no data, to prevent infinite loading
       hideLoader('api');
       setInitialLoadComplete(true);
     }
@@ -108,18 +138,36 @@ export default function Home() {
 
   // Transform admin categories to store format
   useEffect(() => {
+    console.log('Transforming categories:', { loading, categories: categories.length, categoriesData: categories });
     if (!loading && categories.length > 0) {
-      const transformedCategories = categories.map(cat => ({
+      // Add "All" category as the first category
+      const allCategory: StoreCategory = {
+        id: 'all',
+        name: 'All',
+        image: '/categories/all.png' // You can create a special image for this
+      };
+      
+      const transformedCategories = [allCategory, ...categories.map(cat => ({
         id: cat.id,
         name: cat.name,
         image: cat.image || '/categories/default.png'
-      }));
+      }))];
+      console.log('Setting store categories:', transformedCategories);
       setStoreCategories(transformedCategories);
       
-      // Set default selected category to first category or 'All'
-      if (transformedCategories.length > 0 && selectedCategory === 'All') {
-        setSelectedCategory(transformedCategories[0].name);
+      // Set default selected category to 'All'
+      if (selectedCategory === 'All') {
+        setSelectedCategory('All');
       }
+    } else if (!loading && categories.length === 0) {
+      // If no categories exist, at least show the "All" category
+      const allCategory: StoreCategory = {
+        id: 'all',
+        name: 'All',
+        image: '/categories/all.png'
+      };
+      console.log('No categories found, showing only "All" category');
+      setStoreCategories([allCategory]);
     }
   }, [categories, loading, selectedCategory]);
 
@@ -145,19 +193,40 @@ export default function Home() {
 
   // Fallback to localStorage if context is not available (for server-side rendering)
   useEffect(() => {
+    console.log('Fallback useEffect:', { loading, hasStoredData: getStoredCategories().length > 0 });
     if (loading) {
       const savedCategories = getStoredCategories();
       const savedProducts = getStoredProducts();
       
+      console.log('Saved data:', { savedCategories: savedCategories.length, savedProducts: savedProducts.length });
+      
       let hasData = false;
       
       if (savedCategories.length > 0) {
-        const transformedCategories = savedCategories.map(cat => ({
+        // Add "All" category as the first category
+        const allCategory: StoreCategory = {
+          id: 'all',
+          name: 'All',
+          image: '/categories/all.png'
+        };
+        
+        const transformedCategories = [allCategory, ...savedCategories.map(cat => ({
           id: cat.id,
           name: cat.name,
           image: cat.image || '/categories/default.png'
-        }));
+        }))];
+        console.log('Setting fallback categories:', transformedCategories);
         setStoreCategories(transformedCategories);
+        hasData = true;
+      } else {
+        // If no saved categories, at least show the "All" category
+        const allCategory: StoreCategory = {
+          id: 'all',
+          name: 'All',
+          image: '/categories/all.png'
+        };
+        console.log('No saved categories, showing only "All" category in fallback');
+        setStoreCategories([allCategory]);
         hasData = true;
       }
       
@@ -222,7 +291,29 @@ export default function Home() {
           </div>
           
           {/* Product Grid */}
-          <ProductGrid products={filteredProducts} />
+          {storeProducts.length > 0 ? (
+            <ProductGrid products={filteredProducts} />
+          ) : (
+            <Card>
+              <CardContent className="text-center py-12">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+                <p className="text-gray-600">
+                  {selectedCategory === 'All' 
+                    ? 'There are no products in the store yet.' 
+                    : `There are no products in the "${selectedCategory}" category yet.`
+                  }
+                </p>
+                {selectedCategory !== 'All' && (
+                  <button 
+                    onClick={() => setSelectedCategory('All')}
+                    className="mt-4 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
+                  >
+                    View All Products
+                  </button>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </MainLayout>
     </PageTransitionWrapper>

@@ -9,7 +9,7 @@ export const RAZORPAY_CONFIG = {
   key_id: 'rzp_test_RHpVquZ5e0nUkX',
   key_secret: 'C0qZuu2HhC7cLYUKBxlKI2at',
   currency: 'INR',
-  company_name: 'Rudra Spiritual Store',
+  company_name: 'Sanathan Rudraksha',
   description: 'Purchase of Spiritual Products'
 };
 

@@ -17,34 +17,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Rudra Store - Authentic Spiritual Products",
+  title: "Sanathan Rudraksha - Authentic Spiritual Products",
   description: "Premium quality Rudraksha beads, malas, and spiritual products. Authentic Nepali Rudraksha with lab certification. Free shipping across India.",
-  keywords: ["Rudraksha", "Spiritual Products", "Nepali Rudraksha", "Rudraksha Mala", "Spiritual Beads", "Meditation", "Yoga Accessories", "Hindu Spiritual Items"],
-  authors: [{ name: "Rudra Store" }],
+  keywords: ["Rudraksha", "Spiritual Products", "Nepali Rudraksha", "Rudraksha Mala", "Spiritual Beads", "Meditation", "Yoga Accessories", "Hindu Spiritual Items", "Sanathan Rudraksha"],
+  authors: [{ name: "Sanathan Rudraksha" }],
   openGraph: {
-    title: "Rudra Store - Authentic Spiritual Products",
+    title: "Sanathan Rudraksha - Authentic Spiritual Products",
     description: "Premium quality Rudraksha beads and spiritual products. Authentic Nepali Rudraksha with lab certification.",
-    url: "https://rudrastore.com",
-    siteName: "Rudra Store",
+    url: "https://sanathanrudraksha.com",
+    siteName: "Sanathan Rudraksha",
     type: "website",
     images: [
       {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Rudra Store - Authentic Spiritual Products",
+        alt: "Sanathan Rudraksha - Authentic Spiritual Products",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Rudra Store - Authentic Spiritual Products",
+    title: "Sanathan Rudraksha - Authentic Spiritual Products",
     description: "Premium quality Rudraksha beads and spiritual products.",
     images: ["/twitter-image.jpg"],
   },
   other: {
-    "twitter:site": "@rudrastore",
-    "twitter:creator": "@rudrastore",
+    "twitter:site": "@sanathanrudraksha",
+    "twitter:creator": "@sanathanrudraksha",
   },
 };
 

@@ -12,6 +12,7 @@ interface Category {
   productCount: number;
   status: 'active' | 'inactive';
   createdAt: string;
+  order?: number;
 }
 
 interface Variant {
@@ -45,9 +46,10 @@ interface Product {
 interface DataStoreContextType {
   categories: Category[];
   products: Product[];
-  addCategory: (category: Omit<Category, 'id' | 'createdAt' | 'productCount'>, imageFile?: File) => Promise<void>;
+  addCategory: (category: Omit<Category, 'id' | 'createdAt' | 'productCount' | 'order'>, imageFile?: File) => Promise<void>;
   updateCategory: (id: string, category: Partial<Category>, imageFile?: File) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
+  reorderCategories: (categoryOrders: { id: string; order: number }[]) => Promise<void>;
   addProduct: (product: Omit<Product, 'id' | 'createdAt' | 'slug'>, imageFiles?: File[]) => Promise<void>;
   updateProduct: (id: string, product: Partial<Product>, newImageFiles?: File[], imagesToDelete?: string[]) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
@@ -69,15 +71,20 @@ export function DataStoreProvider({ children }: DataStoreProviderProps) {
   // Load data from Firebase on mount
   const loadData = async () => {
     try {
+      console.log('DataStore: Loading data from Firebase...');
       setLoading(true);
       const [categoriesData, productsData] = await Promise.all([
         CategoryService.getAll(),
         ProductService.getAll()
       ]);
+      console.log('DataStore: Data loaded successfully', { 
+        categories: categoriesData.length, 
+        products: productsData.length 
+      });
       setCategories(categoriesData);
       setProducts(productsData);
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error('DataStore: Error loading data:', error);
     } finally {
       setLoading(false);
     }
@@ -87,7 +94,7 @@ export function DataStoreProvider({ children }: DataStoreProviderProps) {
     loadData();
   }, []);
 
-  const addCategory = async (categoryData: Omit<Category, 'id' | 'createdAt' | 'productCount'>, imageFile?: File) => {
+  const addCategory = async (categoryData: Omit<Category, 'id' | 'createdAt' | 'productCount' | 'order'>, imageFile?: File) => {
     try {
       await CategoryService.create(categoryData, imageFile);
       await loadData(); // Refresh data after creation
@@ -113,6 +120,16 @@ export function DataStoreProvider({ children }: DataStoreProviderProps) {
       await loadData(); // Refresh data after deletion
     } catch (error) {
       console.error('Error deleting category:', error);
+      throw error;
+    }
+  };
+
+  const reorderCategories = async (categoryOrders: { id: string; order: number }[]) => {
+    try {
+      await CategoryService.reorderCategories(categoryOrders);
+      await loadData(); // Refresh data after reordering
+    } catch (error) {
+      console.error('Error reordering categories:', error);
       throw error;
     }
   };
@@ -159,6 +176,7 @@ export function DataStoreProvider({ children }: DataStoreProviderProps) {
     addCategory,
     updateCategory,
     deleteCategory,
+    reorderCategories,
     addProduct,
     updateProduct,
     deleteProduct,

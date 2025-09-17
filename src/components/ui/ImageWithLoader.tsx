@@ -11,6 +11,8 @@ interface ImageWithLoaderProps {
   height?: number;
   onLoad?: () => void;
   onError?: () => void;
+  loading?: 'lazy' | 'eager';
+  priority?: boolean;
 }
 
 export function ImageWithLoader({ 
@@ -20,7 +22,9 @@ export function ImageWithLoader({
   width, 
   height,
   onLoad,
-  onError 
+  onError,
+  loading = 'lazy',
+  priority = false
 }: ImageWithLoaderProps) {
   const { showLoader, hideLoader } = useGlobalLoader();
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -53,6 +57,8 @@ export function ImageWithLoader({
       className={className}
       width={width}
       height={height}
+      loading={priority ? 'eager' : loading}
+      fetchPriority={priority ? 'high' : 'auto'}
       style={{ 
         opacity: imageLoaded ? 1 : 0,
         transition: 'opacity 0.3s ease-in-out'

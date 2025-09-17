@@ -84,7 +84,7 @@ export default function LoginPage() {
                 <Phone className="h-8 w-8 text-orange-600" />
               </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">Welcome to Rudra Store</CardTitle>
+            <CardTitle className="text-2xl font-bold text-gray-900">Welcome to Sanathan Rudraksha</CardTitle>
             <CardDescription className="text-gray-600">
               Enter your phone number to login or signup
             </CardDescription>

@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { ImageWithLoader } from '@/components/ui/ImageWithLoader';
 import { useState } from 'react';
 
 interface Category {
@@ -53,27 +54,37 @@ export function CategoryCarousel({ categories, selectedCategory, onCategorySelec
               transition: 'background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease'
             }}
           >
-            <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-gray-100">
-              <img
-                src={category.image}
-                alt={category.name}
-                className="w-8 h-8 object-cover"
-                onError={(e) => {
-                  // Fallback to first letter if image fails to load
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.parentElement!.innerHTML = `
-                    <span class="font-bold text-sm" style="color: ${selectedCategory === category.name ? '#9c542a' : '#666666'}">
-                      ${category.name.charAt(0)}
-                    </span>
-                  `;
-                }}
-              />
+            <div className={`w-14 h-14 rounded-full overflow-hidden flex items-center justify-center ${category.name === 'All' ? 'bg-gray-100' : ''}`}>
+              {category.name === 'All' ? (
+                // Special icon for "All" category
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">All</span>
+                </div>
+              ) : (
+                <ImageWithLoader
+                  src={category.image}
+                  alt={category.name}
+                  className="w-12 h-12 object-cover"
+                  onError={(e) => {
+                    // Fallback to first letter if image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    target.parentElement!.innerHTML = `
+                      <span class="font-bold text-lg" style="color: ${selectedCategory === category.name ? '#9c542a' : '#666666'}">
+                        ${category.name.charAt(0)}
+                      </span>
+                    `;
+                  }}
+                />
+              )}
             </div>
-            <span className="text-xs font-medium" style={{ 
-              color: selectedCategory === category.name ? '#9c542a' : '#000000' 
-            }}>
-              {category.name}
-            </span>
+            {category.name !== 'All' && (
+              <span className="text-xs font-medium" style={{ 
+                color: selectedCategory === category.name ? '#9c542a' : '#000000' 
+              }}>
+                {category.name}
+              </span>
+            )}
           </button>
         ))}
       </div>

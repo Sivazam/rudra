@@ -288,7 +288,7 @@ export default function CheckoutPage() {
         key: keyId,
         amount: amount,
         currency: currency,
-        name: 'Rudra Store',
+        name: 'Sanathan Rudraksha',
         description: 'Purchase of Spiritual Products',
         order_id: orderId,
         prefill: {
