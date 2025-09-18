@@ -54,33 +54,34 @@ const mockBanners: Banner[] = [
     id: '1',
     title: 'Handmade Rudraksha Mala',
     description: 'Authentic Spiritual Products',
-    imageUrl: '/banners/rudraksha-mala.jpg',
-    categoryLink: '/categories/rudraksha',
+    imageUrl: 'https://firebasestorage.googleapis.com/v0/b/rudra-bb6b7.firebasestorage.app/o/Dupload%2FShop%20Now.jpg?alt=media&token=1c490243-b365-4d91-af57-1e6801d4a5da',
+    categoryLink: '/',
     altText: 'Handmade Rudraksha Mala Banner'
-  },
-  {
-    id: '2',
-    title: 'Sacred Malas Collection',
-    description: 'Find Your Spiritual Path',
-    imageUrl: '/banners/malas-collection.jpg',
-    categoryLink: '/categories/malas',
-    altText: 'Sacred Malas Collection Banner'
-  },
-  {
-    id: '3',
-    title: 'Divine Bracelets',
-    description: 'Wear Your Faith',
-    imageUrl: '/banners/bracelets.jpg',
-    categoryLink: '/categories/bracelets',
-    altText: 'Divine Bracelets Banner'
-  },
-  {
-    id: '4',
-    title: 'Spiritual Pendants',
-    description: 'Carry Divinity With You',
-    imageUrl: '/banners/pendants.jpg',
-    categoryLink: '/categories/pendants',
-    altText: 'Spiritual Pendants Banner'
+  }
+  // },
+  // {
+  //   id: '2',
+  //   title: 'Sacred Malas Collection',
+  //   description: 'Find Your Spiritual Path',
+  //   imageUrl: '/banners/malas-collection.jpg',
+  //   categoryLink: '/categories/malas',
+  //   altText: 'Sacred Malas Collection Banner'
+  // },
+  // {
+  //   id: '3',
+  //   title: 'Divine Bracelets',
+  //   description: 'Wear Your Faith',
+  //   imageUrl: '/banners/bracelets.jpg',
+  //   categoryLink: '/categories/bracelets',
+  //   altText: 'Divine Bracelets Banner'
+  // },
+  // {
+  //   id: '4',
+  //   title: 'Spiritual Pendants',
+  //   description: 'Carry Divinity With You',
+  //   imageUrl: '/banners/pendants.jpg',
+  //   categoryLink: '/categories/pendants',
+  //   altText: 'Spiritual Pendants Banner'
   }
 ];
 

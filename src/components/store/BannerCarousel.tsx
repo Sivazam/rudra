@@ -66,14 +66,14 @@ export function BannerCarousel({
       {/* Banner Images */}
       <div className="relative h-full">
         {banners.map((banner, index) => (
-          <Link 
-            key={banner.id} 
-            href={banner.categoryLink}
-            className={cn(
-              "absolute inset-0 transition-opacity duration-500 ease-in-out",
-              index === currentIndex ? "opacity-100" : "opacity-0 pointer-events-none"
-            )}
-          >
+          // <Link 
+          //   key={banner.id} 
+          //   href={banner.categoryLink}
+          //   className={cn(
+          //     "absolute inset-0 transition-opacity duration-500 ease-in-out",
+          //     index === currentIndex ? "opacity-100" : "opacity-0 pointer-events-none"
+          //   )}
+          // >
             <div className="relative h-full w-full">
               <Image
                 src={banner.imageUrl}
@@ -85,18 +85,18 @@ export function BannerCarousel({
               />
               {/* Optional: Overlay with text */}
               <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
-                <div className="text-center text-white">
+                {/* <div className="text-center text-white">
                   <h2 className="text-3xl md:text-4xl font-bold mb-2">{banner.title}</h2>
                   <p className="text-lg md:text-xl opacity-90">{banner.description}</p>
-                </div>
+                </div> */}
               </div>
             </div>
-          </Link>
+          // </Link>
         ))}
       </div>
 
       {/* Navigation Arrows */}
-      <Button
+      {/* <Button
         variant="outline"
         size="icon"
         className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white border-none rounded-full"
@@ -114,10 +114,10 @@ export function BannerCarousel({
       >
         <ChevronRight className="h-4 w-4" />
         <span className="sr-only">Next slide</span>
-      </Button>
+      </Button> */}
 
       {/* Dots Navigation */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
+      {/* <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
         {banners.map((_, index) => (
           <button
             key={index}
@@ -131,7 +131,7 @@ export function BannerCarousel({
             aria-label={`Go to slide ${index + 1}`}
           />
         ))}
-      </div>
+      </div> */}
     </div>
   );
 }
