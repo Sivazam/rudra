@@ -1,8 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { useGlobalLoader } from '@/hooks/useGlobalLoader';
+import { useEffect, useState, useRef } from 'react';
 
 interface PageTransitionWrapperProps {
   children: React.ReactNode;
@@ -10,21 +9,23 @@ interface PageTransitionWrapperProps {
 
 export function PageTransitionWrapper({ children }: PageTransitionWrapperProps) {
   const pathname = usePathname();
-  const { showLoader, hideLoader } = useGlobalLoader();
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const previousPathname = useRef(pathname);
 
   useEffect(() => {
-    showLoader('page');
-    setIsTransitioning(true);
+    // Only handle page transitions without loader
+    if (pathname !== previousPathname.current) {
+      setIsTransitioning(true);
 
-    // Simulate page transition
-    const timer = setTimeout(() => {
-      setIsTransitioning(false);
-      hideLoader('page');
-    }, 800);
+      // Simulate page transition
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+        previousPathname.current = pathname;
+      }, 300);
 
-    return () => clearTimeout(timer);
-  }, [pathname, showLoader, hideLoader]);
+      return () => clearTimeout(timer);
+    }
+  }, [pathname]);
 
   return (
     <div

@@ -9,7 +9,6 @@ import { MainLayout } from '@/components/store/MainLayout';
 import { PageTransitionWrapper } from '@/components/ui/PageTransitionWrapper';
 import { Card, CardContent } from '@/components/ui/card';
 import { useDataStore, getStoredCategories, getStoredProducts } from '@/lib/data-store';
-import { useGlobalLoader } from '@/hooks/useGlobalLoader';
 
 interface Banner {
   id: string;
@@ -77,7 +76,6 @@ const mockBanners: Banner[] = [
 
 export default function Home() {
   const { categories, products, loading } = useDataStore();
-  const { showLoader, hideLoader } = useGlobalLoader();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [storeCategories, setStoreCategories] = useState<StoreCategory[]>([]);
@@ -119,7 +117,7 @@ export default function Home() {
     }
   }, [storeCategories]);
 
-  // Show loader when data is loading
+  // Show loader when data is loading (but not for API calls anymore)
   useEffect(() => {
     console.log('Loader logic:', { 
       loading, 
@@ -127,14 +125,12 @@ export default function Home() {
       storeCategoriesLength: storeCategories.length, 
       storeProductsLength: storeProducts.length 
     });
-    if (loading && !initialLoadComplete) {
-      showLoader('api');
-    } else if (!loading && !initialLoadComplete) {
-      // Hide loader even if no data, to prevent infinite loading
-      hideLoader('api');
+    // Note: API calls no longer trigger global loader per requirements
+    // We'll just set initialLoadComplete when loading is done
+    if (!loading && !initialLoadComplete) {
       setInitialLoadComplete(true);
     }
-  }, [loading, storeCategories.length, storeProducts.length, initialLoadComplete, showLoader, hideLoader]);
+  }, [loading, storeCategories.length, storeProducts.length, initialLoadComplete]);
 
   // Transform admin categories to store format
   useEffect(() => {
@@ -248,13 +244,12 @@ export default function Home() {
         hasData = true;
       }
       
-      // If we have data from localStorage, hide the loader
+      // If we have data from localStorage, mark initial load as complete
       if (hasData && !initialLoadComplete) {
-        hideLoader('api');
         setInitialLoadComplete(true);
       }
     }
-  }, [loading, initialLoadComplete, hideLoader]);
+  }, [loading, initialLoadComplete]);
 
   const filteredProducts = storeProducts.filter(product => {
     const matchesCategory = selectedCategory === 'All' || product.deity === selectedCategory;

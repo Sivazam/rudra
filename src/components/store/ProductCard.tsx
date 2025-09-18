@@ -110,62 +110,60 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleDirectAddToCart = () => {
     setIsAdding(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      addItem({
-        productId: product.id,
-        variantId: `MAIN-${product.id}`,
-        name: product.name,
-        deity: product.deity,
-        image: product.image,
-        variant: {
-          label: 'Default',
-          price: product.price,
-          sku: `MAIN-${product.id}`,
-          discount: 0
-        }
-      });
-      setIsAdding(false);
-      
-      // Open cart after adding item
-      useCartStore.getState().openCart();
-      
-      toast({
-        title: "Added to cart",
-        description: `${product.name} added to cart`,
-      });
-    }, 500);
+    // Add item directly without API call simulation
+    addItem({
+      productId: product.id,
+      variantId: `MAIN-${product.id}`,
+      name: product.name,
+      deity: product.deity,
+      image: product.image,
+      variant: {
+        label: 'Default',
+        price: product.price,
+        sku: `MAIN-${product.id}`,
+        discount: 0
+      }
+    });
+    
+    // Open cart after adding item
+    useCartStore.getState().openCart();
+    
+    setIsAdding(false);
+    
+    toast({
+      title: "Added to cart",
+      description: `${product.name} added to cart`,
+    });
   };
 
   const handleVariantSelect = (variant: any) => {
     setIsAdding(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      addItem({
-        productId: product.id,
-        variantId: variant.label, // Use variant.label instead of variant.sku since SKU is empty
-        name: product.name,
-        deity: product.deity,
-        image: product.image,
-        variant: {
-          label: variant.label,
-          price: variant.price,
-          sku: variant.sku,
-          discount: variant.discount
-        }
-      });
-      setIsAdding(false);
-      setShowVariantSelector(false);
-      
-      // Open cart after adding item
-      useCartStore.getState().openCart();
-      
-      toast({
-        title: "Added to cart",
-        description: `${product.name} added to cart`,
-      });
-    }, 500);
+    // Add item directly without API call simulation
+    addItem({
+      productId: product.id,
+      variantId: variant.label, // Use variant.label instead of variant.sku since SKU is empty
+      name: product.name,
+      deity: product.deity,
+      image: product.image,
+      variant: {
+        label: variant.label,
+        price: variant.price,
+        sku: variant.sku,
+        discount: variant.discount
+      }
+    });
+    
+    // Open cart after adding item
+    useCartStore.getState().openCart();
+    
+    setIsAdding(false);
+    setShowVariantSelector(false);
+    
+    toast({
+      title: "Added to cart",
+      description: `${product.name} added to cart`,
+    });
   };
 
   const handleQuantityChange = (newQuantity: number) => {
@@ -176,7 +174,7 @@ export function ProductCard({ product }: ProductCardProps) {
         if (cartItem) {
           useCartStore.getState().updateQuantity(cartItem.id, newQuantity);
           
-          // Open cart after updating quantity
+          // Open cart immediately after updating quantity
           useCartStore.getState().openCart();
           
           toast({
@@ -196,7 +194,7 @@ export function ProductCard({ product }: ProductCardProps) {
         if (cartItem) {
           useCartStore.getState().updateQuantity(cartItem.id, newQuantity);
           
-          // Open cart after updating quantity
+          // Open cart immediately after updating quantity
           useCartStore.getState().openCart();
           
           toast({
@@ -247,8 +245,10 @@ export function ProductCard({ product }: ProductCardProps) {
       useCartStore.getState().updateQuantity(mostRecentItem.id, mostRecentItem.quantity + 1);
       setShowRepeatDialog(false);
       
-      // Open cart after updating quantity
-      useCartStore.getState().openCart();
+      // Open cart after updating quantity with a small delay
+      setTimeout(() => {
+        useCartStore.getState().openCart();
+      }, 100);
       
       toast({
         title: "Quantity updated",
@@ -280,6 +280,7 @@ export function ProductCard({ product }: ProductCardProps) {
               src={product.image}
               alt={product.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
             />
           </Link>
           

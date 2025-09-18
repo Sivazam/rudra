@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface CartItem {
   id: string;
@@ -47,37 +47,42 @@ export const useCartStore = create<CartStore>()(
         );
 
         if (existingItem) {
-          set({
-            items: currentItems.map((i) =>
-              i.productId === item.productId && i.variant.label === item.variant.label
-                ? { ...i, quantity: i.quantity + 1 }
-                : i
-            ),
-          });
+          const updatedItems = currentItems.map((i) =>
+            i.productId === item.productId && i.variant.label === item.variant.label
+              ? { ...i, quantity: i.quantity + 1 }
+              : i
+          );
+          set({ items: updatedItems });
         } else {
-          set({
-            items: [...currentItems, { ...item, id: Date.now().toString(), quantity: 1, variantId: item.variant.label }],
-          });
+          const newItems = [...currentItems, { ...item, id: Date.now().toString(), quantity: 1, variantId: item.variant.label }];
+          set({ items: newItems });
         }
+        
+        // Note: Removed automatic cart opening to prevent race conditions
+        // Cart should be opened explicitly by the calling component
       },
 
       removeItem: (id) => {
-        set({ items: get().items.filter((item) => item.id !== id) });
+        const currentItems = get().items;
+        const newItems = currentItems.filter((item) => item.id !== id);
+        set({ items: newItems });
       },
 
       updateQuantity: (id, quantity) => {
         if (quantity <= 0) {
           get().removeItem(id);
         } else {
-          set({
-            items: get().items.map((item) =>
-              item.id === id ? { ...item, quantity } : item
-            ),
-          });
+          const currentItems = get().items;
+          const updatedItems = currentItems.map((item) =>
+            item.id === id ? { ...item, quantity } : item
+          );
+          set({ items: updatedItems });
         }
       },
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => {
+        set({ items: [] });
+      },
 
       getTotalItems: () => {
         return get().items.reduce((total, item) => total + item.quantity, 0);
@@ -98,24 +103,22 @@ export const useCartStore = create<CartStore>()(
       },
 
       toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
-      openCart: () => set({ isOpen: true }),
-      closeCart: () => set({ isOpen: false }),
+    openCart: () => set({ isOpen: true }),
+    closeCart: () => set({ isOpen: false }),
       freezeCartForPayment: () => {
-        console.log('Cart frozen for payment');
         // This function is used to prevent cart modifications during payment
         // In a real implementation, you might want to add a flag or lock the cart
       },
       unfreezeCart: () => {
-        console.log('Cart unfrozen');
         // This function is used to allow cart modifications after payment process
       },
     }),
     {
-      name: 'cart-storage',
-      partialize: (state) => ({ 
-        items: state.items,
-        // Don't persist isOpen state as it's UI state
-      }),
-    }
+    name: 'cart-storage',
+    storage: createJSONStorage(() => localStorage),
+    partialize: (state) => ({ 
+      items: state.items,
+    }),
+  }
   )
 );

@@ -6,11 +6,14 @@ import { GlobalLoader } from '@/components/ui/GlobalLoader';
 
 export function GlobalLoaderProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   useEffect(() => {
     // Subscribe to global loader state changes
     const unsubscribe = globalLoaderManager.subscribe((state) => {
-      setIsLoading(state.isLoading);
+      // Only show loader for initial app load
+      const shouldShowLoader = state.sources.has('initial') && !initialLoadComplete;
+      setIsLoading(shouldShowLoader);
     });
 
     // Show initial loader
@@ -19,13 +22,14 @@ export function GlobalLoaderProvider({ children }: { children: React.ReactNode }
     // Hide initial loader after a short delay (simulating app initialization)
     const timer = setTimeout(() => {
       globalLoaderManager.hide('initial');
+      setInitialLoadComplete(true);
     }, 1500);
 
     return () => {
       unsubscribe();
       clearTimeout(timer);
     };
-  }, []);
+  }, [initialLoadComplete]);
 
   return (
     <>

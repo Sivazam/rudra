@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useGlobalLoader } from '@/hooks/useGlobalLoader';
 
 interface ImageWithLoaderProps {
   src: string;
@@ -26,29 +25,37 @@ export function ImageWithLoader({
   loading = 'lazy',
   priority = false
 }: ImageWithLoaderProps) {
-  const { showLoader, hideLoader } = useGlobalLoader();
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    if (src && !imageLoaded) {
-      showLoader('image');
-      
+    if (src && !imageLoaded && !hasError) {
       const img = new Image();
       img.onload = () => {
         setImageLoaded(true);
-        hideLoader('image');
         onLoad?.();
       };
       
       img.onerror = () => {
-        setImageLoaded(true);
-        hideLoader('image');
+        setHasError(true);
         onError?.();
       };
       
       img.src = src;
     }
-  }, [src, imageLoaded, showLoader, hideLoader, onLoad, onError]);
+  }, [src, imageLoaded, onLoad, onError, hasError]);
+
+  // If there's an error, show a placeholder
+  if (hasError) {
+    return (
+      <div 
+        className={`${className} flex items-center justify-center bg-gray-200`}
+        style={{ width, height }}
+      >
+        <span className="text-gray-500 text-sm">Image not available</span>
+      </div>
+    );
+  }
 
   return (
     <img
@@ -60,8 +67,8 @@ export function ImageWithLoader({
       loading={priority ? 'eager' : loading}
       fetchPriority={priority ? 'high' : 'auto'}
       style={{ 
-        opacity: imageLoaded ? 1 : 0,
-        transition: 'opacity 0.3s ease-in-out'
+        opacity: imageLoaded ? 1 : 0.8,
+        transition: 'opacity 0.1s ease-in-out'
       }}
     />
   );
