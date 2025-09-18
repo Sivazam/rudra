@@ -190,20 +190,20 @@ export function Header({ onSearch, children }: HeaderProps) {
                       <br />
                       <span className="font-spiritual" style={{ color: '#755e3e' }}>Rudraksha</span>
                     </div> */}
-                    <div>                      
-                      <span
-                        className="block text-xl font-bold font-spiritual"
-                        style={{ color: '#755e3e' }}
-                      >
-                        SANATHAN
-                      </span>
-                      <span
-                        className="block text-lg font-bold font-spiritual"
-                        style={{ color: '#755e3e' }}
-                      >
-                        RUDRAKSHA
-                      </span>
-                    </div>
+                   <div className="text-center">
+                    <span
+                      className="block text-xl font-bold font-spiritual -mb-1"
+                      style={{ color: '#755e3e' }}
+                    >
+                      SANATHAN
+                    </span>
+                    <span
+                      className="block text-lg font-bold font-spiritual"
+                      style={{ color: '#755e3e' }}
+                    >
+                      RUDRAKSHA
+                    </span>
+                  </div>
 
                   </div>
                 </Link>
@@ -366,20 +366,20 @@ export function Header({ onSearch, children }: HeaderProps) {
               <br />
               <span className="text-xl font-bold font-spiritual" style={{ color: '#755e3e' }}>Rudraksha</span>
             </div> */}
-           <div className="hidden sm:block text-center leading-snug">
-            <span
-              className="block text-xl font-bold font-spiritual"
-              style={{ color: '#755e3e' }}
-            >
-              SANATHAN
-            </span>
-            <span
-              className="block text-lg font-bold font-spiritual"
-              style={{ color: '#755e3e' }}
-            >
-              RUDRAKSHA
-            </span>
-          </div>
+          <div className="hidden sm:block text-center">
+          <span
+            className="block text-xl font-bold font-spiritual -mb-1"
+            style={{ color: '#755e3e' }}
+          >
+            SANATHAN
+          </span>
+          <span
+            className="block text-lg font-bold font-spiritual"
+            style={{ color: '#755e3e' }}
+          >
+            RUDRAKSHA
+          </span>
+        </div>
 
           </Link>
 

@@ -135,7 +135,6 @@
 //     </div>
 //   );
 // }
-
 'use client';
 
 import React from 'react';
@@ -145,13 +144,21 @@ export function BannerCarousel() {
   return (
     <div className="relative h-[50vh] w-full overflow-hidden">
       <Image
-        src="https://firebasestorage.googleapis.com/v0/b/rudra-bb6b7.firebasestorage.app/o/Dupload%2FShop%20Now.jpg?alt=media&token=1c490243-b365-4d91-af57-1e6801d4a5da"
+        src="https://firebasestorage.googleapis.com/v0/b/rudra-bb6b7.firebasestorage.app/o/Dupload%2FShop%20Now%20(1).jpg?alt=media&token=ba05c76f-b1d5-4fe3-8c47-622da00e29fd"
         alt="Hero Banner"
         fill
-        className="object-contain"
+        className="object-cover object-center"
         priority
         unoptimized
       />
+
+      {/* Responsive Overlay Text */}
+      <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6">
+        <h1 className="text-white font-extrabold tracking-wide drop-shadow-lg 
+                       text-2xl sm:text-4xl md:text-5xl lg:text-6xl">
+          SHOP NOW
+        </h1>
+      </div>
     </div>
   );
 }
