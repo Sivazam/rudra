@@ -1,6 +1,7 @@
 'use client';
 
 import { ProductCard } from './ProductCard';
+import { VirtualizedProductGrid } from './VirtualizedProductGrid';
 
 interface Product {
   id: string;
@@ -29,6 +30,11 @@ interface ProductGridProps {
 }
 
 export function ProductGrid({ products }: ProductGridProps) {
+  // Use virtualization for large product lists, regular grid for smaller ones
+  if (products.length > 12) {
+    return <VirtualizedProductGrid products={products} />;
+  }
+  
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
       {products.map((product) => (

@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
         // Add shipping address to user's addresses only if it's not already saved
         try {
           // Check if this address already exists for the user
-          const existingUser = await userService.getUserByPhoneNumber(phoneUserId);
+          const existingUser = await userService.getUserByPhoneNumber(standardizedUserId);
           let addressExists = false;
           
           if (existingUser && existingUser.addresses) {
@@ -239,7 +239,8 @@ export async function POST(request: NextRequest) {
       quantity: item.quantity,
       price: item.variant.price,
       discount: item.variant.discount,
-      totalPrice: (item.variant.price - (item.variant.price * item.variant.discount) / 100) * item.quantity
+      totalPrice: (item.variant.price - (item.variant.price * item.variant.discount) / 100) * item.quantity,
+      image: item.image // Include the product image from cart item
     }));
 
     const customerData: ICustomerInfo = {

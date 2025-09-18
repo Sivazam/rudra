@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Heart, Star, Minus, Plus, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,13 +8,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useCartStore } from '@/store/cartStore';
 import { VariantSelector } from './VariantSelector';
 import { useToast } from '@/hooks/use-toast';
-import { ImageWithLoader } from '@/components/ui/ImageWithLoader';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { wishlistService } from '@/lib/services/wishlistService';
 import Link from 'next/link';
 
 interface Product {
   id: string;
   name: string;
   deity: string;
+  categoryName: string;
   price: number;
   originalPrice?: number;
   rating: number;
@@ -67,9 +69,35 @@ export function ProductCard({ product }: ProductCardProps) {
   const [showVariantSelector, setShowVariantSelector] = useState(false);
   const [showRepeatDialog, setShowRepeatDialog] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+  const [updatingWishlist, setUpdatingWishlist] = useState(false);
   
   const { items, addItem, updateQuantity } = useCartStore();
   const { toast } = useToast();
+
+  // Check if product is in wishlist on component mount and listen for changes
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      try {
+        const inWishlist = await wishlistService.isInWishlist(product.id);
+        setIsWishlisted(inWishlist);
+      } catch (error) {
+        console.error('Error checking wishlist status:', error);
+      }
+    };
+    
+    checkWishlistStatus();
+    
+    // Listen for wishlist changes
+    const handleWishlistChange = () => {
+      checkWishlistStatus();
+    };
+    
+    window.addEventListener('wishlist-changed', handleWishlistChange);
+    
+    return () => {
+      window.removeEventListener('wishlist-changed', handleWishlistChange);
+    };
+  }, [product.id]);
 
   // Check if this product is already in cart - sum quantities of ALL variants
   const cartItemsForProduct = items.filter(item => item.productId === product.id);
@@ -245,10 +273,8 @@ export function ProductCard({ product }: ProductCardProps) {
       useCartStore.getState().updateQuantity(mostRecentItem.id, mostRecentItem.quantity + 1);
       setShowRepeatDialog(false);
       
-      // Open cart after updating quantity with a small delay
-      setTimeout(() => {
-        useCartStore.getState().openCart();
-      }, 100);
+      // Open cart after updating quantity
+      useCartStore.getState().openCart();
       
       toast({
         title: "Quantity updated",
@@ -262,8 +288,48 @@ export function ProductCard({ product }: ProductCardProps) {
     setShowVariantSelector(true);
   };
 
-  const toggleWishlist = () => {
-    setIsWishlisted(!isWishlisted);
+  const toggleWishlist = async () => {
+    try {
+      setUpdatingWishlist(true);
+      
+      if (isWishlisted) {
+        // Remove from wishlist
+        await wishlistService.removeFromWishlistByProductId(product.id);
+        setIsWishlisted(false);
+        toast({
+          title: "Removed from favorites",
+          description: `${product.name} removed from your favorites`,
+        });
+      } else {
+        // Add to wishlist
+        await wishlistService.addToWishlist({
+          productId: product.id,
+          name: product.name,
+          deity: product.deity,
+          categoryName: product.categoryName,
+          price: product.price,
+          originalPrice: product.originalPrice,
+          image: product.image,
+          badge: product.badge,
+          hasVariants: product.hasVariants,
+          variants: product.variants
+        });
+        setIsWishlisted(true);
+        toast({
+          title: "Added to favorites",
+          description: `${product.name} added to your favorites`,
+        });
+      }
+    } catch (error) {
+      console.error('Error updating wishlist:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update favorites",
+        variant: "destructive"
+      });
+    } finally {
+      setUpdatingWishlist(false);
+    }
   };
 
   const discountPercentage = product.originalPrice 
@@ -272,15 +338,15 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow group flex flex-col h-full" style={{ border: `1px solid #846549` }}>
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow group flex flex-col h-full scroll-optimized smooth-transition" style={{ border: `1px solid #846549` }}>
         {/* Product Image - Fixed height */}
-        <div className="relative aspect-square overflow-hidden flex-shrink-0">
-          <Link href={`/products/${product.id}`}>
-            <ImageWithLoader
+        <div className="relative aspect-square overflow-hidden flex-shrink-0 gpu-accelerated bg-gray-50">
+          <Link href={`/products/${product.id}`} className="block w-full h-full">
+            <OptimizedImage
               src={product.image}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              loading="lazy"
+              className="w-full h-full group-hover:scale-105 optimized-image smooth-image-zoom"
+              objectFit="cover"
             />
           </Link>
           
@@ -301,30 +367,35 @@ export function ProductCard({ product }: ProductCardProps) {
         
         {/* Product Info - Flexible content area */}
         <div className="p-4 space-y-2 flex flex-col flex-1">
-          {/* Deity */}
-          <p className="text-sm font-medium" style={{ color: '#846549' }}>{product.deity}</p>
+          {/* Deity Chip */}
+          <div className="inline-block">
+            <span className="inline-block px-1.5 py-0.5 text-xs font-medium rounded-full bg-[#846549] text-white whitespace-nowrap">
+              {product.deity}
+            </span>
+          </div>
           
           {/* Product Name - Flexible but with max lines */}
-          <Link href={`/products/${product.id}`} className="flex-1">
-            <div className="flex items-center justify-between h-full">
-              <h3 className="font-semibold line-clamp-2 hover:opacity-80 transition-colors flex-1" style={{ color: '#755e3e' }}>
+          <div className="flex items-center justify-between h-full">
+            <Link href={`/products/${product.id}`} className="flex-1">
+              <h3 className="font-semibold line-clamp-2 hover:opacity-80 transition-colors" style={{ color: '#755e3e' }}>
                 {product.name}
               </h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 p-0 hover:bg-white/20 flex-shrink-0 ml-2"
-                onClick={toggleWishlist}
-              >
-                <Heart 
-                  className={`h-4 w-4 ${
-                    isWishlisted ? 'fill-current' : ''
-                  }`}
-                  style={{ color: isWishlisted ? '#f20600' : '#846549' }}
-                />
-              </Button>
-            </div>
-          </Link>
+            </Link>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 p-0 hover:bg-white/20 flex-shrink-0 ml-2"
+              onClick={toggleWishlist}
+              disabled={updatingWishlist}
+            >
+              <Heart 
+                className={`h-4 w-4 ${
+                  isWishlisted ? 'fill-current' : ''
+                }`}
+                style={{ color: isWishlisted ? '#f20600' : '#846549' }}
+              />
+            </Button>
+          </div>
           
           {/* Rating - Fixed height */}
           <div className="flex items-center space-x-1">

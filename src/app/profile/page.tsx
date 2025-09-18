@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Edit, Save, Phone, Mail, Calendar, MapPin } from 'lucide-react';
 import { MainLayout } from '@/components/store/MainLayout';
 import { isUserAuthenticated, getCurrentUser } from '@/lib/auth';
@@ -167,6 +167,7 @@ export default function ProfilePage() {
                 </CardHeader>
                 <CardContent className="text-center">
                   <Avatar className="h-24 w-24 mx-auto mb-4">
+                    <AvatarImage src="/rudraksha-bead.png" alt="Rudraksha Bead" />
                     <AvatarFallback className="bg-orange-100 text-orange-600 text-2xl">
                       {user?.name ? user.name.charAt(0).toUpperCase() : user?.phoneNumber?.slice(-2) || 'U'}
                     </AvatarFallback>

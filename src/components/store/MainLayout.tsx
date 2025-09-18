@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { SlideInCart } from './SlideInCart';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -15,6 +16,7 @@ export function MainLayout({ children, onSearch }: MainLayoutProps) {
         {children}
       </main>
       <Footer />
+      <SlideInCart />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import connectDB from '@/lib/mongodb';
 import { firestoreService } from '@/lib/firebase';
 import { IUser } from '@/lib/models/User';
+import { wishlistService } from '@/lib/services/wishlistService';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -106,7 +107,10 @@ export async function POST(request: NextRequest) {
       // Approach 1: Use Buffer-based secret
       const secretBuffer = getSecretBuffer();
       token = jwt.sign(
-        { phoneNumber },
+        { 
+          phoneNumber,
+          userId: userId // Include the Firestore document ID
+        },
         secretBuffer,
         { expiresIn: '7d' }
       );
@@ -116,7 +120,10 @@ export async function POST(request: NextRequest) {
       // Approach 2: Use string secret with explicit options
       const secretString = getJwtSecret();
       token = jwt.sign(
-        { phoneNumber },
+        { 
+          phoneNumber,
+          userId: userId // Include the Firestore document ID
+        },
         secretString,
         { algorithm: 'HS256', expiresIn: '7d' }
       );
@@ -148,6 +155,16 @@ export async function POST(request: NextRequest) {
 
     console.log('Cookie set in response headers');
     console.log('Response cookies:', response.cookies.getAll());
+
+    // Merge local wishlist with Firestore after successful login
+    try {
+      console.log('Merging local wishlist with Firestore...');
+      await wishlistService.mergeLocalWishlist();
+      console.log('Wishlist merge completed successfully');
+    } catch (error) {
+      console.error('Error merging wishlist:', error);
+      // Don't fail the authentication if wishlist merge fails
+    }
 
     console.log('OTP verification completed successfully');
     return response;

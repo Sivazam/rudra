@@ -13,7 +13,7 @@ import { userService } from '@/lib/services';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { isUserAuthenticated, getCurrentUser } from '@/lib/auth';
 import { getUserIdentifier, standardizeUserId } from '@/lib/userUtils';
-import { ImageWithLoader } from '@/components/ui/ImageWithLoader';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface Order {
   id: string;
@@ -280,10 +280,12 @@ export default function MyOrdersPage() {
             <div className="flex flex-wrap gap-2 sm:ml-6 sm:flex-nowrap sm:space-x-2">
               {order.items.slice(0, 4).map((item, index) => (
                 <div key={index} className="relative">
-                  <ImageWithLoader
+                  <OptimizedImage
                     src={getProductImage(item)}
                     alt={item.name}
                     className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg border"
+                    width={64}
+                    height={64}
                   />
                   {item.quantity > 1 && (
                     <div className="absolute -top-2 -right-2 bg-orange-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -326,10 +328,12 @@ export default function MyOrdersPage() {
         <div className="space-y-3">
           {order.items.map((item, index) => (
             <div key={index} className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg">
-              <ImageWithLoader
+              <OptimizedImage
                 src={getProductImage(item)}
                 alt={item.name}
                 className="w-12 h-12 object-cover rounded-lg"
+                width={48}
+                height={48}
               />
               <div className="flex-1">
                 <p className="font-medium text-sm">{item.name}</p>

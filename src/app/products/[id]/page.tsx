@@ -14,6 +14,7 @@ import { MainLayout } from '@/components/store/MainLayout';
 import { useToast } from '@/hooks/use-toast';
 import { useGlobalLoader } from '@/hooks/useGlobalLoader';
 import { ImageWithLoader } from '@/components/ui/ImageWithLoader';
+import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
 interface Product {
   id: string;
@@ -213,11 +214,8 @@ export default function ProductDetailPage() {
         description: `${product.name} added to cart`,
       });
       
-      // Navigate to checkout (this will be implemented later)
-      setTimeout(() => {
-        // For now, just open cart
-        useCartStore.getState().openCart();
-      }, 500);
+      // Open cart immediately
+      useCartStore.getState().openCart();
     }
   };
 
@@ -225,12 +223,13 @@ export default function ProductDetailPage() {
     useCartStore.getState().openCart();
   };
 
-  const formatPrice = (price: number, discount: number = 0) => {
+  const formatPrice = (price: number, discount: number = 0, originalPrice?: number) => {
     const discountedPrice = price - (price * discount) / 100;
+    const hasOriginalPrice = originalPrice && originalPrice > price;
     return {
       current: `₹${discountedPrice.toLocaleString()}`,
-      original: discount > 0 ? `₹${price.toLocaleString()}` : null,
-      savings: discount > 0 ? `${discount}% OFF` : null
+      original: hasOriginalPrice ? `₹${originalPrice.toLocaleString()}` : (discount > 0 ? `₹${price.toLocaleString()}` : null),
+      savings: hasOriginalPrice ? `${Math.round(((originalPrice! - price) / originalPrice!) * 100)}% OFF` : (discount > 0 ? `${discount}% OFF` : null)
     };
   };
 
@@ -258,7 +257,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  const currentPricing = formatPrice(selectedVariant?.price || product.price, selectedVariant?.discount || 0);
+  const currentPricing = formatPrice(selectedVariant?.price || product.price, selectedVariant?.discount || 0, selectedVariant?.originalPrice || product.originalPrice);
 
   return (
     <MainLayout>
@@ -286,11 +285,12 @@ export default function ProductDetailPage() {
           <div className="space-y-4">
             {/* Main Image */}
             <div className="aspect-square bg-white rounded-lg shadow-sm overflow-hidden">
-              <ImageWithLoader
+              <OptimizedImage
                 src={product.images[selectedImage]}
                 alt={product.name}
-                className="w-full h-full object-cover"
+                className="w-full h-full group-hover:scale-105 smooth-image-zoom"
                 priority={true}
+                objectFit="cover"
               />
             </div>
             
@@ -306,10 +306,11 @@ export default function ProductDetailPage() {
                       : 'border-gray-200 hover:border-orange-400'
                   }`}
                 >
-                  <ImageWithLoader
+                  <OptimizedImage
                     src={image}
                     alt={`${product.name} view ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full group-hover:scale-105 smooth-image-zoom"
+                    objectFit="cover"
                   />
                 </button>
               ))}
@@ -325,7 +326,11 @@ export default function ProductDetailPage() {
                   <h1 className="text-3xl font-bold mb-2" style={{ color: '#755e3e' }}>
                     {product.name} {product.subtitle}
                   </h1>
-                  <p className="text-lg mb-4" style={{ color: '#846549' }}>{product.deity}</p>
+                  <div className="inline-block mb-4">
+                    <span className="inline-block px-2 py-0.5 text-xs font-medium rounded-full bg-[#846549] text-white">
+                      {product.deity}
+                    </span>
+                  </div>
                 </div>
                 <Button
                   variant="ghost"
@@ -391,7 +396,7 @@ export default function ProductDetailPage() {
                 className={`grid grid-cols-2 sm:grid-cols-4 gap-2 ${shakeVariants ? 'animate-shake' : ''}`}
               >
                 {product.variants.map((variant) => {
-                  const pricing = formatPrice(variant.price, variant.discount);
+                  const pricing = formatPrice(variant.price, variant.discount, variant.originalPrice);
                   return (
                     <div key={variant.id} className="relative">
                       <RadioGroupItem

@@ -1,4 +1,5 @@
 import { firestoreService } from '@/lib/firebase';
+import { wishlistService } from './wishlistService';
 
 export interface IOrderItem {
   productId?: string;
@@ -8,6 +9,7 @@ export interface IOrderItem {
   price: number;
   discount: number;
   totalPrice: number;
+  image?: string;
 }
 
 export interface ICustomerInfo {
@@ -213,6 +215,12 @@ class OrderService {
       };
 
       await this.updateOrder(order.id!, updateData);
+
+      // If payment is completed, remove items from wishlist
+      if (paymentData.status === 'paid') {
+        console.log('Payment completed, removing items from wishlist...');
+        await this.removeWishlistItemsOnOrderCompletion(order.items);
+      }
     } catch (error) {
       console.error('Error updating payment status:', error);
       throw error;
@@ -226,6 +234,39 @@ class OrderService {
     } catch (error) {
       console.error('Error deleting order:', error);
       throw error;
+    }
+  }
+
+  // Remove items from wishlist when order is completed
+  private async removeWishlistItemsOnOrderCompletion(orderItems: IOrderItem[]): Promise<void> {
+    try {
+      // Extract product IDs from order items
+      const productIds = orderItems
+        .filter(item => item.productId) // Only items with productId
+        .map(item => item.productId!);
+
+      if (productIds.length === 0) {
+        return; // No products to remove from wishlist
+      }
+
+      console.log('Removing items from wishlist for completed order:', productIds);
+      
+      // Remove each product from wishlist
+      for (const productId of productIds) {
+        try {
+          await wishlistService.removeFromWishlistByProductId(productId);
+          console.log(`Removed product ${productId} from wishlist`);
+        } catch (error) {
+          console.warn(`Failed to remove product ${productId} from wishlist:`, error);
+          // Continue with other products even if one fails
+        }
+      }
+      
+      console.log('Wishlist cleanup completed for order');
+    } catch (error) {
+      console.error('Error removing items from wishlist on order completion:', error);
+      // Don't throw the error as this is a secondary operation
+      // Order completion should not fail due to wishlist cleanup issues
     }
   }
 

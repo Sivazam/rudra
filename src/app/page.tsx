@@ -8,7 +8,16 @@ import { BannerCarousel } from '@/components/store/BannerCarousel';
 import { MainLayout } from '@/components/store/MainLayout';
 import { PageTransitionWrapper } from '@/components/ui/PageTransitionWrapper';
 import { Card, CardContent } from '@/components/ui/card';
+import { SlideInCart } from '@/components/store/SlideInCart';
+import { ImagePreloader } from '@/components/ui/ImagePreloader';
 import { useDataStore, getStoredCategories, getStoredProducts } from '@/lib/data-store';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Banner {
   id: string;
@@ -23,6 +32,7 @@ interface StoreProduct {
   id: string;
   name: string;
   deity: string;
+  categoryName: string;
   price: number;
   originalPrice?: number;
   rating: number;
@@ -78,6 +88,7 @@ export default function Home() {
   const { categories, products, loading } = useDataStore();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('featured');
   const [storeCategories, setStoreCategories] = useState<StoreCategory[]>([]);
   const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
@@ -169,23 +180,30 @@ export default function Home() {
 
   // Transform admin products to store format
   useEffect(() => {
-    if (!loading && products.length > 0) {
-      const transformedProducts = products.map(product => ({
-        id: product.id,
-        name: product.name,
-        deity: product.categoryName, // Using category name as deity for now
-        price: product.price,
-        originalPrice: product.originalPrice,
-        rating: 4.5, // Default rating
-        reviews: 10, // Default reviews
-        image: product.images[0] || '/products/default.jpg',
-        badge: product.discount > 0 ? `${product.discount}% OFF` : undefined,
-        hasVariants: product.variants.length > 0,
-        variants: product.variants // Pass the actual variants
-      }));
+    if (!loading && products.length > 0 && categories.length > 0) {
+      const transformedProducts = products.map(product => {
+        // Find the category name from the categories array
+        const category = categories.find(cat => cat.id === product.category);
+        const categoryName = category ? category.name : 'Unknown';
+        
+        return {
+          id: product.id,
+          name: product.name,
+          deity: product.deity, // Use actual deity field
+          categoryName: categoryName, // Populate category name from categories data
+          price: product.price,
+          originalPrice: product.originalPrice,
+          rating: 4.5, // Default rating
+          reviews: 10, // Default reviews
+          image: product.images[0] || '/products/default.jpg',
+          badge: product.discount > 0 ? `${product.discount}% OFF` : undefined,
+          hasVariants: product.variants.length > 0,
+          variants: product.variants // Pass the actual variants
+        };
+      });
       setStoreProducts(transformedProducts);
     }
-  }, [products, loading]);
+  }, [products, loading, categories]);
 
   // Fallback to localStorage if context is not available (for server-side rendering)
   useEffect(() => {
@@ -230,7 +248,8 @@ export default function Home() {
         const transformedProducts = savedProducts.map(product => ({
           id: product.id,
           name: product.name,
-          deity: product.categoryName,
+          deity: product.deity, // Use actual deity field
+          categoryName: product.categoryName || 'Unknown', // Use actual category name field or fallback
           price: product.price,
           originalPrice: product.originalPrice,
           rating: 4.5,
@@ -252,65 +271,101 @@ export default function Home() {
   }, [loading, initialLoadComplete]);
 
   const filteredProducts = storeProducts.filter(product => {
-    const matchesCategory = selectedCategory === 'All' || product.deity === selectedCategory;
+    const matchesCategory = selectedCategory === 'All' || product.categoryName === selectedCategory;
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.deity.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
+  // Sort products based on selected sort option
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortBy) {
+      case 'price-low-high':
+        return a.price - b.price;
+      case 'price-high-low':
+        return b.price - a.price;
+      case 'rating-high-low':
+        return b.rating - a.rating;
+      case 'discount-high-low':
+        const discountA = a.originalPrice ? ((a.originalPrice - a.price) / a.originalPrice) * 100 : 0;
+        const discountB = b.originalPrice ? ((b.originalPrice - b.price) / b.originalPrice) * 100 : 0;
+        return discountB - discountA;
+      default: // featured
+        return 0; // Keep original order for featured
+    }
+  });
+
+  // Preload product images for better performance
+  const productImages = storeProducts.map(product => product.image);
+  const bannerImages = mockBanners.map(banner => banner.imageUrl);
+  
   return (
-    <PageTransitionWrapper>
-      <MainLayout onSearch={setSearchQuery}>
-        {/* Banner Carousel */}
-        <BannerCarousel banners={mockBanners} />
-        
-        <div className="container mx-auto px-4 py-8">
-          {/* Category Carousel */}
-          <CategoryCarousel 
-            categories={storeCategories}
-            selectedCategory={selectedCategory}
-            onCategorySelect={setSelectedCategory}
-          />
+    <>
+      {/* Preload critical images */}
+      <ImagePreloader images={[...bannerImages, ...productImages.slice(0, 8)]} priority={true} />
+      
+      <PageTransitionWrapper>
+        <MainLayout onSearch={setSearchQuery}>
+          {/* Banner Carousel */}
+          <BannerCarousel banners={mockBanners} />
           
-          {/* Results Info */}
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Showing {filteredProducts.length} results
-            </h3>
-            <select className="border border-gray-300 rounded-md px-3 py-1 text-sm">
-              <option>Sort by: Featured</option>
-              <option>Price: Low to High</option>
-              <option>Price: High to Low</option>
-              <option>Rating: High to Low</option>
-            </select>
+          <div className="container mx-auto px-4 py-8">
+            {/* Category Carousel */}
+            <CategoryCarousel 
+              categories={storeCategories}
+              selectedCategory={selectedCategory}
+              onCategorySelect={setSelectedCategory}
+            />
+            
+            {/* Results Info */}
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Showing {sortedProducts.length} results
+              </h3>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-48 border-gray-200 focus:border-orange-300 focus:ring-orange-200">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="featured">Sort by: Featured</SelectItem>
+                  <SelectItem value="price-low-high">Price: Low to High</SelectItem>
+                  <SelectItem value="price-high-low">Price: High to Low</SelectItem>
+                  <SelectItem value="rating-high-low">Rating: High to Low</SelectItem>
+                  <SelectItem value="discount-high-low">Discount: High to Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Product Grid */}
+            {storeProducts.length > 0 ? (
+              <div className="smooth-scroll-container">
+                <ProductGrid products={sortedProducts} />
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+                  <p className="text-gray-600">
+                    {selectedCategory === 'All' 
+                      ? 'There are no products in the store yet.' 
+                      : `There are no products in the "${selectedCategory}" category yet.`
+                    }
+                  </p>
+                  {selectedCategory !== 'All' && (
+                    <button 
+                      onClick={() => setSelectedCategory('All')}
+                      className="mt-4 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
+                    >
+                      View All Products
+                    </button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
-          
-          {/* Product Grid */}
-          {storeProducts.length > 0 ? (
-            <ProductGrid products={filteredProducts} />
-          ) : (
-            <Card>
-              <CardContent className="text-center py-12">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-                <p className="text-gray-600">
-                  {selectedCategory === 'All' 
-                    ? 'There are no products in the store yet.' 
-                    : `There are no products in the "${selectedCategory}" category yet.`
-                  }
-                </p>
-                {selectedCategory !== 'All' && (
-                  <button 
-                    onClick={() => setSelectedCategory('All')}
-                    className="mt-4 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
-                  >
-                    View All Products
-                  </button>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </MainLayout>
-    </PageTransitionWrapper>
+        </MainLayout>
+      </PageTransitionWrapper>
+      <SlideInCart />
+    </>
   );
 }

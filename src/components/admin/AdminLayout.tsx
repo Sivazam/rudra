@@ -53,10 +53,33 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 font-spiritual">Sanathan</h1>
-              <h1 className="text-xl font-bold text-gray-900 font-spiritual">Rudraksha</h1>
-              <p className="text-sm text-gray-500">Admin Portal</p>
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 flex items-center justify-center">
+                <img 
+                  src="/logo-original.png" 
+                  alt="Sanathan Rudraksha Logo" 
+                  className="w-full h-full object-cover rounded-full"
+                />
+                <div className="hidden sm:block text-center">
+                      <span
+                        className="block uppercase font-bold font-spiritual text-3xl"
+                        style={{ color: "#755e3e", width: "100%" }}
+                      >
+                        SANATHAN
+                      </span>
+                      <span
+                        className="block uppercase font-bold font-spiritual text-lg"
+                        style={{ color: "#755e3e", width: "80%", margin: "0 auto" }}
+                      >
+                        RUDRAKSHA
+                      </span>
+                    </div>
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 font-spiritual">Sanathan</h1>
+                <h1 className="text-xl font-bold text-gray-900 font-spiritual">Rudraksha</h1>
+                <p className="text-sm text-gray-500">Admin Portal</p>
+              </div>
             </div>
             <Button
               variant="ghost"

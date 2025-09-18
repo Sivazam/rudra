@@ -1,5 +1,6 @@
 'use client';
 
+import { ReactNode } from 'react';
 import { useState, useEffect } from 'react';
 import { Menu, Search, Heart, ShoppingCart, User, Package, LogOut, Phone, MapPin, Edit, UserPlus, AlertCircle, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,17 +9,18 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useCartStore } from '@/store/cartStore';
-import { SlideInCart } from './SlideInCart';
 import Link from 'next/link';
 import { isUserAuthenticated, getCurrentUser } from '@/lib/auth';
 import { isProfileComplete, getCurrentUserProfile } from '@/lib/profileCompletionMiddleware';
 import { useRouter } from 'next/navigation';
+import { wishlistService } from '@/lib/services/wishlistService';
 
 interface HeaderProps {
   onSearch: (query: string) => void;
+  children?: ReactNode;
 }
 
-export function Header({ onSearch }: HeaderProps) {
+export function Header({ onSearch, children }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
@@ -26,6 +28,7 @@ export function Header({ onSearch }: HeaderProps) {
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   const [isCheckingProfile, setIsCheckingProfile] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [wishlistCount, setWishlistCount] = useState(0);
   const { getTotalItems, openCart } = useCartStore();
   const router = useRouter();
 
@@ -68,12 +71,24 @@ export function Header({ onSearch }: HeaderProps) {
       }
     };
     
-    // Check authentication immediately
+    // Load wishlist count
+    const loadWishlistCount = async () => {
+      try {
+        const count = await wishlistService.getWishlistCount();
+        setWishlistCount(count);
+      } catch (error) {
+        console.error('Error loading wishlist count:', error);
+      }
+    };
+    
+    // Check authentication and load wishlist count immediately
     checkAuth();
+    loadWishlistCount();
     
     // Set up event listeners for auth state changes
     const handleStorageChange = () => {
       checkAuth();
+      loadWishlistCount();
     };
     
     const handleAuthStateChange = () => {
@@ -81,16 +96,24 @@ export function Header({ onSearch }: HeaderProps) {
       // Add a small delay to ensure Firestore updates are committed
       setTimeout(() => {
         checkAuth();
+        loadWishlistCount();
       }, 500);
+    };
+    
+    const handleWishlistChange = () => {
+      console.log('Wishlist change event received');
+      loadWishlistCount();
     };
     
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('auth-state-changed', handleAuthStateChange);
+    window.addEventListener('wishlist-changed', handleWishlistChange);
     
     // Cleanup event listeners on component unmount
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('auth-state-changed', handleAuthStateChange);
+      window.removeEventListener('wishlist-changed', handleWishlistChange);
     };
   }, []);
 
@@ -154,9 +177,34 @@ export function Header({ onSearch }: HeaderProps) {
             <SheetContent side="left" className="w-64 bg-white">
               <nav className="space-y-6 mt-6 px-4">
                 <Link href="/" className="block text-lg font-semibold text-black">
-                  <span className="font-spiritual">Sanathan</span>
-                  <br />
-                  <span className="font-spiritual">Rudraksha</span>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 flex items-center justify-center">
+                      <img 
+                        src="/logo-original.png" 
+                        alt="Sanathan Rudraksha Logo" 
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    </div>
+                     <div className="hidden sm:block text-center">
+                      <span
+                        className="block uppercase font-bold font-spiritual text-3xl"
+                        style={{ color: "#755e3e", width: "100%" }}
+                      >
+                        SANATHAN
+                      </span>
+                      <span
+                        className="block uppercase font-bold font-spiritual text-lg"
+                        style={{ color: "#755e3e", width: "80%", margin: "0 auto" }}
+                      >
+                        RUDRAKSHA
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-spiritual" style={{ color: '#755e3e' }}>Sanathan</span>
+                      <br />
+                      <span className="font-spiritual" style={{ color: '#755e3e' }}>Rudraksha</span>
+                    </div>
+                  </div>
                 </Link>
                 
                 {/* User Information Section - Only show if authenticated */}
@@ -305,13 +353,31 @@ export function Header({ onSearch }: HeaderProps) {
 
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(156,86,26,255)' }}>
-              <span className="text-white font-bold text-lg">SR</span>
+            <div className="w-10 h-10 flex items-center justify-center">
+              <img 
+                src="/logo-original.png" 
+                alt="Sanathan Rudraksha Logo" 
+                className="w-full h-full object-cover rounded-full"
+              />
             </div>
-            <div className="hidden sm:block">
+            {/* <div className="hidden sm:block">
               <span className="text-xl font-bold font-spiritual" style={{ color: '#755e3e' }}>Sanathan</span>
               <br />
               <span className="text-xl font-bold font-spiritual" style={{ color: '#755e3e' }}>Rudraksha</span>
+            </div> */}
+            <div className="hidden sm:block text-center">
+              <span
+                className="block uppercase font-bold font-spiritual text-3xl"
+                style={{ color: "#755e3e", width: "100%" }}
+              >
+                SANATHAN
+              </span>
+              <span
+                className="block uppercase font-bold font-spiritual text-lg"
+                style={{ color: "#755e3e", width: "80%", margin: "0 auto" }}
+              >
+                RUDRAKSHA
+              </span>
             </div>
           </Link>
 
@@ -349,12 +415,16 @@ export function Header({ onSearch }: HeaderProps) {
             </Button>
 
             {/* Wishlist */}
-            <Button variant="ghost" size="icon" className="relative">
-              <Heart className="h-6 w-6" />
-              <span className="absolute -top-1 -right-1 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" style={{ backgroundColor: 'rgba(156,86,26,255)' }}>
-                3
-              </span>
-            </Button>
+            <Link href="/my-favorites">
+              <Button variant="ghost" size="icon" className="relative">
+                <Heart className="h-6 w-6" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1 -right-1 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" style={{ backgroundColor: 'rgba(156,86,26,255)' }}>
+                    {wishlistCount > 9 ? '9+' : wishlistCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
 
             {/* Cart */}
             <Button 
@@ -452,9 +522,6 @@ export function Header({ onSearch }: HeaderProps) {
         )}
       </div>
     </header>
-    
-    {/* Slide-in Cart */}
-    <SlideInCart />
     </>
   );
 }

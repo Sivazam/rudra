@@ -19,7 +19,12 @@ interface CategoryCarouselProps {
 export function CategoryCarousel({ categories, selectedCategory, onCategorySelect }: CategoryCarouselProps) {
   return (
     <div className="mb-8">
-      <h2 className="text-2xl font-bold mb-6" style={{ color: '#755e3e' }}>Categories</h2>
+      <div className="flex items-center mb-6 px-4">
+        <h2 className="text-xl font-bold text-black font-sans">Select Category</h2>
+        <div className="flex-1 ml-4">
+          <div className="h-px bg-[#846549]" style={{ width: '80%' }}></div>
+        </div>
+      </div>
       
       <div 
         className="category-scroll"

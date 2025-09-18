@@ -28,6 +28,7 @@ const getSecretBuffer = (): Buffer => {
 
 export interface DecodedToken {
   phoneNumber: string;
+  userId?: string; // Firestore document ID
   iat: number;
   exp: number;
 }
