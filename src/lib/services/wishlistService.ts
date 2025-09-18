@@ -30,26 +30,14 @@ export interface WishlistItem {
 class WishlistService {
   private readonly LOCAL_STORAGE_KEY = 'sanathan-wishlist';
 
-  // Get user document ID from the authenticated user
+  // Get user document ID (now just returns the phone number)
   private async getUserDocumentId(): Promise<string | null> {
     try {
       const user = getCurrentUser();
       if (!user) return null;
       
-      // If userId is available in the token, use it directly
-      if (user.userId) {
-        return user.userId;
-      }
-      
-      // Fallback: look up by phone number (for backward compatibility)
-      const users = await firestoreService.getAll('users', {
-        where: { field: 'phoneNumber', operator: '==', value: user.phoneNumber }
-      });
-      
-      if (users.length > 0) {
-        return users[0].id;
-      }
-      return null;
+      // Return the phone number directly since it's now the document ID
+      return user.phoneNumber;
     } catch (error) {
       console.error('Error getting user document ID:', error);
       return null;
@@ -71,8 +59,8 @@ class WishlistService {
       const user = getCurrentUser();
       if (!user) return [];
 
-      // Get the actual user document ID
-      const userDocId = await this.getUserDocumentId();
+      // Get the user document using phone number as document ID
+      const userDocId = user.phoneNumber;
       if (!userDocId) return [];
 
       const userDoc = await getDoc(doc(firestoreDb, 'users', userDocId));
@@ -130,10 +118,10 @@ class WishlistService {
       const user = getCurrentUser();
       if (!user) return;
 
-      // Get the actual user document ID
-      const userDocId = await this.getUserDocumentId();
+      // Get the user document using phone number as document ID
+      const userDocId = user.phoneNumber;
       if (!userDocId) {
-        console.error('User document not found');
+        console.error('User phone number not found');
         return;
       }
 
@@ -158,7 +146,7 @@ class WishlistService {
       const userDoc = await getDoc(userRef);
       
       if (!userDoc.exists()) {
-        // This should not happen since we just got the userDocId, but handle it just in case
+        // This should not happen since user should be logged in, but handle it
         console.error('User document does not exist:', userDocId);
         return;
       } else {
@@ -203,10 +191,10 @@ class WishlistService {
       const user = getCurrentUser();
       if (!user) return;
 
-      // Get the actual user document ID
-      const userDocId = await this.getUserDocumentId();
+      // Get the user document using phone number as document ID
+      const userDocId = user.phoneNumber;
       if (!userDocId) {
-        console.error('User document not found');
+        console.error('User phone number not found');
         return;
       }
 
@@ -260,10 +248,10 @@ class WishlistService {
       const user = getCurrentUser();
       if (!user) return;
 
-      // Get the actual user document ID
-      const userDocId = await this.getUserDocumentId();
+      // Get the user document using phone number as document ID
+      const userDocId = user.phoneNumber;
       if (!userDocId) {
-        console.error('User document not found');
+        console.error('User phone number not found');
         return;
       }
 
@@ -338,10 +326,10 @@ class WishlistService {
       const user = getCurrentUser();
       if (!user) return;
 
-      // Get the actual user document ID
-      const userDocId = await this.getUserDocumentId();
+      // Get the user document using phone number as document ID
+      const userDocId = user.phoneNumber;
       if (!userDocId) {
-        console.error('User document not found');
+        console.error('User phone number not found');
         return;
       }
 
@@ -376,10 +364,10 @@ class WishlistService {
       const user = getCurrentUser();
       if (!user) return;
 
-      // Get the actual user document ID
-      const userDocId = await this.getUserDocumentId();
+      // Get the user document using phone number as document ID
+      const userDocId = user.phoneNumber;
       if (!userDocId) {
-        console.error('User document not found');
+        console.error('User phone number not found');
         return;
       }
 
@@ -427,32 +415,24 @@ class WishlistService {
       const user = getCurrentUser();
       if (!user) return () => {};
 
-      // Get the actual user document ID
-      this.getUserDocumentId().then(userDocId => {
-        if (!userDocId) {
-          console.error('User document not found');
-          return () => {};
-        }
-
-        const userRef = doc(firestoreDb, 'users', userDocId);
-        const unsubscribe = onSnapshot(userRef, (doc) => {
-          if (doc.exists()) {
-            const wishlist = doc.data().wishlist || [];
-            callback(wishlist);
-          } else {
-            callback([]);
-          }
-        });
-
-        return unsubscribe;
-      }).catch(error => {
-        console.error('Error setting up wishlist subscription:', error);
+      // Get the user document using phone number as document ID
+      const userDocId = user.phoneNumber;
+      if (!userDocId) {
+        console.error('User phone number not found');
         return () => {};
+      }
+
+      const userRef = doc(firestoreDb, 'users', userDocId);
+      const unsubscribe = onSnapshot(userRef, (doc) => {
+        if (doc.exists()) {
+          const wishlist = doc.data().wishlist || [];
+          callback(wishlist);
+        } else {
+          callback([]);
+        }
       });
 
-      // Return a dummy unsubscribe function initially
-      // The real unsubscribe function will be returned from the promise above
-      return () => {};
+      return unsubscribe;
     } catch (error) {
       console.error('Error subscribing to wishlist:', error);
       return () => {};

@@ -192,13 +192,13 @@ export function Header({ onSearch, children }: HeaderProps) {
                     </div> */}
                    <div className="text-center">
                     <span
-                      className="block text-xl font-bold font-spiritual -mb-1"
+                      className="block text-xl font-bold font-spiritual leading-none"
                       style={{ color: '#755e3e' }}
                     >
                       SANATHAN
                     </span>
                     <span
-                      className="block text-lg font-bold font-spiritual"
+                      className="block text-sm font-bold font-spiritual -mt-1 leading-tight"
                       style={{ color: '#755e3e' }}
                     >
                       RUDRAKSHA
@@ -361,26 +361,20 @@ export function Header({ onSearch, children }: HeaderProps) {
                 className="w-full h-full object-cover rounded-full"
               />
             </div>
-            {/* <div className="hidden sm:block">
-              <span className="text-xl font-bold font-spiritual" style={{ color: '#755e3e' }}>Sanathan</span>
-              <br />
-              <span className="text-xl font-bold font-spiritual" style={{ color: '#755e3e' }}>Rudraksha</span>
-            </div> */}
-          <div className="hidden sm:block text-center">
-          <span
-            className="block text-xl font-bold font-spiritual -mb-1"
-            style={{ color: '#755e3e' }}
-          >
-            SANATHAN
-          </span>
-          <span
-            className="block text-lg font-bold font-spiritual"
-            style={{ color: '#755e3e' }}
-          >
-            RUDRAKSHA
-          </span>
-        </div>
-
+            <div className="block text-center">
+              <span
+                className="block text-xl font-bold font-spiritual leading-none"
+                style={{ color: '#755e3e' }}
+              >
+                SANATHAN
+              </span>
+              <span
+                className="block text-sm font-bold font-spiritual -mt-1 leading-tight"
+                style={{ color: '#755e3e' }}
+              >
+                RUDRAKSHA
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}

@@ -52,15 +52,16 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // Create or update user in Firestore
-    let existingUser: any[] = [];
+    let existingUser: any = null;
     let isNewUser = false;
     let needsProfileCompletion = true;
+    let userId: string = phoneNumber; // Use phone number as document ID
     
     try {
       console.log('Creating/updating user in Firestore for phone:', phoneNumber);
-      existingUser = await firestoreService.getAll('users', {
-        where: { field: 'phoneNumber', operator: '==', value: phoneNumber }
-      });
+      
+      // Check if user exists using phone number as document ID
+      existingUser = await firestoreService.getById('users', phoneNumber);
 
       let userData: IUser = {
         phoneNumber,
@@ -68,27 +69,24 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date()
       };
 
-      let userId: string;
-
-      if (existingUser.length > 0) {
+      if (existingUser) {
         // Update existing user
-        userId = existingUser[0].id!;
+        userId = phoneNumber; // Phone number is the document ID
         await firestoreService.update('users', userId, {
           updatedAt: new Date()
         });
         console.log('User updated in Firestore:', userId);
         
         // Check if user has completed profile
-        const user = existingUser[0];
-        needsProfileCompletion = !user.name || !user.email;
+        needsProfileCompletion = !existingUser.name || !existingUser.email;
         if (needsProfileCompletion) {
           console.log('User profile incomplete, needs completion');
         }
       } else {
-        // Create new user
-        userId = await firestoreService.create('users', userData);
+        // Create new user with phone number as document ID
+        userId = await firestoreService.create('users', userData, phoneNumber);
         isNewUser = true;
-        console.log('New user created in Firestore:', userId);
+        console.log('New user created in Firestore with phone number as ID:', userId);
       }
     } catch (firestoreError) {
       console.error('Error creating/updating user in Firestore:', firestoreError);
@@ -96,10 +94,15 @@ export async function POST(request: NextRequest) {
       // Assume it's a new user if we can't check
       isNewUser = true;
       needsProfileCompletion = true;
+      // Use phone number as userId even for temporary cases
+      userId = phoneNumber;
     }
 
     // Create JWT token for session management
     console.log('Creating JWT token');
+    
+    // userId is now always the phone number
+    console.log('Using phone number as userId:', userId);
     
     // Try multiple approaches for token signing
     let token: string;
@@ -109,7 +112,7 @@ export async function POST(request: NextRequest) {
       token = jwt.sign(
         { 
           phoneNumber,
-          userId: userId // Include the Firestore document ID
+          userId: userId // Include the phone number as userId
         },
         secretBuffer,
         { expiresIn: '7d' }
@@ -122,7 +125,7 @@ export async function POST(request: NextRequest) {
       token = jwt.sign(
         { 
           phoneNumber,
-          userId: userId // Include the Firestore document ID
+          userId: userId // Include the phone number as userId
         },
         secretString,
         { algorithm: 'HS256', expiresIn: '7d' }
@@ -170,8 +173,14 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error('OTP verification error:', error);
+    console.error('Error details:', {
+      name: (error as any).name,
+      message: (error as any).message,
+      stack: (error as any).stack,
+      code: (error as any).code
+    });
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: (error as any).message },
       { status: 500 }
     );
   }

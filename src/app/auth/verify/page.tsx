@@ -150,7 +150,25 @@ export default function VerifyPage() {
       }
     } catch (error) {
       console.error('Error verifying OTP:', error);
-      setError('Invalid OTP. Please try again.');
+      console.error('Error details:', {
+        name: (error as any).name,
+        message: (error as any).message,
+        code: (error as any).code,
+        stack: (error as any).stack
+      });
+      
+      // Check if it's a Firebase auth error
+      if ((error as any).code === 'auth/invalid-verification-code') {
+        setError('Invalid OTP. Please enter the correct 6-digit code.');
+      } else if ((error as any).code === 'auth/code-expired') {
+        setError('OTP has expired. Please request a new one.');
+      } else if ((error as any).code === 'auth/too-many-requests') {
+        setError('Too many failed attempts. Please try again later.');
+      } else if ((error as any).message && (error as any).message.includes('Internal server error')) {
+        setError('Server error. Please try again later.');
+      } else {
+        setError('Invalid OTP. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -167,7 +185,23 @@ export default function VerifyPage() {
       setError('');
     } catch (error) {
       console.error('Error resending OTP:', error);
-      setError('Failed to resend OTP. Please try again.');
+      console.error('Error details:', {
+        name: (error as any).name,
+        message: (error as any).message,
+        code: (error as any).code,
+        stack: (error as any).stack
+      });
+      
+      // Provide more specific error messages based on the error type
+      if ((error as any).code === 'auth/invalid-phone-number') {
+        setError('Invalid phone number. Please go back and enter a valid phone number.');
+      } else if ((error as any).code === 'auth/quota-exceeded') {
+        setError('OTP quota exceeded. Please try again later.');
+      } else if ((error as any).code === 'auth/too-many-requests') {
+        setError('Too many requests. Please try again later.');
+      } else {
+        setError('Failed to resend OTP. Please try again.');
+      }
     } finally {
       setResendLoading(false);
     }

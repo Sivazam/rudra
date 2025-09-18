@@ -28,6 +28,9 @@ export function ImageWithLoader({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
 
+  // Check if image is from Firebase Storage
+  const isFirebaseStorage = src.includes('firebasestorage.googleapis.com');
+
   useEffect(() => {
     if (src && !imageLoaded && !hasError) {
       const img = new Image();
@@ -66,6 +69,7 @@ export function ImageWithLoader({
       height={height}
       loading={priority ? 'eager' : loading}
       fetchPriority={priority ? 'high' : 'auto'}
+      unoptimized={isFirebaseStorage}
       style={{ 
         opacity: imageLoaded ? 1 : 0.8,
         transition: 'opacity 0.1s ease-in-out'

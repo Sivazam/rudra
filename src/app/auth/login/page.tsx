@@ -68,7 +68,25 @@ export default function LoginPage() {
       router.push('/auth/verify');
     } catch (error) {
       console.error('Error sending OTP:', error);
-      setError('Failed to send OTP. Please try again.');
+      console.error('Error details:', {
+        name: (error as any).name,
+        message: (error as any).message,
+        code: (error as any).code,
+        stack: (error as any).stack
+      });
+      
+      // Provide more specific error messages based on the error type
+      if ((error as any).code === 'auth/invalid-phone-number') {
+        setError('Invalid phone number. Please enter a valid phone number.');
+      } else if ((error as any).code === 'auth/quota-exceeded') {
+        setError('OTP quota exceeded. Please try again later.');
+      } else if ((error as any).code === 'auth/user-disabled') {
+        setError('This user account has been disabled.');
+      } else if ((error as any).code === 'auth/too-many-requests') {
+        setError('Too many requests. Please try again later.');
+      } else {
+        setError('Failed to send OTP. Please check your phone number and try again.');
+      }
     } finally {
       setLoading(false);
     }

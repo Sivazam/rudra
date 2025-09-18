@@ -93,8 +93,8 @@ export function OptimizedImage({
   const generateSrcSet = useCallback(() => {
     if (!src) return '';
     
-    // If it's already a URL with parameters, don't modify it
-    if (src.includes('?')) return src;
+    // If it's already a URL with parameters or from Firebase Storage, don't modify it
+    if (src.includes('?') || src.includes('firebasestorage.googleapis.com')) return src;
     
     // Basic srcset generation - you can enhance this based on your image service
     const baseUrl = src.split('.')[0];
@@ -102,6 +102,9 @@ export function OptimizedImage({
     
     return `${src} 1x, ${baseUrl}@2x.${extension} 2x, ${baseUrl}@3x.${extension} 3x`;
   }, [src]);
+
+  // Check if image is from Firebase Storage
+  const isFirebaseStorage = src.includes('firebasestorage.googleapis.com');
 
   // If there's an error, show a placeholder
   if (hasError) {
@@ -147,6 +150,7 @@ export function OptimizedImage({
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? 'high' : 'auto'}
         decoding="async"
+        unoptimized={isFirebaseStorage}
         style={{
           opacity: imageLoaded ? 1 : 0,
           transition: 'opacity 0.3s ease-in-out',
