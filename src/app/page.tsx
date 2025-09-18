@@ -308,8 +308,9 @@ export default function Home() {
       <PageTransitionWrapper>
         <MainLayout onSearch={setSearchQuery}>
           {/* Banner Carousel */}
-          <BannerCarousel banners={mockBanners} />
-          
+          {/* <BannerCarousel banners={mockBanners} /> */}
+          <BannerCarousel  />
+
           <div className="container mx-auto px-4 py-8">
             {/* Category Carousel */}
             <CategoryCarousel 
