@@ -148,8 +148,9 @@ export function BannerCarousel() {
         src="https://firebasestorage.googleapis.com/v0/b/rudra-bb6b7.firebasestorage.app/o/Dupload%2FShop%20Now.jpg?alt=media&token=1c490243-b365-4d91-af57-1e6801d4a5da"
         alt="Hero Banner"
         fill
-        className="object-cover"
+        className="object-contain"
         priority
+        unoptimized
       />
     </div>
   );
