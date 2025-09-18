@@ -82,7 +82,7 @@ const mockBanners: Banner[] = [
   //   imageUrl: '/banners/pendants.jpg',
   //   categoryLink: '/categories/pendants',
   //   altText: 'Spiritual Pendants Banner'
-  }
+  
 ];
 
 export default function Home() {

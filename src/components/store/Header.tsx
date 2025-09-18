@@ -178,18 +178,33 @@ export function Header({ onSearch, children }: HeaderProps) {
               <nav className="space-y-6 mt-6 px-4">
                 <Link href="/" className="block text-lg font-semibold text-black">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 flex items-center justify-center">
+                    <div className="w-13 h-13 flex items-center justify-center">
                       <img 
                         src="/logo-original.png" 
                         alt="Sanathan Rudraksha Logo" 
                         className="w-full h-full object-cover rounded-full"
                       />
                     </div>
-                    <div>
+                    {/* <div>
                       <span className="font-spiritual" style={{ color: '#755e3e' }}>Sanathan</span>
                       <br />
                       <span className="font-spiritual" style={{ color: '#755e3e' }}>Rudraksha</span>
+                    </div> */}
+                    <div>                      
+                      <span
+                        className="block text-2xl font-bold font-spiritual"
+                        style={{ color: '#755e3e' }}
+                      >
+                        SANATHAN
+                      </span>
+                      <span
+                        className="block text-xl font-bold font-spiritual"
+                        style={{ color: '#755e3e' }}
+                      >
+                        RUDRAKSHA
+                      </span>
                     </div>
+
                   </div>
                 </Link>
                 
@@ -339,18 +354,33 @@ export function Header({ onSearch, children }: HeaderProps) {
 
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 flex items-center justify-center">
+            <div className="w-11 h-11 flex items-center justify-center">
               <img 
                 src="/logo-original.png" 
                 alt="Sanathan Rudraksha Logo" 
                 className="w-full h-full object-cover rounded-full"
               />
             </div>
-            <div className="hidden sm:block">
+            {/* <div className="hidden sm:block">
               <span className="text-xl font-bold font-spiritual" style={{ color: '#755e3e' }}>Sanathan</span>
               <br />
               <span className="text-xl font-bold font-spiritual" style={{ color: '#755e3e' }}>Rudraksha</span>
+            </div> */}
+            <div className="hidden sm:block text-center leading-tight">
+              <span
+                className="block text-2xl font-bold font-spiritual"
+                style={{ color: '#755e3e' }}
+              >
+                SANATHAN
+              </span>
+              <span
+                className="block text-xl font-bold font-spiritual"
+                style={{ color: '#755e3e' }}
+              >
+                RUDRAKSHA
+              </span>
             </div>
+
           </Link>
 
           {/* Desktop Navigation */}

@@ -45,7 +45,12 @@ export function GlobalLoader({ isLoading }: GlobalLoaderProps) {
         {/* OM Logo Placeholder */}
         <div className="mb-8">
           <div className="w-32 h-32 mx-auto bg-white rounded-full flex items-center justify-center shadow-lg animate-bounce">
-            <span className="text-4xl font-bold" style={{ color: 'rgba(156,86,26,255)' }}>OM</span>
+            {/* <span className="text-4xl font-bold" style={{ color: 'rgba(156,86,26,255)' }}>OM</span> */}
+            <img 
+                  src="/logo-original.png" 
+                  alt="Sanathan Rudraksha Logo" 
+                  className="w-full h-full object-cover rounded-full"
+                />
           </div>
         </div>
 
