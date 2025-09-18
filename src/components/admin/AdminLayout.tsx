@@ -60,7 +60,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   alt="Sanathan Rudraksha Logo" 
                   className="w-full h-full object-cover rounded-full"
                 />
-                <div className="hidden sm:block text-center">
+                  <div className="hidden sm:block text-center">
                       <span
                         className="block uppercase font-bold font-spiritual text-3xl"
                         style={{ color: "#755e3e", width: "100%" }}

@@ -178,7 +178,7 @@ export function Header({ onSearch, children }: HeaderProps) {
               <nav className="space-y-6 mt-6 px-4">
                 <Link href="/" className="block text-lg font-semibold text-black">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 flex items-center justify-center">
+                    <div className="w-16 h-16 flex items-center justify-center">
                       <img 
                         src="/logo-original.png" 
                         alt="Sanathan Rudraksha Logo" 
@@ -187,7 +187,7 @@ export function Header({ onSearch, children }: HeaderProps) {
                     </div>
                      <div className="hidden sm:block text-center">
                       <span
-                        className="block uppercase font-bold font-spiritual text-3xl"
+                        className="block uppercase font-bold font-spiritual text-2xl"
                         style={{ color: "#755e3e", width: "100%" }}
                       >
                         SANATHAN
@@ -200,10 +200,31 @@ export function Header({ onSearch, children }: HeaderProps) {
                       </span>
                     </div>
                     <div>
-                      <span className="font-spiritual" style={{ color: '#755e3e' }}>Sanathan</span>
-                      <br />
-                      <span className="font-spiritual" style={{ color: '#755e3e' }}>Rudraksha</span>
-                    </div>
+                      <span
+                        className="block uppercase font-bold font-spiritual text-2xl"
+                        style={{ color: "#755e3e", width: "100%" }}
+                      >
+                        SANATHAN
+                      </span>                      <br />
+                      <span
+                        className="block uppercase font-bold font-spiritual text-lg"
+                        style={{ color: "#755e3e", width: "80%", margin: "0 auto" }}
+                      >
+                        RUDRAKSHA
+                      </span>                    </div>
+                    <div>
+                      <span
+                        className="block uppercase font-bold font-spiritual text-2xl"
+                        style={{ color: "#755e3e", width: "100%" }}
+                      >
+                        SANATHAN
+                      </span>                      <br />
+                      <span
+                        className="block uppercase font-bold font-spiritual text-lg"
+                        style={{ color: "#755e3e", width: "80%", margin: "0 auto" }}
+                      >
+                        RUDRAKSHA
+                      </span>                    </div>
                   </div>
                 </Link>
                 
@@ -353,7 +374,7 @@ export function Header({ onSearch, children }: HeaderProps) {
 
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 flex items-center justify-center">
+            <div className="w-14 h-14 flex items-center justify-center">
               <img 
                 src="/logo-original.png" 
                 alt="Sanathan Rudraksha Logo" 
@@ -367,7 +388,7 @@ export function Header({ onSearch, children }: HeaderProps) {
             </div> */}
             <div className="hidden sm:block text-center">
               <span
-                className="block uppercase font-bold font-spiritual text-3xl"
+                className="block uppercase font-bold font-spiritual text-2xl"
                 style={{ color: "#755e3e", width: "100%" }}
               >
                 SANATHAN
