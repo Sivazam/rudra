@@ -192,13 +192,13 @@ export function Header({ onSearch, children }: HeaderProps) {
                     </div> */}
                     <div>                      
                       <span
-                        className="block text-2xl font-bold font-spiritual"
+                        className="block text-xl font-bold font-spiritual"
                         style={{ color: '#755e3e' }}
                       >
                         SANATHAN
                       </span>
                       <span
-                        className="block text-xl font-bold font-spiritual"
+                        className="block text-lg font-bold font-spiritual"
                         style={{ color: '#755e3e' }}
                       >
                         RUDRAKSHA
@@ -366,20 +366,20 @@ export function Header({ onSearch, children }: HeaderProps) {
               <br />
               <span className="text-xl font-bold font-spiritual" style={{ color: '#755e3e' }}>Rudraksha</span>
             </div> */}
-            <div className="hidden sm:block text-center leading-tight">
-              <span
-                className="block text-2xl font-bold font-spiritual"
-                style={{ color: '#755e3e' }}
-              >
-                SANATHAN
-              </span>
-              <span
-                className="block text-xl font-bold font-spiritual"
-                style={{ color: '#755e3e' }}
-              >
-                RUDRAKSHA
-              </span>
-            </div>
+           <div className="hidden sm:block text-center leading-snug">
+            <span
+              className="block text-xl font-bold font-spiritual"
+              style={{ color: '#755e3e' }}
+            >
+              SANATHAN
+            </span>
+            <span
+              className="block text-lg font-bold font-spiritual"
+              style={{ color: '#755e3e' }}
+            >
+              RUDRAKSHA
+            </span>
+          </div>
 
           </Link>
 

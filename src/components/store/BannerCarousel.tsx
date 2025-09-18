@@ -65,34 +65,14 @@ export function BannerCarousel({
     <div className="relative h-[50vh] w-full overflow-hidden">
       {/* Banner Images */}
       <div className="relative h-full">
-        {banners.map((banner, index) => (
-          // <Link 
-          //   key={banner.id} 
-          //   href={banner.categoryLink}
-          //   className={cn(
-          //     "absolute inset-0 transition-opacity duration-500 ease-in-out",
-          //     index === currentIndex ? "opacity-100" : "opacity-0 pointer-events-none"
-          //   )}
-          // >
-            <div className="relative h-full w-full">
+        <div className="relative h-full w-full">
               <Image
-                src={banner.imageUrl}
-                alt={banner.altText}
+                src="https://firebasestorage.googleapis.com/v0/b/rudra-bb6b7.firebasestorage.app/o/Dupload%2FShop%20Now.jpg?alt=media&token=1c490243-b365-4d91-af57-1e6801d4a5da"
+                alt="Hero Banner"
                 fill
                 className="object-cover"
-                priority={index === 0}
-                loading={index === 0 ? 'eager' : 'lazy'}
-              />
-              {/* Optional: Overlay with text */}
-              {/* <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center"> */}
-                {/* <div className="text-center text-white">
-                  <h2 className="text-3xl md:text-4xl font-bold mb-2">{banner.title}</h2>
-                  <p className="text-lg md:text-xl opacity-90">{banner.description}</p>
-                </div> */}
-              {/* </div> */}
-            </div>
-          // </Link>
-        ))}
+                loading={'eager'}
+              /> 
       </div>
 
       {/* Navigation Arrows */}
