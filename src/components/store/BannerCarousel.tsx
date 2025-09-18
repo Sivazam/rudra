@@ -74,7 +74,7 @@ export function BannerCarousel({
                 loading={'eager'}
               /> 
       </div>
-
+  </div>
       {/* Navigation Arrows */}
       {/* <Button
         variant="outline"
