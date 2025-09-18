@@ -96,11 +96,27 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
         const user = await userService.getUserByPhoneNumber(currentUser.phoneNumber);
         if (user && user.addresses) {
           console.log('Found user with addresses:', user.addresses.length, user.addresses);
-          setAddresses(user.addresses);
+          
+          // Remove duplicates based on address content (not just ID)
+          const uniqueAddresses = user.addresses.filter((address, index, self) =>
+            index === self.findIndex((a) => 
+              a.name === address.name && 
+              a.phone === address.phone && 
+              a.doorNo === address.doorNo && 
+              a.city === address.city && 
+              a.pincode === address.pincode
+            )
+          );
+          
+          if (uniqueAddresses.length !== user.addresses.length) {
+            console.log('Removed duplicate addresses:', user.addresses.length - uniqueAddresses.length, 'duplicates found');
+          }
+          
+          setAddresses(uniqueAddresses);
           
           // Auto-select default address if none is selected
           if (!selectedAddress) {
-            const defaultAddress = user.addresses.find(addr => addr.isDefault) || user.addresses[0];
+            const defaultAddress = uniqueAddresses.find(addr => addr.isDefault) || uniqueAddresses[0];
             if (defaultAddress) {
               console.log('Auto-selecting default address:', defaultAddress);
               onAddressSelect(defaultAddress);
@@ -108,12 +124,15 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
           }
         } else {
           console.log('User found but no addresses:', user);
+          setAddresses([]);
         }
       } else {
         console.log('No current user found');
+        setAddresses([]);
       }
     } catch (error) {
       console.error('Error loading addresses:', error);
+      setAddresses([]);
     } finally {
       setLoading(false);
     }
@@ -305,7 +324,9 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
     if (address.addressType === 'other' && address.customAddressName) {
       return address.customAddressName;
     }
-    return address.addressType.charAt(0).toUpperCase() + address.addressType.slice(1);
+    // Handle undefined addressType with fallback
+    const addressType = address.addressType || 'home';
+    return addressType.charAt(0).toUpperCase() + addressType.slice(1);
   };
 
   if (loading) {
@@ -345,9 +366,20 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                 const address = addresses.find(addr => addr.id === value);
                 if (address) {
                   console.log('Found address, calling onAddressSelect:', address);
+                  console.log('Address validation check:', {
+                    hasName: !!address.name,
+                    hasPhone: !!address.phone,
+                    hasEmail: !!address.email,
+                    hasDoorNo: !!address.doorNo,
+                    hasCity: !!address.city,
+                    hasPincode: !!address.pincode,
+                    phoneValid: address.phone && address.phone.startsWith('+91') && address.phone.length >= 5,
+                    pincodeValid: address.pincode && /^\d{6}$/.test(address.pincode)
+                  });
                   onAddressSelect(address);
                 } else {
                   console.log('No address found for id:', value);
+                  console.log('Available addresses:', addresses.map(a => ({ id: a.id, name: a.name })));
                 }
               }}
               className="space-y-3"

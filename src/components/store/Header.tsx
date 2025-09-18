@@ -1,5 +1,6 @@
 'use client';
 
+
 import { ReactNode } from 'react';
 import { useState, useEffect } from 'react';
 import { Menu, Search, Heart, ShoppingCart, User, Package, LogOut, Phone, MapPin, Edit, UserPlus, AlertCircle, ShoppingBag } from 'lucide-react';
@@ -15,10 +16,12 @@ import { isProfileComplete, getCurrentUserProfile } from '@/lib/profileCompletio
 import { useRouter } from 'next/navigation';
 import { wishlistService } from '@/lib/services/wishlistService';
 
+
 interface HeaderProps {
   onSearch: (query: string) => void;
   children?: ReactNode;
 }
+
 
 export function Header({ onSearch, children }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -32,9 +35,10 @@ export function Header({ onSearch, children }: HeaderProps) {
   const { getTotalItems, openCart } = useCartStore();
   const router = useRouter();
 
+
   useEffect(() => {
     setIsMounted(true);
-    
+   
     // Function to check authentication status and get current user
     const checkAuth = async () => {
       const authStatus = isUserAuthenticated();
@@ -52,7 +56,7 @@ export function Header({ onSearch, children }: HeaderProps) {
             setCurrentUser(userToken); // Fallback to token data
           }
         }
-        
+       
         // Check profile completion
         try {
           setIsCheckingProfile(true);
@@ -70,7 +74,7 @@ export function Header({ onSearch, children }: HeaderProps) {
         setProfileComplete(null);
       }
     };
-    
+   
     // Load wishlist count
     const loadWishlistCount = async () => {
       try {
@@ -80,17 +84,17 @@ export function Header({ onSearch, children }: HeaderProps) {
         console.error('Error loading wishlist count:', error);
       }
     };
-    
+   
     // Check authentication and load wishlist count immediately
     checkAuth();
     loadWishlistCount();
-    
+   
     // Set up event listeners for auth state changes
     const handleStorageChange = () => {
       checkAuth();
       loadWishlistCount();
     };
-    
+   
     const handleAuthStateChange = () => {
       console.log('Auth state change event received');
       // Add a small delay to ensure Firestore updates are committed
@@ -99,16 +103,16 @@ export function Header({ onSearch, children }: HeaderProps) {
         loadWishlistCount();
       }, 500);
     };
-    
+   
     const handleWishlistChange = () => {
       console.log('Wishlist change event received');
       loadWishlistCount();
     };
-    
+   
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('auth-state-changed', handleAuthStateChange);
     window.addEventListener('wishlist-changed', handleWishlistChange);
-    
+   
     // Cleanup event listeners on component unmount
     return () => {
       window.removeEventListener('storage', handleStorageChange);
@@ -116,6 +120,7 @@ export function Header({ onSearch, children }: HeaderProps) {
       window.removeEventListener('wishlist-changed', handleWishlistChange);
     };
   }, []);
+
 
   const handleLogout = () => {
     // Clear the auth token cookie
@@ -127,10 +132,12 @@ export function Header({ onSearch, children }: HeaderProps) {
     router.push('/');
   };
 
+
   const handleNavigation = (path: string) => {
     setIsSidebarOpen(false);
     router.push(path);
   };
+
 
   const formatPhoneNumber = (phone: string) => {
     if (!phone) return '';
@@ -139,6 +146,7 @@ export function Header({ onSearch, children }: HeaderProps) {
     }
     return phone;
   };
+
 
   const getDisplayName = (user: any) => {
     if (!user) return 'User';
@@ -150,17 +158,20 @@ export function Header({ onSearch, children }: HeaderProps) {
     return 'User';
   };
 
+
   const getUserEmail = (user: any) => {
     if (!user) return null;
     // Return email if available from full profile
     return user.email || null;
   };
 
+
   const getUserPhone = (user: any) => {
     if (!user) return null;
     // Return phoneNumber from either full profile or token
     return user.phoneNumber || null;
   };
+
 
   return (
     <>
@@ -179,9 +190,9 @@ export function Header({ onSearch, children }: HeaderProps) {
                 <Link href="/" className="block text-lg font-semibold text-black">
                   <div className="flex items-center space-x-3">
                     <div className="w-13 h-13 flex items-center justify-center">
-                      <img 
-                        src="/logo-original.png" 
-                        alt="Sanathan Rudraksha Logo" 
+                      <img
+                        src="/logo-original.png"
+                        alt="Sanathan Rudraksha Logo"
                         className="w-full h-full object-cover rounded-full"
                       />
                     </div>
@@ -205,9 +216,10 @@ export function Header({ onSearch, children }: HeaderProps) {
                     </span>
                   </div>
 
+
                   </div>
                 </Link>
-                
+               
                 {/* User Information Section - Only show if authenticated */}
                 {isAuth && currentUser && (
                   <div className="space-y-4">
@@ -222,8 +234,8 @@ export function Header({ onSearch, children }: HeaderProps) {
                           </div>
                         </div>
                         <Link href="/auth/complete-profile" className="block mt-2">
-                          <Button 
-                            className="w-full text-xs py-1.5" 
+                          <Button
+                            className="w-full text-xs py-1.5"
                             style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
                           >
                             Complete Now
@@ -231,7 +243,7 @@ export function Header({ onSearch, children }: HeaderProps) {
                         </Link>
                       </div>
                     )}
-                    
+                   
                     {/* Loading indicator for profile check */}
                     {isCheckingProfile && (
                       <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
@@ -241,7 +253,7 @@ export function Header({ onSearch, children }: HeaderProps) {
                         </div>
                       </div>
                     )}
-                    
+                   
                     {/* User Details Row */}
                     <div className="flex items-start space-x-3">
                       {/* Left Column - Avatar */}
@@ -250,7 +262,7 @@ export function Header({ onSearch, children }: HeaderProps) {
                           {getUserPhone(currentUser) ? getUserPhone(currentUser)!.slice(-2) : 'U'}
                         </AvatarFallback>
                       </Avatar>
-                      
+                     
                       {/* Right Column - User Info */}
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm text-black">
@@ -269,21 +281,21 @@ export function Header({ onSearch, children }: HeaderProps) {
                         )}
                       </div>
                     </div>
-                    
+                   
                     {/* Edit Profile Button - Much Smaller */}
                     <Link href="/profile" className="block">
-                      <Button 
-                        className="w-full text-xs py-1.5" 
+                      <Button
+                        className="w-full text-xs py-1.5"
                         style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
                       >
                         <Edit className="h-3 w-3 mr-2" />
                         Edit Profile
                       </Button>
                     </Link>
-                    
+                   
                     {/* Shop by Category Button - Outlined */}
                     <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="block">
-                      <Button 
+                      <Button
                         variant="outline"
                         className="w-full text-xs py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50"
                       >
@@ -293,7 +305,7 @@ export function Header({ onSearch, children }: HeaderProps) {
                     </Link>
                   </div>
                 )}
-                
+               
                 {/* User-specific menu items - Only show if authenticated */}
                 {isAuth && (
                   <div className="space-y-1">
@@ -313,7 +325,7 @@ export function Header({ onSearch, children }: HeaderProps) {
                       <span>My Orders</span>
                     </Link>
                     <div className="border-b border-gray-200"></div>
-                    <button 
+                    <button
                       onClick={handleLogout}
                       className="block py-3 hover:opacity-80 transition-colors text-left w-full flex items-center space-x-3 text-red-600"
                     >
@@ -322,13 +334,13 @@ export function Header({ onSearch, children }: HeaderProps) {
                     </button>
                   </div>
                 )}
-                
+               
                 {/* Login/Signup section - Only show if not authenticated */}
                 {!isAuth && (
                   <div className="space-y-4 pt-4">
                     {/* Shop by Category Button - Outlined */}
                     <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="block">
-                      <Button 
+                      <Button
                         variant="outline"
                         className="w-full text-sm py-3 border-gray-300 text-gray-700 hover:bg-gray-50"
                       >
@@ -336,10 +348,10 @@ export function Header({ onSearch, children }: HeaderProps) {
                         Shop by category
                       </Button>
                     </Link>
-                    
+                   
                     <Link href="/auth/login" className="block">
-                      <Button 
-                        className="w-full text-sm py-3" 
+                      <Button
+                        className="w-full text-sm py-3"
                         style={{ backgroundColor: 'rgba(156,86,26,255)', color: 'white' }}
                       >
                         <User className="h-4 w-4 mr-2" />
@@ -352,12 +364,13 @@ export function Header({ onSearch, children }: HeaderProps) {
             </SheetContent>
           </Sheet>
 
+
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <div className="w-11 h-11 flex items-center justify-center">
-              <img 
-                src="/logo-original.png" 
-                alt="Sanathan Rudraksha Logo" 
+              <img
+                src="/logo-original.png"
+                alt="Sanathan Rudraksha Logo"
                 className="w-full h-full object-cover rounded-full"
               />
             </div>
@@ -377,6 +390,7 @@ export function Header({ onSearch, children }: HeaderProps) {
             </div>
           </Link>
 
+
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
             <Link href="/" className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors">
@@ -384,6 +398,7 @@ export function Header({ onSearch, children }: HeaderProps) {
               <span>Shop by category</span>
             </Link>
           </nav>
+
 
           {/* Search and Actions */}
           <div className="flex items-center space-x-2">
@@ -400,15 +415,17 @@ export function Header({ onSearch, children }: HeaderProps) {
               </div>
             </div>
 
+
             {/* Mobile Search */}
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="md:hidden"
               onClick={() => setIsSearchOpen(!isSearchOpen)}
             >
               <Search className="h-6 w-6" />
             </Button>
+
 
             {/* Wishlist */}
             <Link href="/my-favorites">
@@ -422,11 +439,12 @@ export function Header({ onSearch, children }: HeaderProps) {
               </Button>
             </Link>
 
+
             {/* Cart */}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="relative" 
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative"
               onClick={openCart}
             >
               <ShoppingCart className="h-6 w-6" />
@@ -436,6 +454,7 @@ export function Header({ onSearch, children }: HeaderProps) {
                 </span>
               )}
             </Button>
+
 
             {/* User Account - Desktop Only */}
             {isAuth && currentUser ? (
@@ -501,6 +520,7 @@ export function Header({ onSearch, children }: HeaderProps) {
           </div>
         </div>
 
+
         {/* Mobile Search Bar */}
         {isSearchOpen && (
           <div className="md:hidden pb-4">
@@ -521,3 +541,4 @@ export function Header({ onSearch, children }: HeaderProps) {
     </>
   );
 }
+

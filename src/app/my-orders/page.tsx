@@ -243,7 +243,7 @@ export default function MyOrdersPage() {
               <div className="flex items-center space-x-2">
                 {getStatusIcon(order.status)}
                 <Badge className={getStatusColor(order.status)}>
-                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                  {(order.status || 'pending').charAt(0).toUpperCase() + (order.status || 'pending').slice(1)}
                 </Badge>
               </div>
             </div>
@@ -317,7 +317,7 @@ export default function MyOrdersPage() {
         <div className="flex items-center space-x-2">
           {getStatusIcon(order.status)}
           <Badge className={getStatusColor(order.status)}>
-            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+            {(order.status || 'pending').charAt(0).toUpperCase() + (order.status || 'pending').slice(1)}
           </Badge>
         </div>
       </div>
@@ -391,7 +391,7 @@ export default function MyOrdersPage() {
         <div className="flex items-center space-x-2">
           <span className="text-sm text-gray-600">Payment:</span>
           <Badge className={order.paymentStatus === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}>
-            {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
+            {(order.paymentStatus || 'pending').charAt(0).toUpperCase() + (order.paymentStatus || 'pending').slice(1)}
           </Badge>
         </div>
         {order.paidAt && (

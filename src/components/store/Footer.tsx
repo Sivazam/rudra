@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+
 export function Footer() {
   return (
     <footer className="bg-gray-900 text-gray-300 py-12 mt-16">
@@ -10,9 +11,9 @@ export function Footer() {
             <Link href="/" className="inline-block mb-6">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 flex items-center justify-center">
-                  <img 
-                    src="/logo-original.png" 
-                    alt="Sanathan Rudraksha Logo" 
+                  <img
+                    src="/logo-original.png"
+                    alt="Sanathan Rudraksha Logo"
                     className="w-full h-full object-cover rounded-full"
                   />
                 </div>
@@ -36,7 +37,7 @@ export function Footer() {
               Authentic Rudraksha beads and spiritual products for your journey towards inner peace and enlightenment.
             </p>
           </div>
-          
+         
           {/* Quick Links */}
           <div>
             <h3 className="text-lg font-semibold mb-4 text-white">Quick Links</h3>
@@ -47,7 +48,7 @@ export function Footer() {
               <li><Link href="/profile" className="hover:text-amber-400 transition-colors">My Profile</Link></li>
             </ul>
           </div>
-          
+         
           {/* Account & Support */}
           <div>
             <h3 className="text-lg font-semibold mb-4 text-white">Account & Support</h3>
@@ -58,7 +59,7 @@ export function Footer() {
               <li><Link href="/checkout" className="hover:text-amber-400 transition-colors">Checkout</Link></li>
             </ul>
           </div>
-          
+         
           {/* Contact Info */}
           <div>
             <h3 className="text-lg font-semibold mb-4 text-white">Get In Touch</h3>
@@ -78,7 +79,7 @@ export function Footer() {
             </ul>
           </div>
         </div>
-        
+       
         <div className="border-t border-gray-800 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-400 mb-4 md:mb-0">

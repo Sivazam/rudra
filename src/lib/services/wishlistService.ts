@@ -77,6 +77,12 @@ class WishlistService {
   // Get wishlist from localStorage for guests
   private getLocalWishlist(): WishlistItem[] {
     try {
+      // Check if we're on the server side
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        console.log('localStorage not available on server side, returning empty wishlist');
+        return [];
+      }
+      
       const stored = localStorage.getItem(this.LOCAL_STORAGE_KEY);
       return stored ? JSON.parse(stored) : [];
     } catch (error) {
@@ -164,6 +170,12 @@ class WishlistService {
   // Add item to localStorage wishlist
   private addToLocalWishlist(item: WishlistItem): void {
     try {
+      // Check if we're on the server side
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        console.log('localStorage not available on server side, skipping local wishlist addition');
+        return;
+      }
+      
       const wishlist = this.getLocalWishlist();
       wishlist.push(item);
       localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(wishlist));
@@ -233,6 +245,12 @@ class WishlistService {
   // Remove item from localStorage wishlist by product ID
   private async removeFromLocalWishlistByProductId(productId: string): Promise<void> {
     try {
+      // Check if we're on the server side
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        console.log('localStorage not available on server side, skipping local wishlist removal');
+        return;
+      }
+      
       const wishlist = this.getLocalWishlist();
       const updatedWishlist = wishlist.filter(item => item.productId !== productId);
       localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(updatedWishlist));
@@ -290,6 +308,12 @@ class WishlistService {
   // Remove item from localStorage wishlist
   private removeFromLocalWishlist(itemId: string): void {
     try {
+      // Check if we're on the server side
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        console.log('localStorage not available on server side, skipping local wishlist removal');
+        return;
+      }
+      
       const wishlist = this.getLocalWishlist();
       const updatedWishlist = wishlist.filter(item => item.id !== itemId);
       localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(updatedWishlist));
@@ -346,6 +370,12 @@ class WishlistService {
   // Clear localStorage wishlist
   private clearLocalWishlist(): void {
     try {
+      // Check if we're on the server side
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        console.log('localStorage not available on server side, skipping local wishlist clearing');
+        return;
+      }
+      
       localStorage.removeItem(this.LOCAL_STORAGE_KEY);
     } catch (error) {
       console.error('Error clearing local wishlist:', error);

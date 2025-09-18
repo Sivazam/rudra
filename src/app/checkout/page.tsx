@@ -155,7 +155,7 @@ export default function CheckoutPage() {
   };
 
   const handleAddressSelect = (address: ShippingAddress) => {
-    console.log('Address selected:', address);
+    console.log('Address selected in checkout:', address);
     console.log('Address validation check:', {
       hasName: !!address.name,
       hasPhone: !!address.phone,
@@ -164,9 +164,18 @@ export default function CheckoutPage() {
       hasCity: !!address.city,
       hasPincode: !!address.pincode,
       phoneValid: address.phone && address.phone.startsWith('+91') && address.phone.length >= 5,
-      pincodeValid: address.pincode && /^\d{6}$/.test(address.pincode)
+      pincodeValid: address.pincode && /^\d{6}$/.test(address.pincode),
+      addressType: typeof address,
+      addressKeys: Object.keys(address || {}),
+      fullAddress: JSON.stringify(address, null, 2)
     });
-    setShippingAddress(address);
+    
+    // Ensure we're setting a proper object
+    if (address && typeof address === 'object') {
+      setShippingAddress({ ...address }); // Create a new object to ensure reactivity
+    } else {
+      console.error('Invalid address object received:', address);
+    }
   };
 
   // Use function declaration instead of const to make it hoisted
@@ -178,31 +187,58 @@ export default function CheckoutPage() {
       return false;
     }
     
+    // Check if shippingAddress has the required structure
+    if (!shippingAddress || typeof shippingAddress !== 'object') {
+      console.log('Validation failed: shippingAddress is not an object');
+      return false;
+    }
+    
     // Check required fields for the new address structure
     const requiredFields = ['name', 'phone', 'doorNo', 'city', 'pincode'];
     
     for (const field of requiredFields) {
       const value = shippingAddress[field as keyof ShippingAddress];
-      console.log(`Checking field ${field}:`, value);
-      if (!value || value.toString().trim() === '') {
+      console.log(`Checking field ${field}:`, value, 'type:', typeof value);
+      
+      if (!value) {
+        console.log(`Validation failed: Field ${field} is undefined or null`);
+        return false;
+      }
+      
+      if (typeof value.toString !== 'function') {
+        console.log(`Validation failed: Field ${field} is not a string or convertible to string`);
+        return false;
+      }
+      
+      if (value.toString().trim() === '') {
         console.log(`Validation failed: Field ${field} is empty`);
         return false;
       }
     }
     
     // Additional validation for phone format
+    if (!shippingAddress.phone || typeof shippingAddress.phone !== 'string') {
+      console.log('Validation failed: Phone is not a string');
+      return false;
+    }
+    
     if (!shippingAddress.phone.startsWith('+91') || shippingAddress.phone.length < 5) {
       console.log('Validation failed: Invalid phone format', shippingAddress.phone);
       return false;
     }
     
     // Pincode must be 6 digits
+    if (!shippingAddress.pincode || typeof shippingAddress.pincode !== 'string') {
+      console.log('Validation failed: Pincode is not a string');
+      return false;
+    }
+    
     if (!/^\d{6}$/.test(shippingAddress.pincode)) {
       console.log('Validation failed: Invalid pincode format', shippingAddress.pincode);
       return false;
     }
     
-    console.log('Validation passed');
+    console.log('Validation passed successfully');
     return true;
   }
 
@@ -290,6 +326,7 @@ export default function CheckoutPage() {
         currency: currency,
         name: 'Sanathan Rudraksha',
         description: 'Purchase of Spiritual Products',
+        image: '/logo-original.png', // Add your logo here
         order_id: orderId,
         prefill: {
           name: shippingAddress.name,

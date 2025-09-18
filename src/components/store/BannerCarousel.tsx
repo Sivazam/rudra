@@ -1,10 +1,12 @@
 'use client';
 
+
 import React, { useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
 
 interface Banner {
   id: string;
@@ -15,19 +17,22 @@ interface Banner {
   altText: string;
 }
 
+
 interface BannerCarouselProps {
   banners?: Banner[];
   autoPlay?: boolean;
   autoPlayInterval?: number;
 }
 
-export function BannerCarousel({ 
-  banners = [], 
-  autoPlay = true, 
-  autoPlayInterval = 5000 
+
+export function BannerCarousel({
+  banners = [],
+  autoPlay = true,
+  autoPlayInterval = 5000
 }: BannerCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
 
   // Default banners if none provided
   const defaultBanners: Banner[] = [
@@ -49,30 +54,37 @@ export function BannerCarousel({
     }
   ];
 
+
   const carouselBanners = banners.length > 0 ? banners : defaultBanners;
 
+
   const nextSlide = useCallback(() => {
-    setCurrentIndex((prevIndex) => 
+    setCurrentIndex((prevIndex) =>
       prevIndex === carouselBanners.length - 1 ? 0 : prevIndex + 1
     );
   }, [carouselBanners.length]);
 
+
   const goToSlide = useCallback((index: number) => {
     setCurrentIndex(index);
   }, []);
+
 
   const handleImageError = (bannerId: string) => {
     console.error(`Failed to load image for banner ${bannerId}`);
     setImageErrors(prev => ({ ...prev, [bannerId]: true }));
   };
 
+
   // Auto-play functionality
   React.useEffect(() => {
     if (!autoPlay) return;
 
+
     const interval = setInterval(nextSlide, autoPlayInterval);
     return () => clearInterval(interval);
   }, [autoPlay, autoPlayInterval, nextSlide]);
+
 
   if (carouselBanners.length === 0) {
     return (
@@ -82,13 +94,14 @@ export function BannerCarousel({
     );
   }
 
+
   return (
     <div className="relative h-[50vh] w-full overflow-hidden">
       {/* Banner Images */}
       <div className="relative h-full">
         {carouselBanners.map((banner, index) => (
-          <Link 
-            key={banner.id} 
+          <Link
+            key={banner.id}
             href={banner.categoryLink}
             className={cn(
               "absolute inset-0 transition-opacity duration-500 ease-in-out",
@@ -119,7 +132,7 @@ export function BannerCarousel({
                   // onError={() => handleImageError(banner.id)}
                 />
               )}
-              
+             
               {/* Optional overlay with text - positioned on left center */}
               {/* Only show overlay if image loaded successfully */}
               {!imageErrors[banner.id] && (
@@ -139,6 +152,7 @@ export function BannerCarousel({
         ))}
       </div>
 
+
       {/* Dots Navigation */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
         {carouselBanners.map((_, index) => (
@@ -147,7 +161,7 @@ export function BannerCarousel({
             onClick={() => goToSlide(index)}
             className={cn(
               "transition-all duration-300 ease-in-out rounded-full",
-              index === currentIndex 
+              index === currentIndex
                 ? "w-3 h-3 bg-white"  // Larger dot for active slide
                 : "w-2 h-2 bg-white/60 hover:bg-white/80"  // Regular dot for inactive slides
             )}

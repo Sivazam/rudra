@@ -76,7 +76,7 @@ export function CategoryCarousel({ categories, selectedCategory, onCategorySelec
                     target.style.display = 'none';
                     target.parentElement!.innerHTML = `
                       <span class="font-bold text-lg" style="color: ${selectedCategory === category.name ? '#9c542a' : '#666666'}">
-                        ${category.name.charAt(0)}
+                        ${(category.name || '').charAt(0) || ''}
                       </span>
                     `;
                   }}
