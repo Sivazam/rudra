@@ -70,7 +70,8 @@ export function SlideInCart() {
     <div className="fixed inset-0 z-[9999]">
       {/* Semi-transparent overlay */}
       <div 
-        className="absolute inset-0 bg-black bg-opacity-30"
+        className="absolute inset-0"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
         onClick={closeCart}
       />
       
