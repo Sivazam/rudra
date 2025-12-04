@@ -69,7 +69,7 @@ export function ImageWithLoader({
       height={height}
       loading={priority ? 'eager' : loading}
       fetchPriority={priority ? 'high' : 'auto'}
-      unoptimized={isFirebaseStorage}
+      unoptimized={isFirebaseStorage ? "true" : undefined}
       style={{ 
         opacity: imageLoaded ? 1 : 0.8,
         transition: 'opacity 0.1s ease-in-out'

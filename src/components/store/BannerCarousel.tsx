@@ -128,7 +128,7 @@ export function BannerCarousel({
                   className="object-cover"
                   priority={index === 0}
                   loading={index === 0 ? 'eager' : 'lazy'}
-                  unoptimized
+                  unoptimized="true"
                   // onError={() => handleImageError(banner.id)}
                 />
               )}

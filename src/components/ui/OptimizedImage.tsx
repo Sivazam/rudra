@@ -150,7 +150,7 @@ export function OptimizedImage({
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? 'high' : 'auto'}
         decoding="async"
-        unoptimized={isFirebaseStorage}
+        unoptimized={isFirebaseStorage ? "true" : undefined}
         style={{
           opacity: imageLoaded ? 1 : 0,
           transition: 'opacity 0.3s ease-in-out',

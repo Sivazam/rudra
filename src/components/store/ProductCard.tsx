@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { wishlistService } from '@/lib/services/wishlistService';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface Product {
   id: string;
@@ -73,6 +74,12 @@ export function ProductCard({ product }: ProductCardProps) {
   
   const { items, addItem, updateQuantity } = useCartStore();
   const { toast } = useToast();
+  const router = useRouter();
+
+  // Prefetch product page on hover for faster navigation
+  const handleMouseEnter = () => {
+    router.prefetch(`/products/${product.id}`);
+  };
 
   // Check if product is in wishlist on component mount and listen for changes
   useEffect(() => {
@@ -338,9 +345,9 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow group flex flex-col h-full scroll-optimized smooth-transition" style={{ border: `1px solid #846549` }}>
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow group flex flex-col h-full scroll-optimized smooth-transition" style={{ border: `1px solid #846549` }} onMouseEnter={handleMouseEnter}>
         {/* Product Image - Fixed height */}
-        <div className="relative aspect-square overflow-hidden flex-shrink-0 gpu-accelerated bg-gray-50">
+        <div className="aspect-square bg-white rounded-lg shadow-sm overflow-hidden flex-shrink-0 gpu-accelerated bg-gray-50">
           <Link href={`/products/${product.id}`} className="block w-full h-full">
             <OptimizedImage
               src={product.image}

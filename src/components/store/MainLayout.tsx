@@ -6,12 +6,13 @@ import { SlideInCart } from './SlideInCart';
 interface MainLayoutProps {
   children: ReactNode;
   onSearch?: (query: string) => void;
+  clearSearch?: () => void;
 }
 
-export function MainLayout({ children, onSearch }: MainLayoutProps) {
+export function MainLayout({ children, onSearch, clearSearch }: MainLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f4f0eb' }}>
-      <Header onSearch={onSearch || (() => {})} />
+      <Header onSearch={onSearch || (() => {})} clearSearch={clearSearch || (() => {})} />
       <main className="flex-grow">
         {children}
       </main>

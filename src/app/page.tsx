@@ -271,11 +271,17 @@ export default function Home() {
     }
   }, [loading, initialLoadComplete]);
 
+  const isSearching = searchQuery.trim().length > 0;
   const filteredProducts = storeProducts.filter(product => {
+    // When searching, ignore category filter and show all matching products
+    if (isSearching) {
+      return product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+             product.deity.toLowerCase().includes(searchQuery.toLowerCase());
+    }
+    
+    // When not searching, apply category filter
     const matchesCategory = selectedCategory === 'All' || product.categoryName === selectedCategory;
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.deity.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return matchesCategory;
   });
 
   // Sort products based on selected sort option
@@ -296,6 +302,10 @@ export default function Home() {
     }
   });
 
+  const clearSearch = () => {
+    setSearchQuery('');
+  };
+
   // Preload product images for better performance
   const productImages = storeProducts.map(product => product.image);
   const bannerImages = mockBanners.map(banner => banner.imageUrl);
@@ -306,23 +316,35 @@ export default function Home() {
       <ImagePreloader images={[...bannerImages, ...productImages.slice(0, 8)]} priority={true} />
       
       <PageTransitionWrapper>
-        <MainLayout onSearch={setSearchQuery}>
-          {/* Banner Carousel */}
-          {/* <BannerCarousel banners={mockBanners} /> */}
-          <BannerCarousel  />
+        <MainLayout onSearch={setSearchQuery} clearSearch={clearSearch}>
+          {/* Banner Carousel - Only show when not searching */}
+          {!isSearching && (
+            <>
+              {/* <BannerCarousel banners={mockBanners} /> */}
+              <BannerCarousel  />
+            </>
+          )}
 
           <div className="container mx-auto px-4 py-8">
-            {/* Category Carousel */}
-            <CategoryCarousel 
-              categories={storeCategories}
-              selectedCategory={selectedCategory}
-              onCategorySelect={setSelectedCategory}
-            />
+            {/* Category Carousel - Only show when not searching */}
+            {!isSearching && (
+              <>
+                {/* Category Carousel */}
+                <CategoryCarousel 
+                  categories={storeCategories}
+                  selectedCategory={selectedCategory}
+                  onCategorySelect={setSelectedCategory}
+                />
+              </>
+            )}
             
-            {/* Results Info */}
+            {/* Results Info - Show search-specific message when searching */}
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold text-gray-900">
-                Showing {sortedProducts.length} results
+                {isSearching 
+                  ? `Found ${sortedProducts.length} result${sortedProducts.length !== 1 ? 's' : ''} for "${searchQuery}"`
+                  : `Showing ${sortedProducts.length} result${sortedProducts.length !== 1 ? 's' : ''}`
+                }
               </h3>
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="w-48 border-gray-200 focus:border-orange-300 focus:ring-orange-200">
@@ -339,21 +361,35 @@ export default function Home() {
             </div>
             
             {/* Product Grid */}
-            {storeProducts.length > 0 ? (
+            {sortedProducts.length > 0 ? (
               <div className="smooth-scroll-container">
                 <ProductGrid products={sortedProducts} />
               </div>
             ) : (
               <Card>
                 <CardContent className="text-center py-12">
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {isSearching 
+                      ? `No results found for "${searchQuery}"`
+                      : 'No products found'
+                    }
+                  </h3>
                   <p className="text-gray-600">
-                    {selectedCategory === 'All' 
-                      ? 'There are no products in the store yet.' 
-                      : `There are no products in the "${selectedCategory}" category yet.`
+                    {isSearching 
+                      ? 'Try searching with different keywords or check spelling.'
+                      : selectedCategory === 'All' 
+                        ? 'There are no products in the store yet.' 
+                        : `There are no products in the "${selectedCategory}" category yet.`
                     }
                   </p>
-                  {selectedCategory !== 'All' && (
+                  {isSearching ? (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      className="mt-4 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
+                    >
+                      Clear Search
+                    </button>
+                  ) : selectedCategory !== 'All' && (
                     <button 
                       onClick={() => setSelectedCategory('All')}
                       className="mt-4 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"

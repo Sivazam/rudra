@@ -19,11 +19,12 @@ import { wishlistService } from '@/lib/services/wishlistService';
 
 interface HeaderProps {
   onSearch: (query: string) => void;
+  clearSearch?: () => void;
   children?: ReactNode;
 }
 
 
-export function Header({ onSearch, children }: HeaderProps) {
+export function Header({ onSearch, clearSearch, children }: HeaderProps) {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [isAuth, setIsAuth] = useState(false);
@@ -294,7 +295,7 @@ export function Header({ onSearch, children }: HeaderProps) {
                     </Link>
                    
                     {/* Shop by Category Button - Outlined */}
-                    <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="block">
+                    <Link href="/" onClick={(e) => { e.preventDefault(); clearSearch?.(); handleNavigation('/'); }} className="block">
                       <Button
                         variant="outline"
                         className="w-full text-xs py-1.5 border-gray-300 text-gray-700 hover:bg-gray-50"
@@ -339,7 +340,7 @@ export function Header({ onSearch, children }: HeaderProps) {
                 {!isAuth && (
                   <div className="space-y-4 pt-4">
                     {/* Shop by Category Button - Outlined */}
-                    <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="block">
+                    <Link href="/" onClick={(e) => { e.preventDefault(); clearSearch?.(); handleNavigation('/'); }} className="block">
                       <Button
                         variant="outline"
                         className="w-full text-sm py-3 border-gray-300 text-gray-700 hover:bg-gray-50"
@@ -366,7 +367,7 @@ export function Header({ onSearch, children }: HeaderProps) {
 
 
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2" onClick={() => clearSearch?.()}>
             <div className="w-11 h-11 flex items-center justify-center">
               <img
                 src="/logo-original.png"
@@ -393,7 +394,7 @@ export function Header({ onSearch, children }: HeaderProps) {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/" className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors">
+            <Link href="/" className="flex items-center space-x-2 text-gray-700 hover:text-gray-900 transition-colors" onClick={() => clearSearch?.()}>
               <ShoppingBag className="h-4 w-4" />
               <span>Shop by category</span>
             </Link>
