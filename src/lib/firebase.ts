@@ -9,7 +9,11 @@ const firebaseConfig = {
   projectId: "rudra-bb6b7",
   storageBucket: "rudra-bb6b7.firebasestorage.app",
   messagingSenderId: "889150603232",
-  appId: "1:889150603232:e2ae8734b6eeab6f585"
+  appId: "1:889150603232:e2ae8734b6eeab6f585",
+  // Add authorized domains
+  authDomain: "rudra-bb6b7.firebaseapp.com",
+  // Add additional authorized domains if needed
+  // Note: Make sure these domains are also configured in Firebase Console
 };
 
 const app = initializeApp(firebaseConfig);
