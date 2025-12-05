@@ -180,6 +180,15 @@ export default function Home() {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const categoryParam = urlParams.get('category');
+      const searchParam = urlParams.get('search');
+      
+      // Handle search parameter from URL
+      if (searchParam) {
+        setSearchQuery(searchParam);
+        // Don't automatically clear search when coming from URL with search param
+      }
+      
+      // Handle category parameter from URL
       if (categoryParam && storeCategories.length > 0) {
         const categoryExists = storeCategories.some(cat => cat.name === categoryParam);
         if (categoryExists) {

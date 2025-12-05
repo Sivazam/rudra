@@ -60,7 +60,7 @@ export default function CartPage() {
               </Link>
               <div className="flex items-center space-x-3">
                 <ShoppingBag className="h-6 w-6" style={{ color: 'rgba(156,86,26,255)' }} />
-                <h1 className="text-2xl font-bold" style={{ color: '#755e3e' }}>Shopping Cart</h1>
+                {/* <h1 className="text-2xl font-bold" style={{ color: '#755e3e' }}>Shopping Cart</h1> */}
                 <Badge variant="secondary">{getTotalItems()} items</Badge>
               </div>
             </div>
@@ -171,9 +171,9 @@ export default function CartPage() {
                                     {item.variant.discount}% OFF
                                   </Badge>
                                 )}
-                                <span className="text-sm font-medium" style={{ color: '#755e3e' }}>
+                                {/* <span className="text-sm font-medium" style={{ color: '#755e3e' }}>
                                   ₹{Math.round(item.variant.price - (item.variant.price * item.variant.discount) / 100) * item.quantity}
-                                </span>
+                                </span> */}
                               </div>
                               
                               <Button

@@ -13,8 +13,9 @@ import { useCartStore } from '@/store/cartStore';
 import Link from 'next/link';
 import { isUserAuthenticated, getCurrentUser } from '@/lib/auth';
 import { isProfileComplete, getCurrentUserProfile } from '@/lib/profileCompletionMiddleware';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { wishlistService } from '@/lib/services/wishlistService';
+import { SearchDropdown } from './SearchDropdown';
 
 
 interface HeaderProps {
@@ -35,8 +36,26 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
   const [wishlistCount, setWishlistCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [desktopSearchQuery, setDesktopSearchQuery] = useState('');
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const { getTotalItems, openCart } = useCartStore();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Detect if we're on the homepage
+  const isHomepage = pathname === '/';
+  
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
 
   useEffect(() => {
@@ -178,20 +197,56 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
   // Search handlers
   const handleMobileSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(searchQuery);
+    
+    // For mobile: always redirect to homepage with search results
+    if (searchQuery.trim()) {
+      router.push(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+    
     // Dismiss keyboard by blurring the input
     const activeElement = document.activeElement as HTMLElement;
     if (activeElement && activeElement.blur) {
       activeElement.blur();
     }
+    
     // Close mobile search after submission
     setIsSearchOpen(false);
+    setSearchQuery('');
   };
 
   const handleDesktopSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setDesktopSearchQuery(value);
-    onSearch(value); // Real-time search for desktop
+    
+    if (isHomepage) {
+      // On homepage: instant search (current behavior)
+      onSearch(value);
+      setShowSearchDropdown(false);
+    } else {
+      // On other pages: show dropdown for desktop
+      setShowSearchDropdown(true);
+    }
+  };
+
+  const handleDesktopSearchFocus = () => {
+    if (!isHomepage && desktopSearchQuery.trim()) {
+      setShowSearchDropdown(true);
+    }
+  };
+
+  const handleDesktopSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (desktopSearchQuery.trim()) {
+      if (isHomepage) {
+        // On homepage: use existing instant search
+        onSearch(desktopSearchQuery);
+      } else {
+        // On other pages: redirect to homepage with search results
+        router.push(`/?search=${encodeURIComponent(desktopSearchQuery.trim())}`);
+        setShowSearchDropdown(false);
+      }
+    }
   };
 
   const handleMobileSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -200,13 +255,19 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
 
   const handleMobileSearchClear = () => {
     setSearchQuery('');
-    onSearch('');
     setIsSearchOpen(false);
   };
 
   const handleDesktopSearchClear = () => {
     setDesktopSearchQuery('');
-    onSearch('');
+    setShowSearchDropdown(false);
+    if (isHomepage) {
+      onSearch('');
+    }
+  };
+
+  const handleSearchDropdownClose = () => {
+    setShowSearchDropdown(false);
   };
 
 
@@ -442,14 +503,39 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
             {/* Search */}
             <div className="hidden md:flex items-center">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  type="text"
-                  placeholder="Search products..."
-                  className="pl-10 w-64"
-                  value={desktopSearchQuery}
-                  onChange={handleDesktopSearchChange}
-                />
+                <form onSubmit={handleDesktopSearchSubmit}>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      type="text"
+                      placeholder="Search products..."
+                      className="pl-10 w-64"
+                      value={desktopSearchQuery}
+                      onChange={handleDesktopSearchChange}
+                      onFocus={handleDesktopSearchFocus}
+                    />
+                    {desktopSearchQuery && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6"
+                        onClick={handleDesktopSearchClear}
+                      >
+                        ×
+                      </Button>
+                    )}
+                  </div>
+                </form>
+                
+                {/* Search Dropdown for non-homepage desktop */}
+                {showSearchDropdown && !isHomepage && (
+                  <SearchDropdown
+                    searchQuery={desktopSearchQuery}
+                    onSearchChange={setDesktopSearchQuery}
+                    onClose={handleSearchDropdownClose}
+                  />
+                )}
               </div>
             </div>
 
