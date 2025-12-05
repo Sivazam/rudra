@@ -72,7 +72,12 @@ export function SearchDropdown({ searchQuery, onSearchChange, onClose }: SearchD
   }, [onClose]);
 
   const handleProductClick = (product: SearchResult) => {
-    router.push(`/products/${product.slug}`);
+    console.log('SearchDropdown: Clicking product', { 
+      id: product.id, 
+      slug: product.slug, 
+      name: product.name 
+    });
+    router.push(`/products/${product.id}`);
     onClose();
     onSearchChange(''); // Clear search after selection
   };
