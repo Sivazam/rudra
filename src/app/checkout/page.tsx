@@ -216,13 +216,15 @@ export default function CheckoutPage() {
       }
     }
     
-    // Additional validation for phone format
+    // Additional validation for phone format - be more lenient
     if (!shippingAddress.phone || typeof shippingAddress.phone !== 'string') {
       console.log('Validation failed: Phone is not a string');
       return false;
     }
     
-    if (!shippingAddress.phone.startsWith('+91') || shippingAddress.phone.length < 5) {
+    // Accept various phone formats - just check if it has reasonable length and contains numbers
+    const cleanPhone = shippingAddress.phone.replace(/[^\d]/g, '');
+    if (cleanPhone.length < 10 || cleanPhone.length > 15) {
       console.log('Validation failed: Invalid phone format', shippingAddress.phone);
       return false;
     }
@@ -434,7 +436,7 @@ export default function CheckoutPage() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto px-4 py-8 pb-24">
+      <div className="container mx-auto px-4 py-6 sm:py-8 pb-20 sm:pb-24">
         <div className="mb-6">
           <Button
             variant="ghost"
@@ -447,7 +449,7 @@ export default function CheckoutPage() {
           <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
           {/* Address Selection */}
           <div className="space-y-6">
             <AddressSelection 
@@ -459,10 +461,10 @@ export default function CheckoutPage() {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center space-x-3">
-                  <Shield className="h-6 w-6 text-green-600" />
-                  <div>
+                  <Shield className="h-6 w-6 text-green-600 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
                     <p className="font-medium text-green-800">Secure Payment</p>
-                    <p className="text-sm text-green-600">
+                    <p className="text-sm text-green-600 break-words">
                       Your payment information is encrypted and secure
                     </p>
                   </div>
@@ -475,8 +477,8 @@ export default function CheckoutPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Order Summary</CardTitle>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                  <CardTitle className="text-lg sm:text-xl">Order Summary</CardTitle>
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                     <span className="text-sm text-green-600 font-medium">Prices Locked</span>
@@ -487,17 +489,17 @@ export default function CheckoutPage() {
                 </p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4 max-h-96 overflow-y-auto">
+                <div className="space-y-4 max-h-80 sm:max-h-96 overflow-y-auto">
                   {items.map((item) => {
                     const itemPrice = item.variant.price - (item.variant.price * item.variant.discount) / 100;
                     const itemTotal = itemPrice * item.quantity;
                     
                     return (
-                      <div key={item.id} className="flex items-center space-x-4 p-3 border rounded-lg">
+                      <div key={item.id} className="flex items-center space-x-3 sm:space-x-4 p-3 border rounded-lg">
                         <img
                           src={item.image}
                           alt={item.name}
-                          className="w-16 h-16 object-cover rounded"
+                          className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded flex-shrink-0"
                         />
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm text-gray-900 truncate">
@@ -545,7 +547,7 @@ export default function CheckoutPage() {
                   {remainingForFreeShipping > 0 && (
                     <div className="flex justify-between text-sm">
                       <span></span>
-                      <span className="text-orange-600 font-medium">
+                      <span className="text-orange-600 font-medium break-words">
                         Add {formatPrice(remainingForFreeShipping)} more for FREE delivery
                       </span>
                     </div>
@@ -574,16 +576,16 @@ export default function CheckoutPage() {
 
         {/* Fixed Bottom Payment Button for All Devices */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
-          <div className="container mx-auto px-4 py-4">
+          <div className="container mx-auto px-4 py-3 sm:py-4">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total</p>
-                <p className="text-lg font-bold text-orange-600">{formatPrice(total)}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs sm:text-sm text-gray-600">Total</p>
+                <p className="text-base sm:text-lg font-bold text-orange-600 truncate">{formatPrice(total)}</p>
               </div>
               <Button
                 onClick={handlePlaceOrder}
                 disabled={loading || !validateForm()}
-                className="bg-orange-600 hover:bg-orange-700 px-8 py-3"
+                className="bg-orange-600 hover:bg-orange-700 px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base flex-shrink-0"
                 size="lg"
               >
                 {loading ? 'Processing...' : `Pay ${formatPrice(total)}`}

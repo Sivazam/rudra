@@ -231,7 +231,7 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
   };
 
   const validateAddress = (address: Address): boolean => {
-    // Required fields: name, phone (with +91), doorNo, city, pincode
+    // Required fields: name, phone, doorNo, city, pincode
     const requiredFields = ['name', 'phone', 'doorNo', 'city', 'pincode'];
     
     // If address type is 'other', customAddressName is also required
@@ -246,8 +246,9 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
       }
     }
     
-    // Phone must start with +91 and contain only numbers after that
-    if (!address.phone.startsWith('+91') || address.phone.length < 5) {
+    // Phone validation - be more lenient, just check for reasonable length and numbers
+    const cleanPhone = address.phone.replace(/[^\d]/g, '');
+    if (cleanPhone.length < 10 || cleanPhone.length > 15) {
       return false;
     }
     
@@ -297,8 +298,9 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
     }
     
     // Check phone format
-    if (!address.phone.startsWith('+91') || address.phone.length < 5) {
-      return 'Please enter a valid phone number starting with +91';
+    const cleanPhone = address.phone.replace(/[^\d]/g, '');
+    if (cleanPhone.length < 10 || cleanPhone.length > 15) {
+      return 'Please enter a valid phone number (10-15 digits)';
     }
     
     // Check pincode format
@@ -393,59 +395,65 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                   />
                   <Label
                     htmlFor={address.id}
-                    className={`flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-3 p-4 border rounded-lg cursor-pointer transition-colors peer-data-[state=checked]:border-orange-600 peer-data-[state=checked]:bg-orange-50 hover:bg-gray-50 ${
+                    className={`flex flex-col p-4 border rounded-lg cursor-pointer transition-colors peer-data-[state=checked]:border-orange-600 peer-data-[state=checked]:bg-orange-50 hover:bg-gray-50 ${
                       selectedAddress?.id === address.id ? 'border-orange-600 bg-orange-50' : 'border-gray-200'
                     }`}
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
-                        <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-2">
-                          <span className="font-medium">{address.name}</span>
-                          <span className="text-sm text-gray-600">{address.phone}</span>
-                          {address.email && (
-                            <span className="text-sm text-blue-600">{address.email}</span>
-                          )}
-                          {address.isDefault && (
-                            <Badge variant="secondary" className="text-xs self-start sm:self-auto">
-                              Default
-                            </Badge>
-                          )}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-col space-y-1">
+                            <span className="font-medium text-base break-words">{address.name}</span>
+                            <span className="text-sm text-gray-600 break-words">{address.phone}</span>
+                            {address.email && (
+                              <span className="text-sm text-blue-600 break-all">{address.email}</span>
+                            )}
+                            {address.isDefault && (
+                              <Badge variant="secondary" className="text-xs w-fit">
+                                Default
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         {selectedAddress?.id === address.id && (
-                          <Check className="h-4 w-4 text-orange-600 flex-shrink-0" />
+                          <Check className="h-5 w-5 text-orange-600 flex-shrink-0 ml-2 mt-1" />
                         )}
                       </div>
-                      <p className="text-sm text-gray-600">{formatAddress(address)}</p>
-                      <p className="text-sm text-gray-600">Pincode: {address.pincode}</p>
-                      {address.addressType === 'other' && address.customAddressName ? (
-                        <p className="text-sm font-medium text-blue-600">
-                          📍 {address.customAddressName}
-                        </p>
-                      ) : (
-                        <p className="text-sm text-gray-600">
-                          <span className="font-medium">Type: </span>
-                          {formatAddressType(address)}
-                        </p>
-                      )}
+                      <div className="space-y-1">
+                        <p className="text-sm text-gray-600 break-words">{formatAddress(address)}</p>
+                        <p className="text-sm text-gray-600">Pincode: {address.pincode}</p>
+                        {address.addressType === 'other' && address.customAddressName ? (
+                          <p className="text-sm font-medium text-blue-600 break-words">
+                            📍 {address.customAddressName}
+                          </p>
+                        ) : (
+                          <p className="text-sm text-gray-600">
+                            <span className="font-medium">Type: </span>
+                            {formatAddressType(address)}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </Label>
                   
-                  <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 mt-3 sm:mt-0 sm:absolute sm:top-2 sm:right-2">
+                  <div className="flex flex-row items-center space-x-2 mt-3 pt-3 border-t border-gray-100">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setEditingAddress(address)}
-                      className="h-8 w-8 p-0"
+                      className="h-8 px-3 py-1 text-xs sm:h-8 sm:w-8 sm:p-0"
                     >
-                      <Edit className="h-4 w-4" />
+                      <Edit className="h-4 w-4 sm:mr-0 mr-1" />
+                      <span className="hidden sm:inline">Edit</span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => handleDeleteAddress(address.id!)}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="h-8 px-3 py-1 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 sm:h-8 sm:w-8 sm:p-0"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 sm:mr-0 mr-1" />
+                      <span className="hidden sm:inline">Delete</span>
                     </Button>
                     {!address.isDefault && (
                       <Button
@@ -454,8 +462,7 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                         onClick={() => handleSetDefault(address.id!)}
                         className="h-8 px-3 py-1 text-xs sm:h-8 sm:w-auto sm:px-2 sm:py-0"
                       >
-                        <span className="sm:hidden">Set Default</span>
-                        <span className="hidden sm:inline">Set Default</span>
+                        Set Default
                       </Button>
                     )}
                   </div>
@@ -474,13 +481,13 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
 
         {showAddForm || editingAddress ? (
           <div className="space-y-4 p-4 border rounded-lg bg-gray-50">
-            <h3 className="font-medium">
+            <h3 className="font-medium text-lg">
               {editingAddress ? 'Edit Address' : 'Add New Address'}
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div>
-                <Label htmlFor="name">Recipient's Full Name *</Label>
+                <Label htmlFor="name" className="text-sm font-medium">Recipient's Full Name *</Label>
                 <Input
                   id="name"
                   value={editingAddress ? editingAddress.name : newAddress.name}
@@ -493,10 +500,12 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                   }}
                   placeholder="Enter recipient's full name"
                   required
+                  className="mt-1"
                 />
               </div>
+              
               <div>
-                <Label htmlFor="phone">Contact Number *</Label>
+                <Label htmlFor="phone" className="text-sm font-medium">Contact Number *</Label>
                 <Input
                   id="phone"
                   type="tel"
@@ -524,90 +533,96 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                   }}
                   placeholder="+91"
                   required
+                  className="mt-1"
                 />
               </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                value={editingAddress ? (editingAddress.email || '') : newAddress.email}
-                onChange={(e) => {
-                  if (editingAddress) {
-                    setEditingAddress({ ...editingAddress, email: e.target.value });
-                  } else {
-                    setNewAddress({ ...newAddress, email: e.target.value });
-                  }
-                }}
-                placeholder="Enter email address (optional)"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="doorNo">Door No/Flat No/Building Name *</Label>
-              <Input
-                id="doorNo"
-                value={editingAddress ? editingAddress.doorNo : newAddress.doorNo}
-                onChange={(e) => {
-                  if (editingAddress) {
-                    setEditingAddress({ ...editingAddress, doorNo: e.target.value });
-                  } else {
-                    setNewAddress({ ...newAddress, doorNo: e.target.value });
-                  }
-                }}
-                placeholder="Enter door/flat number or building name"
-                required
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
               <div>
-                <Label htmlFor="city">City *</Label>
+                <Label htmlFor="email" className="text-sm font-medium">Email Address</Label>
                 <Input
-                  id="city"
-                  value={editingAddress ? (editingAddress.city || '') : newAddress.city}
+                  id="email"
+                  type="email"
+                  value={editingAddress ? (editingAddress.email || '') : newAddress.email}
                   onChange={(e) => {
                     if (editingAddress) {
-                      setEditingAddress({ ...editingAddress, city: e.target.value });
+                      setEditingAddress({ ...editingAddress, email: e.target.value });
                     } else {
-                      setNewAddress({ ...newAddress, city: e.target.value });
+                      setNewAddress({ ...newAddress, email: e.target.value });
                     }
                   }}
-                  placeholder="Enter city"
-                  required
+                  placeholder="Enter email address (optional)"
+                  className="mt-1"
                 />
               </div>
+              
               <div>
-                <Label htmlFor="pincode">Pincode *</Label>
+                <Label htmlFor="doorNo" className="text-sm font-medium">Door No/Flat No/Building Name *</Label>
                 <Input
-                  id="pincode"
-                  value={editingAddress ? editingAddress.pincode : newAddress.pincode}
+                  id="doorNo"
+                  value={editingAddress ? editingAddress.doorNo : newAddress.doorNo}
                   onChange={(e) => {
-                    let value = e.target.value;
-                    
-                    // Only allow numbers and limit to 6 digits
-                    const numbersOnly = value.replace(/[^\d]/g, '');
-                    if (numbersOnly.length > 6) {
-                      value = numbersOnly.slice(0, 6);
-                    } else {
-                      value = numbersOnly;
-                    }
-                    
                     if (editingAddress) {
-                      setEditingAddress({ ...editingAddress, pincode: value });
+                      setEditingAddress({ ...editingAddress, doorNo: e.target.value });
                     } else {
-                      setNewAddress({ ...newAddress, pincode: value });
+                      setNewAddress({ ...newAddress, doorNo: e.target.value });
                     }
                   }}
-                  placeholder="Enter 6-digit pincode"
-                  maxLength={6}
+                  placeholder="Enter door/flat number or building name"
                   required
+                  className="mt-1"
                 />
               </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="city" className="text-sm font-medium">City *</Label>
+                  <Input
+                    id="city"
+                    value={editingAddress ? (editingAddress.city || '') : newAddress.city}
+                    onChange={(e) => {
+                      if (editingAddress) {
+                        setEditingAddress({ ...editingAddress, city: e.target.value });
+                      } else {
+                        setNewAddress({ ...newAddress, city: e.target.value });
+                      }
+                    }}
+                    placeholder="Enter city"
+                    required
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="pincode" className="text-sm font-medium">Pincode *</Label>
+                  <Input
+                    id="pincode"
+                    value={editingAddress ? editingAddress.pincode : newAddress.pincode}
+                    onChange={(e) => {
+                      let value = e.target.value;
+                      
+                      // Only allow numbers and limit to 6 digits
+                      const numbersOnly = value.replace(/[^\d]/g, '');
+                      if (numbersOnly.length > 6) {
+                        value = numbersOnly.slice(0, 6);
+                      } else {
+                        value = numbersOnly;
+                      }
+                      
+                      if (editingAddress) {
+                        setEditingAddress({ ...editingAddress, pincode: value });
+                      } else {
+                        setNewAddress({ ...newAddress, pincode: value });
+                      }
+                    }}
+                    placeholder="Enter 6-digit pincode"
+                    maxLength={6}
+                    required
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+              
               <div>
-                <Label htmlFor="landmark">Nearby Landmark</Label>
+                <Label htmlFor="landmark" className="text-sm font-medium">Nearby Landmark</Label>
                 <Input
                   id="landmark"
                   value={editingAddress ? editingAddress.landmark : newAddress.landmark}
@@ -619,13 +634,14 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                     }
                   }}
                   placeholder="Enter nearby landmark (optional)"
+                  className="mt-1"
                 />
               </div>
             </div>
             
             <div>
-              <Label>Save as *</Label>
-              <div className="flex space-x-4 mt-2">
+              <Label className="text-sm font-medium">Save as *</Label>
+              <div className="grid grid-cols-3 gap-2 mt-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -635,14 +651,14 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                       setNewAddress({ ...newAddress, addressType: 'home' });
                     }
                   }}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg border-2 transition-colors ${
+                  className={`flex flex-col sm:flex-row items-center justify-center sm:justify-start space-y-1 sm:space-y-0 sm:space-x-2 px-3 py-2 rounded-lg border-2 transition-colors ${
                     (editingAddress ? editingAddress.addressType : newAddress.addressType) === 'home'
                       ? 'border-orange-600 bg-orange-50 text-orange-700'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
                 >
                   <Home className="h-4 w-4" />
-                  <span>Home</span>
+                  <span className="text-xs sm:text-sm">Home</span>
                 </button>
                 
                 <button
@@ -654,14 +670,14 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                       setNewAddress({ ...newAddress, addressType: 'office' });
                     }
                   }}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg border-2 transition-colors ${
+                  className={`flex flex-col sm:flex-row items-center justify-center sm:justify-start space-y-1 sm:space-y-0 sm:space-x-2 px-3 py-2 rounded-lg border-2 transition-colors ${
                     (editingAddress ? editingAddress.addressType : newAddress.addressType) === 'office'
                       ? 'border-blue-600 bg-blue-50 text-blue-700'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
                 >
                   <Building className="h-4 w-4" />
-                  <span>Office</span>
+                  <span className="text-xs sm:text-sm">Office</span>
                 </button>
                 
                 <button
@@ -673,14 +689,14 @@ export function AddressSelection({ onAddressSelect, selectedAddress }: AddressSe
                       setNewAddress({ ...newAddress, addressType: 'other' });
                     }
                   }}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg border-2 transition-colors ${
+                  className={`flex flex-col sm:flex-row items-center justify-center sm:justify-start space-y-1 sm:space-y-0 sm:space-x-2 px-3 py-2 rounded-lg border-2 transition-colors ${
                     (editingAddress ? editingAddress.addressType : newAddress.addressType) === 'other'
                       ? 'border-green-600 bg-green-50 text-green-700'
                       : 'border-gray-200 text-gray-600 hover:border-gray-300'
                   }`}
                 >
                   <MapPinIcon className="h-4 w-4" />
-                  <span>Other</span>
+                  <span className="text-xs sm:text-sm">Other</span>
                 </button>
               </div>
               
