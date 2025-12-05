@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { SlideInCart } from '@/components/store/SlideInCart';
 import { ImagePreloader } from '@/components/ui/ImagePreloader';
 import { useDataStore, getStoredCategories, getStoredProducts } from '@/lib/data-store';
+import { useGlobalLoader } from '@/hooks/useGlobalLoader';
 import {
   Select,
   SelectContent,
@@ -87,12 +88,71 @@ const mockBanners: Banner[] = [
 
 export default function Home() {
   const { categories, products, loading } = useDataStore();
+  const { showLoader, hideLoader } = useGlobalLoader();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('featured');
   const [storeCategories, setStoreCategories] = useState<StoreCategory[]>([]);
   const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+
+  // Collect all images that need to be preloaded
+  const getAllImages = () => {
+    const productImages = storeProducts.map(product => product.image);
+    const categoryImages = storeCategories.map(category => category.image);
+    const bannerImages = mockBanners.map(banner => banner.imageUrl);
+    
+    // Filter out any undefined or null images
+    return [...bannerImages, ...categoryImages, ...productImages].filter(Boolean);
+  };
+
+  // Handle image loading for initial load
+  useEffect(() => {
+    if (!loading && !initialLoadComplete && storeProducts.length > 0) {
+      const allImages = getAllImages();
+      if (allImages.length > 0) {
+        let loadedCount = 0;
+        const totalImages = allImages.length;
+
+        const preloadImage = (src: string) => {
+          return new Promise<void>((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              loadedCount++;
+              if (loadedCount === totalImages) {
+                // All images loaded, hide the loader
+                setTimeout(() => {
+                  hideLoader('initial');
+                  setInitialLoadComplete(true);
+                }, 1000); // Keep loader visible for at least 1 second after all images load
+              }
+              resolve();
+            };
+            img.onerror = () => {
+              loadedCount++; // Count even failed images to not block the loader
+              if (loadedCount === totalImages) {
+                setTimeout(() => {
+                  hideLoader('initial');
+                  setInitialLoadComplete(true);
+                }, 1000);
+              }
+              resolve();
+            };
+            img.src = src;
+          });
+        };
+
+        // Start preloading all images
+        Promise.all(allImages.map(preloadImage));
+      } else {
+        // No images to load, hide loader after delay
+        setTimeout(() => {
+          hideLoader('initial');
+          setInitialLoadComplete(true);
+        }, 1000);
+      }
+    }
+  }, [loading, initialLoadComplete, storeProducts, storeCategories, hideLoader]);
 
   // Always ensure "All" category is available as a fallback
   useEffect(() => {
@@ -362,9 +422,7 @@ export default function Home() {
             
             {/* Product Grid */}
             {sortedProducts.length > 0 ? (
-              <div className="smooth-scroll-container">
-                <ProductGrid products={sortedProducts} />
-              </div>
+              <ProductGrid products={sortedProducts} />
             ) : (
               <Card>
                 <CardContent className="text-center py-12">

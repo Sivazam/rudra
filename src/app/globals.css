@@ -144,13 +144,6 @@
     backface-visibility: hidden;
   }
   
-  /* Smooth scrolling container */
-  .smooth-scroll-container {
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    will-change: scroll-position;
-  }
-  
   /* Optimize images for loading */
   .optimized-image {
     content-visibility: auto;

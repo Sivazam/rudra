@@ -9,11 +9,13 @@ interface GlobalLoaderProps {
 export function GlobalLoader({ isLoading }: GlobalLoaderProps) {
   const [progress, setProgress] = useState(0);
   const [showLoader, setShowLoader] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Initializing spiritual experience...');
 
   useEffect(() => {
     if (isLoading) {
       setShowLoader(true);
       setProgress(0);
+      setLoadingMessage('Preparing your spiritual journey...');
       
       // Simulate progress animation
       const interval = setInterval(() => {
@@ -22,7 +24,18 @@ export function GlobalLoader({ isLoading }: GlobalLoaderProps) {
             clearInterval(interval);
             return 90;
           }
-          return prev + Math.random() * 10;
+          const newProgress = prev + Math.random() * 10;
+          
+          // Update message based on progress
+          if (newProgress > 75) {
+            setLoadingMessage('Welcome to your spiritual sanctuary...');
+          } else if (newProgress > 50) {
+            setLoadingMessage('Discovering authentic products...');
+          } else if (newProgress > 25) {
+            setLoadingMessage('Loading sacred items...');
+          }
+          
+          return newProgress;
         });
       }, 200);
 
@@ -30,9 +43,11 @@ export function GlobalLoader({ isLoading }: GlobalLoaderProps) {
     } else {
       // Complete progress when loading finishes
       setProgress(100);
+      setLoadingMessage('Ready to explore...');
       setTimeout(() => {
         setShowLoader(false);
         setProgress(0);
+        setLoadingMessage('Initializing spiritual experience...');
       }, 300);
     }
   }, [isLoading]);
@@ -45,7 +60,6 @@ export function GlobalLoader({ isLoading }: GlobalLoaderProps) {
         {/* OM Logo Placeholder */}
         <div className="mb-8">
           <div className="w-32 h-32 mx-auto bg-white rounded-full flex items-center justify-center shadow-lg animate-bounce">
-            {/* <span className="text-4xl font-bold" style={{ color: 'rgba(156,86,26,255)' }}>OM</span> */}
             <img 
                   src="/logo-original.png" 
                   alt="Sanathan Rudraksha Logo" 
@@ -86,8 +100,22 @@ export function GlobalLoader({ isLoading }: GlobalLoaderProps) {
         {/* Loading text */}
         <div className="mt-6">
           <p className="text-white/80 text-sm animate-pulse">
-            Loading spiritual experience...
+            {loadingMessage}
           </p>
+        </div>
+
+        {/* Decorative Elements */}
+        <div className="absolute top-8 left-8 w-16 h-16 opacity-20">
+          <div className="w-full h-full rounded-full bg-gradient-to-br from-white/30 to-white/10 animate-pulse"></div>
+        </div>
+        <div className="absolute top-20 right-12 w-12 h-12 opacity-20">
+          <div className="w-full h-full rounded-full bg-gradient-to-br from-white/20 to-white/5 animate-pulse" style={{ animationDelay: '0.75s' }}></div>
+        </div>
+        <div className="absolute bottom-16 left-16 w-20 h-20 opacity-20">
+          <div className="w-full h-full rounded-full bg-gradient-to-br from-white/15 to-transparent animate-pulse" style={{ animationDelay: '1.5s' }}></div>
+        </div>
+        <div className="absolute bottom-12 right-8 w-14 h-14 opacity-20">
+          <div className="w-full h-full rounded-full bg-gradient-to-br from-white/25 to-white/10 animate-pulse" style={{ animationDelay: '2.25s' }}></div>
         </div>
       </div>
     </div>

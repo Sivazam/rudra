@@ -110,7 +110,7 @@ export function VirtualizedProductGrid({
     <div 
       ref={setContainerRef}
       className="relative overflow-y-auto smooth-scroll-container"
-      style={{ height: containerHeight, maxHeight: '70vh' }}
+      style={{ maxHeight: '70vh' }}
     >
       {/* Spacer element to maintain scroll height */}
       <div style={{ height: totalHeight }} />

@@ -33,6 +33,8 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
   const [isCheckingProfile, setIsCheckingProfile] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [wishlistCount, setWishlistCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [desktopSearchQuery, setDesktopSearchQuery] = useState('');
   const { getTotalItems, openCart } = useCartStore();
   const router = useRouter();
 
@@ -171,6 +173,40 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
     if (!user) return null;
     // Return phoneNumber from either full profile or token
     return user.phoneNumber || null;
+  };
+
+  // Search handlers
+  const handleMobileSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSearch(searchQuery);
+    // Dismiss keyboard by blurring the input
+    const activeElement = document.activeElement as HTMLElement;
+    if (activeElement && activeElement.blur) {
+      activeElement.blur();
+    }
+    // Close mobile search after submission
+    setIsSearchOpen(false);
+  };
+
+  const handleDesktopSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setDesktopSearchQuery(value);
+    onSearch(value); // Real-time search for desktop
+  };
+
+  const handleMobileSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleMobileSearchClear = () => {
+    setSearchQuery('');
+    onSearch('');
+    setIsSearchOpen(false);
+  };
+
+  const handleDesktopSearchClear = () => {
+    setDesktopSearchQuery('');
+    onSearch('');
   };
 
 
@@ -411,7 +447,8 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
                   type="text"
                   placeholder="Search products..."
                   className="pl-10 w-64"
-                  onChange={(e) => onSearch(e.target.value)}
+                  value={desktopSearchQuery}
+                  onChange={handleDesktopSearchChange}
                 />
               </div>
             </div>
@@ -422,7 +459,14 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
               variant="ghost"
               size="icon"
               className="md:hidden"
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
+              onClick={() => {
+                if (!isSearchOpen) {
+                  // Clear search when opening mobile search
+                  setSearchQuery('');
+                  onSearch('');
+                }
+                setIsSearchOpen(!isSearchOpen);
+              }}
             >
               <Search className="h-6 w-6" />
             </Button>
@@ -525,16 +569,35 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
         {/* Mobile Search Bar */}
         {isSearchOpen && (
           <div className="md:hidden pb-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <form onSubmit={handleMobileSearchSubmit} className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 z-10" />
               <Input
                 type="text"
                 placeholder="Search products..."
-                className="pl-10 w-full"
-                onChange={(e) => onSearch(e.target.value)}
+                className="pl-10 w-full pr-20"
+                value={searchQuery}
+                onChange={handleMobileSearchChange}
+                enterKeyHint="search"
                 autoFocus
               />
-            </div>
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={handleMobileSearchClear}
+                  className="absolute right-12 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-orange-600 hover:text-orange-700 font-medium text-sm z-10"
+              >
+                Search
+              </button>
+            </form>
           </div>
         )}
       </div>

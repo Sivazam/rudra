@@ -19,15 +19,11 @@ export function GlobalLoaderProvider({ children }: { children: React.ReactNode }
     // Show initial loader
     globalLoaderManager.show('initial');
     
-    // Hide initial loader after a short delay (simulating app initialization)
-    const timer = setTimeout(() => {
-      globalLoaderManager.hide('initial');
-      setInitialLoadComplete(true);
-    }, 1500);
+    // Don't auto-hide the loader anymore - let homepage control it
+    // The homepage will hide it after images are loaded
 
     return () => {
       unsubscribe();
-      clearTimeout(timer);
     };
   }, [initialLoadComplete]);
 

@@ -11,9 +11,9 @@ interface MainLayoutProps {
 
 export function MainLayout({ children, onSearch, clearSearch }: MainLayoutProps) {
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f4f0eb' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#f4f0eb' }}>
       <Header onSearch={onSearch || (() => {})} clearSearch={clearSearch || (() => {})} />
-      <main className="flex-grow">
+      <main>
         {children}
       </main>
       <Footer />

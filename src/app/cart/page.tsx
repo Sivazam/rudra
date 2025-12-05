@@ -172,7 +172,7 @@ export default function CartPage() {
                                   </Badge>
                                 )}
                                 <span className="text-sm font-medium" style={{ color: '#755e3e' }}>
-                                  = ₹{Math.round(item.variant.price - (item.variant.price * item.variant.discount) / 100) * item.quantity}
+                                  ₹{Math.round(item.variant.price - (item.variant.price * item.variant.discount) / 100) * item.quantity}
                                 </span>
                               </div>
                               
@@ -212,11 +212,11 @@ export default function CartPage() {
                       <div className="text-right">
                         {shipping === 0 ? (
                           <>
-                            <span className="text-gray-400 line-through text-sm">₹99</span>
+                            <span className="text-gray-400 line-through text-sm">99</span>
                             <span className="text-green-600 ml-2 text-sm">Free</span>
                           </>
                         ) : (
-                          <span style={{ color: '#6b7280' }}>₹{shipping.toLocaleString()}</span>
+                          <span style={{ color: '#6b7280' }}>{shipping}</span>
                         )}
                       </div>
                     </div>

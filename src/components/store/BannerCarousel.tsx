@@ -88,7 +88,7 @@ export function BannerCarousel({
 
   if (carouselBanners.length === 0) {
     return (
-      <div className="h-[50vh] bg-gray-200 flex items-center justify-center">
+      <div className="h-[30vh] bg-gray-200 flex items-center justify-center">
         <p className="text-gray-500">No banners available</p>
       </div>
     );
@@ -96,7 +96,7 @@ export function BannerCarousel({
 
 
   return (
-    <div className="relative h-[50vh] w-full overflow-hidden">
+    <div className="relative h-[30vh] w-full overflow-hidden">
       {/* Banner Images */}
       <div className="relative h-full">
         {carouselBanners.map((banner, index) => (

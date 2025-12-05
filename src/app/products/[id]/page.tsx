@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Star, Heart, Share2, Shield, Check, ArrowRight, ShoppingCart, Minus, Plus, Truck, RotateCcw, Award, Sparkles, Package, Info } from 'lucide-react';
+import { Star, Heart, Share2, Shield, Check, ArrowRight, ShoppingCart, Minus, Plus, Truck, RotateCcw, Award, Sparkles, Package, Info, Zap, ZapIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -191,6 +191,9 @@ export default function ProductDetailPage() {
         title: "Added to cart",
         description: `${product.name} added to cart`,
       });
+      
+      // Navigate to cart to view items and proceed to checkout
+      window.location.href = '/cart';
     }
   };
 
@@ -316,7 +319,7 @@ export default function ProductDetailPage() {
               </div>
               
               {/* Thumbnail Strip */}
-              <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+              <div className="flex gap-2 mt-4 pb-2">
                 {product.images.map((image, index) => (
                   <button
                     key={index}
@@ -635,8 +638,11 @@ export default function ProductDetailPage() {
                     onClick={handleBuyNow}
                     className={`flex-1 h-12 text-base font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white transition-colors ${shakeButton === 'buy-now' ? 'animate-shake' : ''}`}
                   >
+                    <div className="relative">
+          <ZapIcon className="h-5 w-5 mr-2 text-white" />
+        </div>
                     Buy Now
-                    <ArrowRight className="h-5 w-5 ml-2" />
+                    <ArrowRight className="h-5 w-5 ml-2 text-white" />
                   </Button>
                 </>
               ) : (
