@@ -42,6 +42,19 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Sync mobile search query with URL search parameter
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchParam = urlParams.get('search');
+      
+      // Update mobile search input to match URL search parameter
+      if (searchParam !== null) {
+        setSearchQuery(searchParam);
+      }
+    }
+  }, [pathname]); // Re-run when pathname changes
+
   // Detect if we're on the homepage
   const isHomepage = pathname === '/';
   
@@ -201,6 +214,10 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
     // For mobile: always redirect to homepage with search results
     if (searchQuery.trim()) {
       router.push(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+      // Dispatch custom event to notify homepage of URL change
+      setTimeout(() => {
+        window.dispatchEvent(new Event('urlchange'));
+      }, 100);
     }
     
     // Dismiss keyboard by blurring the input
@@ -209,9 +226,10 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
       activeElement.blur();
     }
     
-    // Close mobile search after submission
+    // Close mobile search after submission but DON'T clear search query
+    // This allows the homepage to maintain the search state
     setIsSearchOpen(false);
-    setSearchQuery('');
+    // Don't clear searchQuery here - let the homepage handle it from URL
   };
 
   const handleDesktopSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -254,7 +272,8 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
   };
 
   const handleMobileSearchClear = () => {
-    setSearchQuery('');
+    // Just close the search - don't clear the search query
+    // This keeps the search term in the URL and maintains filtering
     setIsSearchOpen(false);
   };
 
@@ -660,23 +679,12 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
               <Input
                 type="text"
                 placeholder="Search products..."
-                className="pl-10 w-full pr-20"
+                className="pl-10 w-full pr-10"
                 value={searchQuery}
                 onChange={handleMobileSearchChange}
                 enterKeyHint="search"
                 autoFocus
               />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={handleMobileSearchClear}
-                  className="absolute right-12 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
               <button
                 type="submit"
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 text-orange-600 hover:text-orange-700 font-medium text-sm z-10"

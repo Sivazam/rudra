@@ -174,29 +174,80 @@ export default function Home() {
     }
   }, [storeCategories.length, loading, initialLoadComplete]);
 
-  // Handle category from URL parameter
+  // Handle category and search from URL parameter
   useEffect(() => {
     // Only access searchParams on the client side
     if (typeof window !== 'undefined') {
+      const handleUrlChange = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoryParam = urlParams.get('category');
+        const searchParam = urlParams.get('search');
+        
+        console.log('🔍 URL Change Detected:', {
+          url: window.location.search,
+          searchParam,
+          categoryParam,
+          currentSearchQuery: searchQuery,
+          willClearSearch: !searchParam
+        });
+        
+        // Handle search parameter from URL
+        if (searchParam) {
+          console.log('✅ Setting search query from URL:', searchParam);
+          setSearchQuery(searchParam);
+        } else {
+          // Only clear search if there's no search parameter AND we haven't just set it from mobile search
+          if (!(window as any).__preventSearchClear && searchQuery !== '') {
+            console.log('❌ Clearing search query - no search parameter');
+            setSearchQuery('');
+          }
+        }
+        
+        // Handle category parameter from URL
+        if (categoryParam && storeCategories.length > 0) {
+          const categoryExists = storeCategories.some(cat => cat.name === categoryParam);
+          if (categoryExists) {
+            setSelectedCategory(categoryParam);
+          }
+        }
+      };
+
+      // Initial handle
+      handleUrlChange();
+
+      // Listen for popstate events (browser back/forward)
+      window.addEventListener('popstate', handleUrlChange);
+      
+      // Custom event for programmatic URL changes
+      window.addEventListener('urlchange', handleUrlChange);
+
+      return () => {
+        window.removeEventListener('popstate', handleUrlChange);
+        window.removeEventListener('urlchange', handleUrlChange);
+      };
+    }
+  }, [storeCategories.length, storeProducts.length]); // Include both categories and products in dependencies
+
+  // Separate effect specifically for handling search when products are loaded
+  useEffect(() => {
+    if (typeof window !== 'undefined' && storeProducts.length > 0) {
       const urlParams = new URLSearchParams(window.location.search);
-      const categoryParam = urlParams.get('category');
       const searchParam = urlParams.get('search');
       
-      // Handle search parameter from URL
-      if (searchParam) {
-        setSearchQuery(searchParam);
-        // Don't automatically clear search when coming from URL with search param
-      }
+      console.log('🔍 Search Effect Check:', { 
+        searchParam, 
+        storeProductsLength: storeProducts.length,
+        currentSearchQuery: searchQuery,
+        willUpdate: searchParam && searchParam !== searchQuery
+      });
       
-      // Handle category parameter from URL
-      if (categoryParam && storeCategories.length > 0) {
-        const categoryExists = storeCategories.some(cat => cat.name === categoryParam);
-        if (categoryExists) {
-          setSelectedCategory(categoryParam);
-        }
+      // Only set search query if it's different and we have products
+      if (searchParam && searchParam !== searchQuery) {
+        console.log('✅ Updating search query from separate effect:', searchParam);
+        setSearchQuery(searchParam);
       }
     }
-  }, [storeCategories]);
+  }, [storeProducts.length]); // Only depend on products
 
   // Show loader when data is loading (but not for API calls anymore)
   useEffect(() => {
@@ -229,7 +280,6 @@ export default function Home() {
         name: cat.name,
         image: cat.image || '/categories/default.png'
       }))];
-      console.log('Setting store categories:', transformedCategories);
       setStoreCategories(transformedCategories);
       
       // Set default selected category to 'All'
@@ -243,14 +293,13 @@ export default function Home() {
         name: 'All',
         image: '/categories/all.png'
       };
-      console.log('No categories found, showing only "All" category');
       setStoreCategories([allCategory]);
     }
   }, [categories, loading, selectedCategory]);
 
   // Transform admin products to store format
   useEffect(() => {
-    if (!loading && products.length > 0 && categories.length > 0) {
+    if (!loading && products.length > 0) {
       const transformedProducts = products.map(product => {
         // Find the category name from the categories array
         const category = categories.find(cat => cat.id === product.category);
@@ -273,16 +322,13 @@ export default function Home() {
       });
       setStoreProducts(transformedProducts);
     }
-  }, [products, loading, categories]);
+  }, [products, loading]); // Only depend on products and loading
 
   // Fallback to localStorage if context is not available (for server-side rendering)
   useEffect(() => {
-    console.log('Fallback useEffect:', { loading, hasStoredData: getStoredCategories().length > 0 });
     if (loading) {
       const savedCategories = getStoredCategories();
       const savedProducts = getStoredProducts();
-      
-      console.log('Saved data:', { savedCategories: savedCategories.length, savedProducts: savedProducts.length });
       
       let hasData = false;
       
@@ -344,8 +390,9 @@ export default function Home() {
   const filteredProducts = storeProducts.filter(product => {
     // When searching, ignore category filter and show all matching products
     if (isSearching) {
-      return product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-             product.deity.toLowerCase().includes(searchQuery.toLowerCase());
+      const nameMatch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const deityMatch = product.deity.toLowerCase().includes(searchQuery.toLowerCase());
+      return nameMatch || deityMatch;
     }
     
     // When not searching, apply category filter
