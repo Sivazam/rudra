@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { CategoryCarousel } from '@/components/store/CategoryCarousel';
 import { ProductGrid } from '@/components/store/ProductGrid';
 import { ProductCard } from '@/components/store/ProductCard';
@@ -95,6 +95,12 @@ export default function Home() {
   const [storeCategories, setStoreCategories] = useState<StoreCategory[]>([]);
   const [storeProducts, setStoreProducts] = useState<StoreProduct[]>([]);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const searchQueryRef = useRef(searchQuery); // Ref to track latest search query
+
+  // Update ref when searchQuery changes
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  }, [searchQuery]);
 
   // Collect all images that need to be preloaded
   const getAllImages = () => {
@@ -174,7 +180,7 @@ export default function Home() {
     }
   }, [storeCategories.length, loading, initialLoadComplete]);
 
-  // Handle category and search from URL parameter
+  // Handle category and search from URL parameter - Simplified for instant search
   useEffect(() => {
     // Only access searchParams on the client side
     if (typeof window !== 'undefined') {
@@ -187,26 +193,26 @@ export default function Home() {
           url: window.location.search,
           searchParam,
           categoryParam,
-          currentSearchQuery: searchQuery,
+          currentSearchQuery: searchQueryRef.current,
+          loading,
+          storeProductsLength: storeProducts.length,
           willClearSearch: !searchParam
         });
         
-        // Handle search parameter from URL
-        if (searchParam) {
+        // Handle search parameter from URL (for direct links or page refresh)
+        if (searchParam && searchParam !== searchQueryRef.current) {
           console.log('✅ Setting search query from URL:', searchParam);
           setSearchQuery(searchParam);
-        } else {
-          // Only clear search if there's no search parameter AND we haven't just set it from mobile search
-          if (!(window as any).__preventSearchClear && searchQuery !== '') {
-            console.log('❌ Clearing search query - no search parameter');
-            setSearchQuery('');
-          }
+        } else if (!searchParam && searchQueryRef.current !== '') {
+          // Only clear search if there's no search parameter
+          console.log('❌ Clearing search query - no search parameter');
+          setSearchQuery('');
         }
         
-        // Handle category parameter from URL
+        // Handle category parameter from URL (only if we have categories loaded)
         if (categoryParam && storeCategories.length > 0) {
           const categoryExists = storeCategories.some(cat => cat.name === categoryParam);
-          if (categoryExists) {
+          if (categoryExists && selectedCategory !== categoryParam) {
             setSelectedCategory(categoryParam);
           }
         }
@@ -226,28 +232,7 @@ export default function Home() {
         window.removeEventListener('urlchange', handleUrlChange);
       };
     }
-  }, [storeCategories.length, storeProducts.length]); // Include both categories and products in dependencies
-
-  // Separate effect specifically for handling search when products are loaded
-  useEffect(() => {
-    if (typeof window !== 'undefined' && storeProducts.length > 0) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const searchParam = urlParams.get('search');
-      
-      console.log('🔍 Search Effect Check:', { 
-        searchParam, 
-        storeProductsLength: storeProducts.length,
-        currentSearchQuery: searchQuery,
-        willUpdate: searchParam && searchParam !== searchQuery
-      });
-      
-      // Only set search query if it's different and we have products
-      if (searchParam && searchParam !== searchQuery) {
-        console.log('✅ Updating search query from separate effect:', searchParam);
-        setSearchQuery(searchParam);
-      }
-    }
-  }, [storeProducts.length]); // Only depend on products
+  }, [storeCategories.length, selectedCategory]);
 
   // Show loader when data is loading (but not for API calls anymore)
   useEffect(() => {
@@ -387,6 +372,7 @@ export default function Home() {
   }, [loading, initialLoadComplete]);
 
   const isSearching = searchQuery.trim().length > 0;
+  
   const filteredProducts = storeProducts.filter(product => {
     // When searching, ignore category filter and show all matching products
     if (isSearching) {

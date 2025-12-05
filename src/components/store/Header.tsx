@@ -208,30 +208,6 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
   };
 
   // Search handlers
-  const handleMobileSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // For mobile: always redirect to homepage with search results
-    if (searchQuery.trim()) {
-      router.push(`/?search=${encodeURIComponent(searchQuery.trim())}`);
-      // Dispatch custom event to notify homepage of URL change
-      setTimeout(() => {
-        window.dispatchEvent(new Event('urlchange'));
-      }, 100);
-    }
-    
-    // Dismiss keyboard by blurring the input
-    const activeElement = document.activeElement as HTMLElement;
-    if (activeElement && activeElement.blur) {
-      activeElement.blur();
-    }
-    
-    // Close mobile search after submission but DON'T clear search query
-    // This allows the homepage to maintain the search state
-    setIsSearchOpen(false);
-    // Don't clear searchQuery here - let the homepage handle it from URL
-  };
-
   const handleDesktopSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setDesktopSearchQuery(value);
@@ -268,7 +244,38 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
   };
 
   const handleMobileSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    // Use instant search like desktop mode
+    if (isHomepage) {
+      // On homepage: instant search
+      onSearch(value);
+    } else {
+      // On other pages: show dropdown for mobile
+      setShowSearchDropdown(true);
+    }
+  };
+
+  const handleMobileSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      // Dismiss keyboard by blurring the input
+      const activeElement = document.activeElement as HTMLElement;
+      if (activeElement && activeElement.blur) {
+        activeElement.blur();
+      }
+      
+      // Close mobile search and dropdown
+      setIsSearchOpen(false);
+      setShowSearchDropdown(false);
+      
+      // If not on homepage, redirect to homepage with search results
+      if (!isHomepage && searchQuery.trim()) {
+        router.push(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+      }
+    }
   };
 
   const handleMobileSearchClear = () => {
@@ -673,25 +680,47 @@ export function Header({ onSearch, clearSearch, children }: HeaderProps) {
 
         {/* Mobile Search Bar */}
         {isSearchOpen && (
-          <div className="md:hidden pb-4">
-            <form onSubmit={handleMobileSearchSubmit} className="relative">
+          <div className="md:hidden pb-4 relative">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 z-10" />
               <Input
                 type="text"
                 placeholder="Search products..."
-                className="pl-10 w-full pr-10"
+                className="pl-10 pr-10"
                 value={searchQuery}
                 onChange={handleMobileSearchChange}
+                onKeyDown={handleMobileSearchKeyDown}
                 enterKeyHint="search"
                 autoFocus
               />
-              <button
-                type="submit"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-orange-600 hover:text-orange-700 font-medium text-sm z-10"
-              >
-                Search
-              </button>
-            </form>
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    onSearch('');
+                    setShowSearchDropdown(false);
+                  }}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            
+            {/* Mobile Search Dropdown */}
+            {showSearchDropdown && !isHomepage && (
+              <div className="absolute top-full left-0 right-0 mt-2 z-50">
+                <SearchDropdown
+                  searchQuery={searchQuery}
+                  onSearchChange={setSearchQuery}
+                  onClose={() => {
+                    setShowSearchDropdown(false);
+                    setIsSearchOpen(false);
+                  }}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -28,9 +28,31 @@ export default function LoginPage() {
       router.push('/');
       return;
     }
+
+    // Cleanup function to clear recaptcha on unmount
+    return () => {
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+        } catch (error) {
+          console.log('Error clearing recaptcha on unmount:', error);
+        }
+        window.recaptchaVerifier = null;
+      }
+    };
   }, [router]);
 
   const setupRecaptcha = () => {
+    // Clear any existing recaptcha instance
+    if (window.recaptchaVerifier) {
+      try {
+        window.recaptchaVerifier.clear();
+      } catch (error) {
+        console.log('Error clearing recaptcha:', error);
+      }
+      window.recaptchaVerifier = null;
+    }
+
     if (!window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         size: 'invisible',
@@ -43,6 +65,13 @@ export default function LoginPage() {
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (loading) {
+      console.log('OTP already being sent, ignoring click');
+      return;
+    }
+    
     setLoading(true);
     setError('');
 

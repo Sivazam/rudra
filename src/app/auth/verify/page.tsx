@@ -57,7 +57,19 @@ export default function VerifyPage() {
       });
     }, 1000);
 
-    return () => clearInterval(interval);
+    // Cleanup function
+    return () => {
+      clearInterval(interval);
+      // Clear recaptcha on unmount
+      if (window.recaptchaVerifier) {
+        try {
+          window.recaptchaVerifier.clear();
+        } catch (error) {
+          console.log('Error clearing recaptcha on unmount:', error);
+        }
+        window.recaptchaVerifier = null;
+      }
+    };
   }, [router]);
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
@@ -175,14 +187,36 @@ export default function VerifyPage() {
   };
 
   const handleResendOTP = async () => {
+    // Prevent multiple resends
+    if (resendLoading || timer > 0) {
+      console.log('Resend blocked - loading:', resendLoading, 'timer:', timer);
+      return;
+    }
+    
     setResendLoading(true);
     try {
+      // Ensure we have a valid recaptcha verifier
+      if (!window.recaptchaVerifier) {
+        console.log('No recaptcha verifier found, setting up new one');
+        // We need to set up recaptcha again since we're on a different page
+        const { RecaptchaVerifier } = await import('firebase/auth');
+        const { auth } = await import('@/lib/firebase');
+        
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+          callback: () => {
+            // reCAPTCHA solved, allow signInWithPhoneNumber.
+          }
+        });
+      }
+      
       const appVerifier = window.recaptchaVerifier;
       const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
       window.confirmationResult = confirmationResult;
       setTimer(30);
       setOtp('');
       setError('');
+      console.log('OTP resent successfully');
     } catch (error) {
       console.error('Error resending OTP:', error);
       console.error('Error details:', {
