@@ -422,10 +422,10 @@ export default function EditProductPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <form id="product-form" onSubmit={handleSubmit} className="space-y-6">
       <div className="flex items-center space-x-4">
         <Link href="/admin-dashboard/products">
-          <Button variant="ghost" size="icon">
+          <Button type="button" variant="ghost" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
@@ -882,6 +882,6 @@ export default function EditProductPage() {
           </Card>
         </div>
       </div>
-    </div>
+    </form>
   );
 }
