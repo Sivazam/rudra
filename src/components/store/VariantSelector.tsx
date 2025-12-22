@@ -86,7 +86,7 @@ export function VariantSelector({
           {/* Variant Options */}
           <div className="flex-1 overflow-y-auto px-6">
             <div className="space-y-4">
-              <h3 className="font-semibold text-lg">Available Variants</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Variants</h3>
               
               {!hasAvailableVariants ? (
                 <div className="text-center py-8">

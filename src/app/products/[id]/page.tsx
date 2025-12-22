@@ -115,7 +115,7 @@ export default function ProductDetailPage() {
   const handleAddToCart = () => {
     if (!product) return;
     
-    const availableVariants = product.variants.filter(v => v.inventory > 0);
+    const availableVariants = product.variants ? product.variants.filter(v => v.inventory > 0) : [];
     
     if (availableVariants.length > 1 && !selectedVariant) {
       setShakeVariants(true);
@@ -156,7 +156,7 @@ export default function ProductDetailPage() {
   const handleBuyNow = () => {
     if (!product) return;
     
-    const availableVariants = product.variants.filter(v => v.inventory > 0);
+    const availableVariants = product.variants ? product.variants.filter(v => v.inventory > 0) : [];
     
     if (availableVariants.length > 1 && !selectedVariant) {
       setShakeVariants(true);

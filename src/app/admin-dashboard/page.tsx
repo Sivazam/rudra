@@ -96,6 +96,28 @@ export default function AdminDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
+              Banner Management
+            </CardTitle>
+            <CardDescription>
+              Manage homepage banners, carousel images, and promotional banners
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Link href="/admin/banners">
+              <Button className="w-full" variant="outline">
+                Manage Banners
+              </Button>
+            </Link>
+            <Button className="w-full" variant="outline" disabled>
+              Banner Analytics (Coming Soon)
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
               Product Management
             </CardTitle>
             <CardDescription>
@@ -127,7 +149,7 @@ export default function AdminDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Link href="/my-orders">
+            <Link href="/admin-dashboard/orders">
               <Button className="w-full" variant="outline">
                 View All Orders
               </Button>
@@ -154,6 +176,70 @@ export default function AdminDashboard() {
             </Button>
             <Button className="w-full" variant="outline" disabled>
               Customer Support (Coming Soon)
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Analytics & Reports
+            </CardTitle>
+            <CardDescription>
+              View sales analytics, generate reports, and track business performance
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Button className="w-full" variant="outline" disabled>
+              Sales Report (Coming Soon)
+            </Button>
+            <Button className="w-full" variant="outline" disabled>
+              Analytics Dashboard (Coming Soon)
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Variants Management
+            </CardTitle>
+            <CardDescription>
+              Manage product variants, pricing, and inventory levels
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Link href="/admin-dashboard/variants">
+              <Button className="w-full" variant="outline">
+                Manage Variants
+              </Button>
+            </Link>
+            <Button className="w-full" variant="outline" disabled>
+              Bulk Update (Coming Soon)
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Discounts Management
+            </CardTitle>
+            <CardDescription>
+              Create and manage discount codes and promotional offers
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Link href="/admin-dashboard/discounts">
+              <Button className="w-full" variant="outline">
+                Manage Discounts
+              </Button>
+            </Link>
+            <Button className="w-full" variant="outline" disabled>
+              Coupon Analytics (Coming Soon)
             </Button>
           </CardContent>
         </Card>

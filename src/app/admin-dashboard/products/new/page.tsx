@@ -548,10 +548,20 @@ export default function NewProductPage() {
                         <Input
                           type="number"
                           value={variant.price}
-                          onChange={(e) => updateVariant(variant.id, 'price', Number(e.target.value))}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === '' || value === '0') {
+                              updateVariant(variant.id, 'price', 0);
+                            } else {
+                              const numValue = parseInt(value);
+                              if (!isNaN(numValue) && numValue > 0) {
+                                updateVariant(variant.id, 'price', numValue);
+                              }
+                            }
+                          }}
                           placeholder="0"
-                          min="0"
-                          step="0.01"
+                          min="1"
+                          step="1"
                           required
                         />
                       </div>
@@ -560,10 +570,20 @@ export default function NewProductPage() {
                         <Input
                           type="number"
                           value={variant.originalPrice || ''}
-                          onChange={(e) => updateVariant(variant.id, 'originalPrice', e.target.value ? Number(e.target.value) : undefined)}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === '' || value === '0') {
+                              updateVariant(variant.id, 'originalPrice', undefined);
+                            } else {
+                              const numValue = parseInt(value);
+                              if (!isNaN(numValue) && numValue > 0) {
+                                updateVariant(variant.id, 'originalPrice', numValue);
+                              }
+                            }
+                          }}
                           placeholder="0"
-                          min="0"
-                          step="0.01"
+                          min="1"
+                          step="1"
                         />
                       </div>
                       <div className="space-y-2">

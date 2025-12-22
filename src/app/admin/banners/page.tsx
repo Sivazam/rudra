@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,61 +10,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Plus, Edit, Trash2, Image as ImageIcon, GripVertical } from 'lucide-react';
 
 interface Banner {
   id: string;
   title: string;
   description: string;
   imageUrl: string;
-  categoryLink: string;
+  categoryLink?: string;
   altText: string;
   isActive: boolean;
   order: number;
 }
-
-const mockBanners: Banner[] = [
-  {
-    id: '1',
-    title: 'Handmade Rudraksha Mala',
-    description: 'Authentic Spiritual Products',
-    imageUrl: '/banners/rudraksha-mala.jpg',
-    categoryLink: '/categories/rudraksha',
-    altText: 'Handmade Rudraksha Mala Banner',
-    isActive: true,
-    order: 1
-  },
-  {
-    id: '2',
-    title: 'Sacred Malas Collection',
-    description: 'Find Your Spiritual Path',
-    imageUrl: '/banners/malas-collection.jpg',
-    categoryLink: '/categories/malas',
-    altText: 'Sacred Malas Collection Banner',
-    isActive: true,
-    order: 2
-  },
-  {
-    id: '3',
-    title: 'Divine Bracelets',
-    description: 'Wear Your Faith',
-    imageUrl: '/banners/bracelets.jpg',
-    categoryLink: '/categories/bracelets',
-    altText: 'Divine Bracelets Banner',
-    isActive: true,
-    order: 3
-  },
-  {
-    id: '4',
-    title: 'Spiritual Pendants',
-    description: 'Carry Divinity With You',
-    imageUrl: '/banners/pendants.jpg',
-    categoryLink: '/categories/pendants',
-    altText: 'Spiritual Pendants Banner',
-    isActive: false,
-    order: 4
-  }
-];
 
 const categoryOptions = [
   { value: '/categories/rudraksha', label: 'Rudraksha' },
@@ -78,7 +36,8 @@ const categoryOptions = [
 ];
 
 export default function BannersPage() {
-  const [banners, setBanners] = useState<Banner[]>(mockBanners);
+  const [banners, setBanners] = useState<Banner[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
   const [formData, setFormData] = useState({
@@ -91,27 +50,55 @@ export default function BannersPage() {
     order: 1
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    fetchBanners();
+  }, []);
+
+  const fetchBanners = async () => {
+    try {
+      const response = await fetch('/api/admin/banners');
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setBanners(result.data || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching banners:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingBanner) {
-      // Update existing banner
-      setBanners(prev => prev.map(banner => 
-        banner.id === editingBanner.id 
-          ? { ...editingBanner, ...formData }
-          : banner
-      ));
-    } else {
-      // Add new banner
-      const newBanner: Banner = {
-        ...formData,
-        id: Date.now().toString()
-      };
-      setBanners(prev => [...prev, newBanner]);
+    try {
+      const url = editingBanner ? '/api/admin/banners' : '/api/admin/banners';
+      const method = editingBanner ? 'PUT' : 'POST';
+      
+      const body = editingBanner 
+        ? { ...formData, id: editingBanner.id }
+        : formData;
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (response.ok) {
+        fetchBanners();
+        resetForm();
+        setIsDialogOpen(false);
+      } else {
+        console.error('Failed to save banner');
+      }
+    } catch (error) {
+      console.error('Error saving banner:', error);
     }
-    
-    resetForm();
-    setIsDialogOpen(false);
   };
 
   const handleEdit = (banner: Banner) => {
@@ -120,7 +107,7 @@ export default function BannersPage() {
       title: banner.title,
       description: banner.description,
       imageUrl: banner.imageUrl,
-      categoryLink: banner.categoryLink,
+      categoryLink: banner.categoryLink || '',
       altText: banner.altText,
       isActive: banner.isActive,
       order: banner.order
@@ -128,8 +115,45 @@ export default function BannersPage() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setBanners(prev => prev.filter(banner => banner.id !== id));
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this banner?')) {
+      try {
+        const response = await fetch(`/api/admin/banners?id=${id}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          fetchBanners();
+        } else {
+          console.error('Failed to delete banner');
+        }
+      } catch (error) {
+        console.error('Error deleting banner:', error);
+      }
+    }
+  };
+
+  const handleToggleActive = async (banner: Banner) => {
+    try {
+      const response = await fetch('/api/admin/banners', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: banner.id,
+          isActive: !banner.isActive
+        }),
+      });
+
+      if (response.ok) {
+        fetchBanners();
+      } else {
+        console.error('Failed to toggle banner status');
+      }
+    } catch (error) {
+      console.error('Error toggling banner status:', error);
+    }
   };
 
   const resetForm = () => {
@@ -140,7 +164,7 @@ export default function BannersPage() {
       categoryLink: '',
       altText: '',
       isActive: true,
-      order: 1
+      order: banners.length + 1
     });
     setEditingBanner(null);
   };
@@ -152,9 +176,22 @@ export default function BannersPage() {
     setIsDialogOpen(open);
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Banners</h1>
+            <p className="text-gray-600">Loading banners...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <div className="mb-8 flex justify-between items-center">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Banners</h1>
           <p className="text-gray-600">Manage homepage banners and carousel</p>
@@ -174,7 +211,7 @@ export default function BannersPage() {
               </DialogTitle>
               <DialogDescription>
                 {editingBanner 
-                  ? 'Update the banner information below.'
+                  ? 'Update banner information below.'
                   : 'Create a new banner for the homepage carousel.'
                 }
               </DialogDescription>
@@ -226,6 +263,18 @@ export default function BannersPage() {
                   placeholder="/banners/banner-image.jpg"
                   required
                 />
+                {formData.imageUrl && (
+                  <div className="mt-2">
+                    <img 
+                      src={formData.imageUrl} 
+                      alt="Preview" 
+                      className="h-20 w-auto object-cover rounded border"
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder-image.jpg';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
               
               <div className="space-y-2">
@@ -240,12 +289,13 @@ export default function BannersPage() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="categoryLink">Category Link</Label>
+                <Label htmlFor="categoryLink">Category Link (Optional)</Label>
                 <Select value={formData.categoryLink} onValueChange={(value) => setFormData(prev => ({ ...prev, categoryLink: value }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">No link</SelectItem>
                     {categoryOptions.map((option) => (
                       <SelectItem key={option.value} value={option.value}>
                         {option.label}
@@ -256,12 +306,10 @@ export default function BannersPage() {
               </div>
               
               <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Switch
                   id="isActive"
                   checked={formData.isActive}
-                  onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.checked }))}
-                  className="rounded"
+                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
                 />
                 <Label htmlFor="isActive">Active</Label>
               </div>
@@ -291,6 +339,7 @@ export default function BannersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Order</TableHead>
+                <TableHead>Preview</TableHead>
                 <TableHead>Title</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Category</TableHead>
@@ -303,7 +352,22 @@ export default function BannersPage() {
                 .sort((a, b) => a.order - b.order)
                 .map((banner) => (
                 <TableRow key={banner.id}>
-                  <TableCell className="font-medium">{banner.order}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <GripVertical className="h-4 w-4 text-gray-400" />
+                      {banner.order}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <img 
+                      src={banner.imageUrl} 
+                      alt={banner.altText}
+                      className="h-12 w-20 object-cover rounded border"
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder-image.jpg';
+                      }}
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <ImageIcon className="h-4 w-4 text-gray-400" />
@@ -312,12 +376,18 @@ export default function BannersPage() {
                   </TableCell>
                   <TableCell className="max-w-xs truncate">{banner.description}</TableCell>
                   <TableCell>
-                    {categoryOptions.find(cat => cat.value === banner.categoryLink)?.label || banner.categoryLink}
+                    {categoryOptions.find(cat => cat.value === banner.categoryLink)?.label || 'No link'}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={banner.isActive ? "default" : "secondary"}>
-                      {banner.isActive ? "Active" : "Inactive"}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={banner.isActive}
+                        onCheckedChange={() => handleToggleActive(banner)}
+                      />
+                      <Badge variant={banner.isActive ? "default" : "secondary"}>
+                        {banner.isActive ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
@@ -332,6 +402,7 @@ export default function BannersPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => handleDelete(banner.id)}
+                        className="text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -341,6 +412,14 @@ export default function BannersPage() {
               ))}
             </TableBody>
           </Table>
+          
+          {banners.length === 0 && (
+            <div className="text-center py-8">
+              <ImageIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No banners found</h3>
+              <p className="text-gray-500">Get started by creating your first banner.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

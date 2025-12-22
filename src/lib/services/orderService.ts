@@ -1,5 +1,6 @@
 import { firestoreService } from '@/lib/firebase';
 import { wishlistService } from './wishlistService';
+import { notificationService } from './notificationService';
 
 export interface IOrderItem {
   productId?: string;
@@ -69,6 +70,16 @@ class OrderService {
       const orderId = await firestoreService.create(this.collection, orderToCreate);
       console.log('OrderService: Order created successfully with ID:', orderId);
       console.log('OrderService: Order should be associated with userId:', orderData.userId);
+      
+      // Create notification for new order
+      try {
+        const orderWithId = { ...orderData, id: orderId };
+        await notificationService.createOrderNotification(orderWithId, 'new');
+      } catch (notificationError) {
+        console.warn('OrderService: Failed to create notification:', notificationError);
+        // Don't fail the order creation if notification fails
+      }
+      
       return orderId;
     } catch (error) {
       console.error('OrderService: Error creating order:', error);
@@ -215,6 +226,15 @@ class OrderService {
       };
 
       await this.updateOrder(order.id!, updateData);
+
+      // Create notification for payment status update
+      try {
+        const orderWithStatus = { ...order, ...updateData };
+        await notificationService.createOrderNotification(orderWithStatus, 'payment');
+      } catch (notificationError) {
+        console.warn('OrderService: Failed to create payment notification:', notificationError);
+        // Don't fail the payment update if notification fails
+      }
 
       // If payment is completed, remove items from wishlist
       if (paymentData.status === 'paid') {

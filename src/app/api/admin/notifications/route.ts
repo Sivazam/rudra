@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
-import { orderService } from '@/lib/services';
 import { notificationService } from '@/lib/services/notificationService';
 
 // JWT secret handling with error prevention
@@ -50,53 +49,7 @@ async function verifyAdmin(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
-  try {
-    const admin = await verifyAdmin(request);
-    if (!admin) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const body = await request.json();
-    const { orderId, status } = body;
-
-    if (!orderId || !status) {
-      return NextResponse.json(
-        { success: false, error: 'Order ID and status are required' },
-        { status: 400 }
-      );
-    }
-
-    // Update order status
-    await orderService.updateOrder(orderId, { status });
-
-    // Create notification for order status update
-    try {
-      const order = await orderService.getOrderById(orderId);
-      if (order) {
-        await notificationService.createOrderNotification(order, 'status');
-      }
-    } catch (notificationError) {
-      console.warn('Failed to create order status notification:', notificationError);
-      // Don't fail the status update if notification fails
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Order status updated successfully'
-    });
-  } catch (error) {
-    console.error('Error updating order status:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to update order status' },
-      { status: 500 }
-    );
-  }
-}
-
+// GET /api/admin/notifications - Get all notifications
 export async function GET(request: NextRequest) {
   try {
     const admin = await verifyAdmin(request);
@@ -108,38 +61,77 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const status = searchParams.get('status');
+    const unreadOnly = searchParams.get('unreadOnly') === 'true';
+    const limit = parseInt(searchParams.get('limit') || '50');
 
-    let orders = await orderService.getAllOrders();
-
-    // Filter by status if provided
-    if (status) {
-      orders = orders.filter(order => order.status === status);
+    let notifications;
+    if (unreadOnly) {
+      notifications = await notificationService.getAllNotifications(limit);
+      notifications = notifications.filter(n => !n.isRead);
+    } else {
+      notifications = await notificationService.getAllNotifications(limit);
     }
-
-    // Apply pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedOrders = orders.slice(startIndex, endIndex);
-
-    const total = orders.length;
 
     return NextResponse.json({
       success: true,
-      orders: paginatedOrders,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
+      notifications,
+      unreadCount: notifications.filter(n => !n.isRead).length
     });
   } catch (error) {
-    console.error('Error fetching admin orders:', error);
+    console.error('Error fetching notifications:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch orders' },
+      { success: false, error: 'Failed to fetch notifications' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/admin/notifications - Update notification (mark as read/unread)
+export async function PUT(request: NextRequest) {
+  try {
+    const admin = await verifyAdmin(request);
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const { notificationId, action } = body;
+
+    if (!notificationId || !action) {
+      return NextResponse.json(
+        { success: false, error: 'Notification ID and action are required' },
+        { status: 400 }
+      );
+    }
+
+    switch (action) {
+      case 'markAsRead':
+        await notificationService.markAsRead(notificationId);
+        break;
+      case 'markAllAsRead':
+        await notificationService.markAllAsRead();
+        break;
+      case 'delete':
+        await notificationService.deleteNotification(notificationId);
+        break;
+      default:
+        return NextResponse.json(
+          { success: false, error: 'Invalid action' },
+          { status: 400 }
+        );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Notification updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating notification:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update notification' },
       { status: 500 }
     );
   }

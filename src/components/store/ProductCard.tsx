@@ -115,31 +115,29 @@ export function ProductCard({ product }: ProductCardProps) {
   const quantityInCart = cartItem?.quantity || 0;
 
   const handleAddToCart = () => {
-    // Check if product has actual variants added by the user
+    // Check if product has variants
     if (!product.variants || product.variants.length === 0) {
-      // No variants added by user - add the main product directly
+      // No variants - add main product directly
       handleDirectAddToCart();
       return;
     }
     
-    // Get the actual variants for this product
+    // Product has variants - always show variant selector
     const variants = transformVariants(product);
     const availableVariants = variants.filter(v => v.inventory > 0);
     
-    if (availableVariants.length === 1) {
-      // If only one variant available, add it directly to cart
-      handleVariantSelect(availableVariants[0]);
-    } else if (availableVariants.length > 1) {
-      // If multiple variants available, show variant selector
-      setShowVariantSelector(true);
-    } else {
-      // No variants available, show error
+    if (availableVariants.length === 0) {
+      // All variants out of stock
       toast({
         title: "Out of stock",
         description: `${product.name} is currently out of stock`,
         variant: "destructive"
       });
+      return;
     }
+    
+    // Show variant selector for products with variants
+    setShowVariantSelector(true);
   };
 
   const handleDirectAddToCart = () => {

@@ -521,6 +521,57 @@ export default function EditProductPage() {
 
           <Card>
             <CardHeader>
+              <CardTitle>Product Images</CardTitle>
+              <CardDescription>
+                Upload product images (max 5)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                <Label htmlFor="image-upload" className="cursor-pointer">
+                  <span className="text-sm text-gray-600">Click to upload images</span>
+                  <Input
+                    id="image-upload"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </Label>
+              </div>
+
+              {images.length > 0 && (
+                <div className="space-y-2">
+                  <Label>Uploaded Images</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {images.map((image, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={image}
+                          alt={`Product ${index + 1}`}
+                          className="w-full h-20 object-cover rounded-lg"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 bg-white/80 hover:bg-white text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Product Variants</CardTitle>
               <CardDescription>
                 Update product variants with pricing and inventory
@@ -559,10 +610,20 @@ export default function EditProductPage() {
                       <Input
                         type="number"
                         value={variant.price}
-                        onChange={(e) => updateVariant(variant.id, 'price', Number(e.target.value))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || value === '0') {
+                            updateVariant(variant.id, 'price', 0);
+                          } else {
+                            const numValue = parseInt(value);
+                            if (!isNaN(numValue) && numValue > 0) {
+                              updateVariant(variant.id, 'price', numValue);
+                            }
+                          }
+                        }}
                         placeholder="0"
-                        min="0"
-                        step="0.01"
+                        min="1"
+                        step="1"
                         required
                       />
                     </div>
@@ -571,10 +632,20 @@ export default function EditProductPage() {
                       <Input
                         type="number"
                         value={variant.originalPrice || ''}
-                        onChange={(e) => updateVariant(variant.id, 'originalPrice', e.target.value ? Number(e.target.value) : undefined)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || value === '0') {
+                            updateVariant(variant.id, 'originalPrice', undefined);
+                          } else {
+                            const numValue = parseInt(value);
+                            if (!isNaN(numValue) && numValue > 0) {
+                              updateVariant(variant.id, 'originalPrice', numValue);
+                            }
+                          }
+                        }}
                         placeholder="0"
-                        min="0"
-                        step="0.01"
+                        min="1"
+                        step="1"
                       />
                     </div>
                     <div className="space-y-2">
