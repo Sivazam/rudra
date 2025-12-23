@@ -1,8 +1,16 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { DollarSign, Package, Clock, CheckCircle, TrendingUp, Search, Filter, ArrowUpDown, MoreHorizontal } from 'lucide-react';
+import { Package, Clock, CheckCircle, TrendingUp, Search, FileText } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface OrderItem {
   productId?: string;
@@ -66,6 +74,7 @@ export default function OrdersPage() {
     completedOrders: 0,
     totalRevenue: 0
   });
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     fetchOrders();
@@ -81,13 +90,12 @@ export default function OrdersPage() {
     try {
       setLoading(true);
       console.log('Fetching orders...');
-      
-      // Simple test fetch
-      const response = await fetch('/api/admin/orders?page=1&limit=10');
+
+      const response = await fetch(`/api/admin/orders?page=${currentPage}&limit=10`);
       console.log('Response status:', response.status);
       const data = await response.json();
       console.log('Response data:', data);
-      
+
       if (data.success) {
         setOrders(data.orders);
         setTotalPages(data.pagination.pages);
@@ -112,7 +120,7 @@ export default function OrdersPage() {
       if (order.paymentStatus === 'completed') acc.totalRevenue += order.total;
       return acc;
     }, { totalOrders: 0, pendingOrders: 0, completedOrders: 0, totalRevenue: 0 });
-    
+
     setStats(newStats);
   };
 
@@ -125,10 +133,10 @@ export default function OrdersPage() {
         },
         body: JSON.stringify({ orderId, status: newStatus }),
       });
-      
+
       const data = await response.json();
       if (data.success) {
-        fetchOrders(); // Refresh orders
+        fetchOrders();
       } else {
         setError(data.error || 'Failed to update order status');
       }
@@ -137,7 +145,7 @@ export default function OrdersPage() {
     }
   };
 
-  const filteredOrders = orders.filter(order => 
+  const filteredOrders = orders.filter(order =>
     order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.customerInfo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     order.customerInfo.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -168,7 +176,7 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
@@ -181,19 +189,20 @@ export default function OrdersPage() {
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 p-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
             <p className="text-red-600">Error: {error}</p>
           </div>
+          <Button onClick={fetchOrders} variant="outline">Retry</Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
@@ -203,7 +212,7 @@ export default function OrdersPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
+        <Card className="p-6">
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
               <Package className="h-6 w-6 text-blue-600" />
@@ -213,9 +222,9 @@ export default function OrdersPage() {
               <p className="text-2xl font-semibold text-gray-900">{stats.totalOrders}</p>
             </div>
           </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
+        </Card>
+
+        <Card className="p-6">
           <div className="flex items-center">
             <div className="p-2 bg-yellow-100 rounded-lg">
               <Clock className="h-6 w-6 text-yellow-600" />
@@ -225,9 +234,9 @@ export default function OrdersPage() {
               <p className="text-2xl font-semibold text-gray-900">{stats.pendingOrders}</p>
             </div>
           </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
+        </Card>
+
+        <Card className="p-6">
           <div className="flex items-center">
             <div className="p-2 bg-green-100 rounded-lg">
               <CheckCircle className="h-6 w-6 text-green-600" />
@@ -237,9 +246,9 @@ export default function OrdersPage() {
               <p className="text-2xl font-semibold text-gray-900">{stats.completedOrders}</p>
             </div>
           </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
+        </Card>
+
+        <Card className="p-6">
           <div className="flex items-center">
             <div className="p-2 bg-purple-100 rounded-lg">
               <TrendingUp className="h-6 w-6 text-purple-600" />
@@ -249,11 +258,11 @@ export default function OrdersPage() {
               <p className="text-2xl font-semibold text-gray-900">₹{stats.totalRevenue.toLocaleString()}</p>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Search and Filter */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <Card className="p-6">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -282,10 +291,10 @@ export default function OrdersPage() {
             </select>
           </div>
         </div>
-      </div>
+      </Card>
 
       {/* Orders Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -317,74 +326,92 @@ export default function OrdersPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {order.orderNumber}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{order.customerInfo.name}</div>
-                    <div className="text-sm text-gray-500">{order.customerInfo.email}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {order.items.length} item{order.items.length !== 1 ? 's' : ''}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ₹{order.total.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                      {order.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusColor(order.paymentStatus)}`}>
-                      {order.paymentStatus}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(order.orderDate).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {order.status === 'pending' && (
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => updateOrderStatus(order.id!, 'processing')}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Process
-                        </button>
-                        <button
-                          onClick={() => updateOrderStatus(order.id!, 'cancelled')}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    )}
-                    {order.status === 'processing' && (
-                      <button
-                        onClick={() => updateOrderStatus(order.id!, 'shipped')}
-                        className="text-purple-600 hover:text-purple-900"
-                      >
-                        Ship
-                      </button>
-                    )}
-                    {order.status === 'shipped' && (
-                      <button
-                        onClick={() => updateOrderStatus(order.id!, 'delivered')}
-                        className="text-green-600 hover:text-green-900"
-                      >
-                        Deliver
-                      </button>
-                    )}
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                    No orders found
                   </td>
                 </tr>
-              ))}
+              ) : (
+                filteredOrders.map((order) => (
+                  <tr
+                    key={order.id}
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => setSelectedOrder(order)}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {order.orderNumber}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{order.customerInfo.name}</div>
+                      <div className="text-sm text-gray-500">{order.customerInfo.email}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      ₹{order.total.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge className={getStatusColor(order.status)}>
+                        {order.status}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge className={getPaymentStatusColor(order.paymentStatus)}>
+                        {order.paymentStatus}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(order.orderDate).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      {order.status === 'pending' && (
+                        <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => updateOrderStatus(order.id!, 'processing')}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            Process
+                          </button>
+                          <button
+                            onClick={() => updateOrderStatus(order.id!, 'cancelled')}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+                      {order.status === 'processing' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateOrderStatus(order.id!, 'shipped');
+                          }}
+                          className="text-purple-600 hover:text-purple-900"
+                        >
+                          Ship
+                        </button>
+                      )}
+                      {order.status === 'shipped' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateOrderStatus(order.id!, 'delivered');
+                          }}
+                          className="text-green-600 hover:text-green-900"
+                        >
+                          Deliver
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-        
+
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
@@ -411,28 +438,202 @@ export default function OrdersPage() {
                   <span className="font-medium">{totalPages}</span> pages
                 </p>
               </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <button
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                  >
-                    Next
-                  </button>
-                </nav>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="relative inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
               </div>
             </div>
           </div>
         )}
-      </div>
+      </Card>
+
+      {/* Order Details Dialog */}
+      <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Order Details - {selectedOrder?.orderNumber}</DialogTitle>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="space-y-6">
+              {/* Order Status */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Order Status</p>
+                  <Badge className={getStatusColor(selectedOrder.status)}>
+                    {selectedOrder.status}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Payment Status</p>
+                  <Badge className={getPaymentStatusColor(selectedOrder.paymentStatus)}>
+                    {selectedOrder.paymentStatus}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Customer Information */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Customer Information
+                </h3>
+                <Card className="p-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Name</p>
+                      <p className="font-medium">{selectedOrder.customerInfo.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <p className="font-medium">{selectedOrder.customerInfo.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Phone</p>
+                      <p className="font-medium">{selectedOrder.customerInfo.phone}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">City</p>
+                      <p className="font-medium">{selectedOrder.customerInfo.city}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="text-sm text-gray-500">Address</p>
+                      <p className="font-medium">
+                        {selectedOrder.customerInfo.address}, {selectedOrder.customerInfo.city}, {selectedOrder.customerInfo.state} - {selectedOrder.customerInfo.pincode}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Order Items */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Order Items</h3>
+                <Card className="overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Discount</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {selectedOrder.items.map((item, index) => (
+                          <tr key={index}>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                {item.image && (
+                                  <img src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded" />
+                                )}
+                                <div>
+                                  <p className="font-medium">{item.name}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-sm">{item.quantity}</td>
+                            <td className="px-4 py-3 text-sm">₹{item.price.toLocaleString()}</td>
+                            <td className="px-4 py-3 text-sm">₹{item.discount.toLocaleString()}</td>
+                            <td className="px-4 py-3 text-sm font-medium">₹{item.totalPrice.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Order Totals */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Order Totals</h3>
+                <Card className="p-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Subtotal</span>
+                      <span className="font-medium">₹{selectedOrder.subtotal.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Shipping</span>
+                      <span className="font-medium">₹{selectedOrder.shippingCost.toLocaleString()}</span>
+                    </div>
+                    <div className="border-t pt-2 flex justify-between text-lg font-bold">
+                      <span>Total</span>
+                      <span>₹{selectedOrder.total.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Payment Information */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Payment Information</h3>
+                <Card className="p-4">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Razorpay Order ID</span>
+                      <span className="font-mono">{selectedOrder.razorpayOrderId}</span>
+                    </div>
+                    {selectedOrder.razorpayPaymentId && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Razorpay Payment ID</span>
+                        <span className="font-mono">{selectedOrder.razorpayPaymentId}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Order Date</span>
+                      <span>{new Date(selectedOrder.orderDate).toLocaleString()}</span>
+                    </div>
+                    {selectedOrder.paidAt && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Paid At</span>
+                        <span>{new Date(selectedOrder.paidAt).toLocaleString()}</span>
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                {selectedOrder.status === 'pending' && (
+                  <>
+                    <Button onClick={() => updateOrderStatus(selectedOrder.id!, 'processing')}>
+                      Mark as Processing
+                    </Button>
+                    <Button variant="destructive" onClick={() => updateOrderStatus(selectedOrder.id!, 'cancelled')}>
+                      Cancel Order
+                    </Button>
+                  </>
+                )}
+                {selectedOrder.status === 'processing' && (
+                  <Button onClick={() => updateOrderStatus(selectedOrder.id!, 'shipped')}>
+                    Mark as Shipped
+                  </Button>
+                )}
+                {selectedOrder.status === 'shipped' && (
+                  <Button onClick={() => updateOrderStatus(selectedOrder.id!, 'delivered')}>
+                    Mark as Delivered
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
