@@ -60,7 +60,7 @@ export function Footer() {
             </ul>
           </div>
          
-          {/* Contact Info */}
+          {/* Contact Info */} 
           <div>
             <h3 className="text-lg font-semibold mb-4 text-white">Get In Touch</h3>
             <ul className="space-y-2 text-sm">
@@ -70,20 +70,18 @@ export function Footer() {
               </li>
               <li className="flex items-start space-x-2">
                 <span className="text-amber-400">📞</span>
-                <span>+91 9999999999</span>
+                <span>+91 9533777726</span>
               </li>
               <li className="flex items-start space-x-2">
-                <span className="text-amber-400">📍</span>
-                <span>Jubli Hills, Hyderabad, India</span>
+                <span>No Return | No Exchange</span>
               </li>
             </ul>
           </div>
         </div>
-       
         <div className="border-t border-gray-800 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-400 mb-4 md:mb-0">
-              © 2025 Sanathan Rudraksha. Built by HarTe Labs.
+              © 2025 Sanathan Rudraksha. Built by FactInMedia.
             </p>
             <div className="flex space-x-4 text-sm text-gray-400">
               <Link href="/" className="hover:text-amber-400 transition-colors">Privacy Policy</Link>

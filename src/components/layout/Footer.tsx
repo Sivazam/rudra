@@ -42,16 +42,15 @@ export function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
             <ul className="space-y-2 text-sm">
-              <li>Email: info@rudra.com</li>
-              <li>Phone: +91 123 456 7890</li>
-              <li>Address: 123 Spiritual Street</li>
-              <li>City, State 12345</li>
+              <li>info@sanathanrudraksha.com</li>
+              <li>+91 9533777726</li>
+              <li>No Return | No Exchange</li>
             </ul>
           </div>
         </div>
         
         <div className="border-t border-amber-700 mt-8 pt-8 text-center">
-          <p className="text-sm">Build by Harte Labs</p>
+          <p className="text-sm">Build by FactInMedia</p>
         </div>
       </div>
     </footer>
