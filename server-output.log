@@ -45,3 +45,139 @@ Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allow
  GET / 200 in 130ms
  GET / 200 in 117ms
  GET / 200 in 134ms
+ GET / 200 in 144ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 961ms (835 modules)
+ GET /favicon.ico 200 in 1248ms
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ GET / 200 in 500ms
+ GET /favicon.ico 200 in 14ms
+Middleware: Skipping authentication for admin route: /admin-dashboard
+ ○ Compiling /admin-dashboard ...
+ ✓ Compiled /admin-dashboard in 2.2s (1433 modules)
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ GET /admin-dashboard 200 in 2608ms
+ GET /favicon.ico 200 in 42ms
+Middleware: Skipping authentication for admin route: /api/admin/dashboard
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+ ○ Compiling /api/admin/notifications ...
+ ✓ Compiled /api/admin/notifications in 4s (1633 modules)
+Dashboard API: Fetching statistics...
+Orders fetched successfully, count: 2
+ GET /api/admin/notifications 200 in 5148ms
+Products fetched successfully, count: 14
+Users fetched successfully, count: 4
+Dashboard API: Statistics calculated: {
+  totalOrders: 2,
+  pendingOrders: 0,
+  completedOrders: 1,
+  totalRevenue: 798,
+  totalProducts: 14,
+  totalCustomers: 4,
+}
+ GET /api/admin/dashboard 200 in 5635ms
+Middleware: Skipping authentication for admin route: /admin-dashboard/orders
+ ○ Compiling /admin-dashboard/orders ...
+ ✓ Compiled /admin-dashboard/orders in 1917ms (1652 modules)
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ GET /admin-dashboard/orders 200 in 2110ms
+Middleware: Skipping authentication for admin route: /admin-dashboard/orders
+ GET /admin-dashboard/orders 200 in 76ms
+Middleware: Skipping authentication for admin route: /api/admin/orders
+ ○ Compiling /api/admin/orders ...
+ ✓ Compiled /api/admin/orders in 1880ms (1660 modules)
+ GET /favicon.ico 200 in 1943ms
+Admin API: Fetching orders from Firestore...
+Checking for abandoned orders...
+No abandoned orders found
+Admin API: Found 2 orders
+Admin API: Returning 2 orders for page 1
+ GET /api/admin/orders?page=1&limit=10 200 in 2574ms
+Middleware: Skipping authentication for admin route: /admin-dashboard/orders/RUD31341912
+ ○ Compiling /admin-dashboard/orders/[orderNumber] ...
+ ✓ Compiled /admin-dashboard/orders/[orderNumber] in 2.9s (1681 modules)
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ GET /admin-dashboard/orders/RUD31341912 200 in 3702ms
+Middleware: Skipping authentication for admin route: /admin-dashboard/orders/RUD31341912
+ GET /admin-dashboard/orders/RUD31341912 200 in 83ms
+ GET /favicon.ico 200 in 26ms
+Middleware: Skipping authentication for admin route: /api/admin/orders
+Admin API: Fetching orders from Firestore...
+Checking for abandoned orders...
+No abandoned orders found
+Admin API: Found 2 orders
+Admin API: Returning 2 orders for page 1
+ GET /api/admin/orders 200 in 771ms
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+ GET /api/admin/notifications 200 in 230ms
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+ GET /api/admin/notifications 200 in 154ms
+ GET / 200 in 529ms
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+ GET /api/admin/notifications 200 in 226ms
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+ GET /api/admin/notifications 200 in 209ms
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+ GET /api/admin/notifications 200 in 216ms
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+ GET /api/admin/notifications 200 in 212ms
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+ GET /api/admin/notifications 200 in 200ms
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+ GET /api/admin/notifications 200 in 210ms
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+ GET /api/admin/notifications 200 in 220ms
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+ GET /api/admin/notifications 200 in 210ms
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+ GET /api/admin/notifications 200 in 230ms
+ GET / 200 in 152ms
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+ GET /api/admin/notifications 200 in 198ms
+Middleware: Skipping authentication for admin route: /admin-dashboard/orders/RUD31341912
+ GET /admin-dashboard/orders/RUD31341912 200 in 193ms
+ GET /favicon.ico 200 in 12ms
+Middleware: Skipping authentication for admin route: /api/admin/orders
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+Admin API: Fetching orders from Firestore...
+Checking for abandoned orders...
+ GET /api/admin/notifications 200 in 214ms
+No abandoned orders found
+Admin API: Found 2 orders
+Admin API: Returning 2 orders for page 1
+ GET /api/admin/orders 200 in 397ms
+Middleware: Skipping authentication for admin route: /admin-dashboard/orders/RUD31341912
+ GET /admin-dashboard/orders/RUD31341912 200 in 143ms
+ GET /favicon.ico 200 in 11ms
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+Middleware: Skipping authentication for admin route: /api/admin/orders
+Admin API: Fetching orders from Firestore...
+Checking for abandoned orders...
+No abandoned orders found
+ GET /api/admin/notifications 200 in 230ms
+Admin API: Found 2 orders
+Admin API: Returning 2 orders for page 1
+ GET /api/admin/orders 200 in 303ms
+Middleware: Skipping authentication for admin route: /admin-dashboard/orders/RUD31341912
+ GET /admin-dashboard/orders/RUD31341912 200 in 163ms
+ GET /favicon.ico 200 in 9ms
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+Middleware: Skipping authentication for admin route: /api/admin/orders
+Admin API: Fetching orders from Firestore...
+Checking for abandoned orders...
+No abandoned orders found
+ GET /api/admin/notifications 200 in 215ms
+Admin API: Found 2 orders
+Admin API: Returning 2 orders for page 1
+ GET /api/admin/orders 200 in 299ms
+Middleware: Skipping authentication for admin route: /admin-dashboard/orders
+ GET /admin-dashboard/orders 200 in 85ms
+Middleware: Skipping authentication for admin route: /api/admin/orders
+Admin API: Fetching orders from Firestore...
+Checking for abandoned orders...
+No abandoned orders found
+Admin API: Found 2 orders
+Admin API: Returning 2 orders for page 1
+ GET /api/admin/orders?page=1&limit=10 200 in 248ms
+Middleware: Skipping authentication for admin route: /api/admin/notifications
+ GET /api/admin/notifications 200 in 181ms

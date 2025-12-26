@@ -262,70 +262,68 @@ export default function OrdersPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6">
-          <div className="flex items-center">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <Package className="h-6 w-6 text-blue-600" />
+              <Package className="h-5 w-5 text-blue-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Orders</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.totalOrders}</p>
+            <div className="flex-1">
+              <p className="text-xs text-gray-500">Total Orders</p>
+              <p className="text-lg font-bold text-gray-900">{stats.totalOrders}</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center">
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
             <div className="p-2 bg-yellow-100 rounded-lg">
-              <Clock className="h-6 w-6 text-yellow-600" />
+              <Clock className="h-5 w-5 text-yellow-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Pending Orders</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.pendingOrders}</p>
+            <div className="flex-1">
+              <p className="text-xs text-gray-500">Pending Orders</p>
+              <p className="text-lg font-bold text-gray-900">{stats.pendingOrders}</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center">
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircle className="h-6 w-6 text-green-600" />
+              <CheckCircle className="h-5 w-5 text-green-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Completed Orders</p>
-              <p className="text-2xl font-semibold text-gray-900">{stats.completedOrders}</p>
+            <div className="flex-1">
+              <p className="text-xs text-gray-500">Completed Orders</p>
+              <p className="text-lg font-bold text-gray-900">{stats.completedOrders}</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6">
-          <div className="flex items-center">
+        <Card className="p-4">
+          <div className="flex items-center gap-3">
             <div className="p-2 bg-purple-100 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-purple-600" />
+              <TrendingUp className="h-5 w-5 text-purple-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-semibold text-gray-900">₹{stats.totalRevenue.toLocaleString()}</p>
+            <div className="flex-1">
+              <p className="text-xs text-gray-500">Total Revenue</p>
+              <p className="text-lg font-bold text-gray-900">₹{stats.totalRevenue.toLocaleString()}</p>
             </div>
           </div>
         </Card>
       </div>
 
       {/* Search and Filter */}
-      <Card className="p-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <input
-                type="text"
-                placeholder="Search by order number, customer name, or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+      <Card className="p-4">
+        <div className="flex flex-col gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <input
+              type="text"
+              placeholder="Search by order number, customer..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
           <div className="flex gap-2">
             <Select
@@ -333,7 +331,7 @@ export default function OrdersPage() {
               onValueChange={setStatusFilter}
               disabled={isUpdating}
             >
-              <SelectTrigger className="w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
@@ -356,28 +354,28 @@ export default function OrdersPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order Number
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Order #
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                   Customer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                   Items
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Total
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
                   Payment
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -385,7 +383,7 @@ export default function OrdersPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
                     No orders found
                   </td>
                 </tr>
@@ -396,60 +394,36 @@ export default function OrdersPage() {
                     className="hover:bg-gray-50 cursor-pointer"
                     onClick={() => router.push(`/admin-dashboard/orders/${order.orderNumber}`)}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                       {order.orderNumber}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm hidden sm:table-cell">
                       <div className="text-sm font-medium text-gray-900">{order.customerInfo.name}</div>
-                      <div className="text-sm text-gray-500">{order.customerInfo.email}</div>
+                      <div className="text-xs text-gray-500">{order.customerInfo.email}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
                       {order.items.length} item{order.items.length !== 1 ? 's' : ''}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                       ₹{order.total.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <Badge className={getStatusColor(order.status)}>
                         {order.status}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap hidden sm:table-cell">
                       <Badge className={getPaymentStatusColor(order.paymentStatus)}>
                         {order.paymentStatus}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500 hidden md:table-cell">
                       {new Date(order.orderDate).toLocaleDateString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         {order.status !== 'cancelled' && order.status !== 'delivered' && (
                           <>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingOrder(order);
-                                setOrderStatusToEdit(order.status);
-                              }}
-                              className="text-purple-600 hover:text-purple-900 disabled:opacity-50"
-                              disabled={isUpdating}
-                              title="Edit Status"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingOrder(order);
-                                setShowCancelDialog(true);
-                              }}
-                              className="text-red-600 hover:text-red-900 disabled:opacity-50"
-                              disabled={isUpdating}
-                              title="Cancel Order"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
                           </>
                         )}
                       </div>
