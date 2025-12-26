@@ -30,6 +30,22 @@ interface ShippingAddress {
   createdAt?: string;
 }
 
+interface OrderData {
+  items: any[];
+  customerInfo: {
+    name: string;
+    phone: string;
+    email: string;
+    address: string;
+    city: string;
+    state: string;
+    pincode: string;
+  };
+  subtotal: number;
+  shippingCost: number;
+  total: number;
+}
+
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, getTotalPrice, clearCart, freezeCartForPayment, unfreezeCart } = useCartStore();
@@ -40,6 +56,7 @@ export default function CheckoutPage() {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [showPaymentOverlay, setShowPaymentOverlay] = useState(false);
   const [currentRazorpayOrderId, setCurrentRazorpayOrderId] = useState<string | null>(null);
+  const [storedOrderData, setStoredOrderData] = useState<OrderData | null>(null);
 
   // Freeze cart when component mounts and user is on checkout page
   useEffect(() => {
@@ -47,7 +64,7 @@ export default function CheckoutPage() {
       freezeCartForPayment();
       console.log('Cart frozen for checkout process');
     }
-    
+
     // Cleanup: unfreeze cart when component unmounts (if payment not completed)
     return () => {
       if (!paymentProcessing) {
@@ -59,13 +76,13 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     loadRazorpayScript().then(setRazorpayLoaded);
-    
+
     // Function to check authentication
     const checkAuth = () => {
       const authStatus = isUserAuthenticated();
       console.log('Checkout auth status:', authStatus);
       setIsAuthenticated(authStatus);
-      
+
       // If not authenticated, redirect to login
       if (!authStatus) {
         console.log('User not authenticated, redirecting to login');
@@ -75,23 +92,23 @@ export default function CheckoutPage() {
         return;
       }
     };
-    
+
     // Check authentication immediately
     checkAuth();
-    
+
     // Set up an event listener for storage changes to detect auth state changes
     const handleStorageChange = () => {
       checkAuth();
     };
-    
+
     const handleAuthStateChange = () => {
       console.log('Auth state change event received in checkout');
       checkAuth();
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('auth-state-changed', handleAuthStateChange);
-    
+
     // Cleanup event listeners on component unmount
     return () => {
       window.removeEventListener('storage', handleStorageChange);
@@ -170,7 +187,7 @@ export default function CheckoutPage() {
       addressKeys: Object.keys(address || {}),
       fullAddress: JSON.stringify(address, null, 2)
     });
-    
+
     // Ensure we're setting a proper object
     if (address && typeof address === 'object') {
       setShippingAddress({ ...address }); // Create a new object to ensure reactivity
@@ -182,91 +199,68 @@ export default function CheckoutPage() {
   // Use function declaration instead of const to make it hoisted
   function validateForm(): boolean {
     console.log('Validating form with shippingAddress:', shippingAddress);
-    
+
     if (!shippingAddress) {
       console.log('Validation failed: No shipping address');
       return false;
     }
-    
+
     // Check if shippingAddress has the required structure
     if (!shippingAddress || typeof shippingAddress !== 'object') {
       console.log('Validation failed: shippingAddress is not an object');
       return false;
     }
-    
+
     // Check required fields for the new address structure
     const requiredFields = ['name', 'phone', 'doorNo', 'city', 'pincode'];
-    
+
     for (const field of requiredFields) {
       const value = shippingAddress[field as keyof ShippingAddress];
       console.log(`Checking field ${field}:`, value, 'type:', typeof value);
-      
+
       if (!value) {
         console.log(`Validation failed: Field ${field} is undefined or null`);
         return false;
       }
-      
+
       if (typeof value.toString !== 'function') {
         console.log(`Validation failed: Field ${field} is not a string or convertible to string`);
         return false;
       }
-      
+
       if (value.toString().trim() === '') {
         console.log(`Validation failed: Field ${field} is empty`);
         return false;
       }
     }
-    
+
     // Additional validation for phone format - be more lenient
     if (!shippingAddress.phone || typeof shippingAddress.phone !== 'string') {
       console.log('Validation failed: Phone is not a string');
       return false;
     }
-    
+
     // Accept various phone formats - just check if it has reasonable length and contains numbers
     const cleanPhone = shippingAddress.phone.replace(/[^\d]/g, '');
     if (cleanPhone.length < 10 || cleanPhone.length > 15) {
       console.log('Validation failed: Invalid phone format', shippingAddress.phone);
       return false;
     }
-    
+
     // Pincode must be 6 digits
     if (!shippingAddress.pincode || typeof shippingAddress.pincode !== 'string') {
       console.log('Validation failed: Pincode is not a string');
       return false;
     }
-    
+
     if (!/^\d{6}$/.test(shippingAddress.pincode)) {
       console.log('Validation failed: Invalid pincode format', shippingAddress.pincode);
       return false;
     }
-    
+
     console.log('Validation passed successfully');
     return true;
   }
-
-  const handlePaymentCancellation = async (razorpayOrderId: string, reason: string) => {
-    try {
-      console.log('Cancelling payment for order:', razorpayOrderId, 'reason:', reason);
-
-      // Call payment cancel API
-      await fetch('/api/payment/cancel', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          razorpayOrderId,
-          reason
-        }),
-      });
-
-      console.log('Payment cancelled successfully');
-    } catch (error) {
-      console.error('Error cancelling payment:', error);
-      // Don't show error to user - they already see that payment was cancelled
-    }
-  };
 
   const handlePlaceOrder = async () => {
     if (!validateForm()) {
@@ -324,7 +318,7 @@ export default function CheckoutPage() {
       });
 
       console.log('API response status:', response.status);
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         console.error('API Error:', errorData);
@@ -334,18 +328,21 @@ export default function CheckoutPage() {
 
       const apiResponse = await response.json();
       console.log('API Response:', apiResponse);
-      
+
       if (!apiResponse.success) {
         console.error('API Error:', apiResponse);
         const errorMessage = apiResponse.details || apiResponse.error || 'Failed to create order';
         throw new Error(errorMessage);
       }
 
-      const { orderId, amount, currency, keyId } = apiResponse.data;
+      const { orderId, amount, currency, keyId, orderData } = apiResponse.data;
+
+      // Store order data for payment verification
+      setStoredOrderData(orderData);
 
       console.log('Razorpay order created:', { orderId, amount, currency, keyId });
 
-      // Store the Razorpay order ID for cancellation handling
+      // Store Razorpay order ID for cancellation handling
       setCurrentRazorpayOrderId(orderId);
 
       // Initialize Razorpay payment
@@ -367,13 +364,13 @@ export default function CheckoutPage() {
         handler: async (response: any) => {
           try {
             console.log('Payment successful:', response);
-            
+
             // Show loading state immediately
             setLoading(true);
             setPaymentProcessing(true);
             setShowPaymentOverlay(true);
-            
-            // Verify payment
+
+            // Verify payment with stored order data
             const verifyResponse = await fetch('/api/payment/verify', {
               method: 'POST',
               headers: {
@@ -383,6 +380,7 @@ export default function CheckoutPage() {
                 razorpayOrderId: response.razorpay_order_id,
                 razorpayPaymentId: response.razorpay_payment_id,
                 razorpaySignature: response.razorpay_signature,
+                orderData: storedOrderData
               }),
             });
 
@@ -391,54 +389,56 @@ export default function CheckoutPage() {
             if (verifyResponse.ok) {
               const verifyData = await verifyResponse.json();
               console.log('Payment verified:', verifyData);
-              
+
               // Set sessionStorage flag before redirecting
               sessionStorage.setItem('fromCheckout', 'true');
-              
-              // Unfreeze cart and clear it after successful payment
+
+              // Unfreeze and clear cart in background after successful payment
               unfreezeCart();
               clearCart();
-              
-              // Add a small delay to ensure the loading overlay is visible
+
+              // Add a small delay to ensure that cart clearing completes
               setTimeout(() => {
                 router.push('/order-success');
-              }, 1500);
+              }, 500);
             } else {
               const verifyError = await verifyResponse.json();
               console.error('Payment verification failed:', verifyError);
               setPaymentProcessing(false);
               setShowPaymentOverlay(false);
               setLoading(false);
-              throw new Error('Payment verification failed: ' + (verifyError.error || 'Unknown error'));
+
+              // Redirect to payment failure page
+              router.push('/order-failed');
             }
           } catch (error) {
             console.error('Payment verification error:', error);
             setPaymentProcessing(false);
             setShowPaymentOverlay(false);
             setLoading(false);
-            alert('Payment verification failed. Please contact support.');
+
+            // Redirect to payment failure page
+            router.push('/order-failed');
           }
         },
         modal: {
           ondismiss: async () => {
             console.log('Payment modal dismissed');
-            if (currentRazorpayOrderId) {
-              await handlePaymentCancellation(currentRazorpayOrderId, 'Payment modal dismissed by user');
-            }
             setPaymentProcessing(false);
             setShowPaymentOverlay(false);
             setLoading(false);
             setCurrentRazorpayOrderId(null);
+            // Redirect to payment failure page
+            router.push('/order-failed');
           },
           onclose: async () => {
             console.log('Payment modal closed');
-            if (currentRazorpayOrderId) {
-              await handlePaymentCancellation(currentRazorpayOrderId, 'Payment modal closed by user');
-            }
             setPaymentProcessing(false);
             setShowPaymentOverlay(false);
             setLoading(false);
             setCurrentRazorpayOrderId(null);
+            // Redirect to payment failure page
+            router.push('/order-failed');
           }
         },
         "callback_url": undefined // Prevent automatic redirect
@@ -449,7 +449,7 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error('Order creation error:', error);
       const errorMessage = (error as Error).message || 'Failed to place order. Please try again.';
-      
+
       // Show more user-friendly error messages
       if (errorMessage.includes('Razorpay')) {
         alert('Payment service error: ' + errorMessage + '. Please try again later.');
@@ -487,7 +487,7 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
           {/* Address Selection */}
           <div className="space-y-6">
-            <AddressSelection 
+            <AddressSelection
               onAddressSelect={handleAddressSelect}
               selectedAddress={shippingAddress || undefined}
             />
@@ -528,7 +528,7 @@ export default function CheckoutPage() {
                   {items.map((item) => {
                     const itemPrice = item.variant.price - (item.variant.price * item.variant.discount) / 100;
                     const itemTotal = itemPrice * item.quantity;
-                    
+
                     return (
                       <div key={item.id} className="flex items-center space-x-3 sm:space-x-4 p-3 border rounded-lg">
                         <img
@@ -554,87 +554,71 @@ export default function CheckoutPage() {
                     );
                   })}
                 </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-3">
+                <Separator className="my-4" />
+
+                <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Subtotal</span>
-                    <span>{formatPrice(subtotal)}</span>
+                    <span className="font-medium">{formatPrice(subtotal)}</span>
                   </div>
-                  
                   <div className="flex justify-between text-sm">
                     <span>Shipping</span>
-                    <div className="text-right">
-                      {shipping === 0 ? (
-                        <>
-                          <span className="text-gray-400 line-through">₹99</span>
-                          <span className="text-green-600 ml-2">Free</span>
-                        </>
-                      ) : (
-                        <span className="text-gray-600">{formatPrice(shipping)}</span>
-                      )}
-                    </div>
+                    <span className="font-medium">{shippingCost === 0 ? 'Free' : formatPrice(shippingCost)}</span>
                   </div>
-                  
                   {remainingForFreeShipping > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span></span>
-                      <span className="text-orange-600 font-medium break-words">
-                        Add {formatPrice(remainingForFreeShipping)} more for FREE delivery
-                      </span>
+                    <div className="flex items-center text-xs text-amber-600">
+                      <span>Add {formatPrice(remainingForFreeShipping)} more for free shipping</span>
                     </div>
                   )}
-                  
                   <Separator />
-                  
                   <div className="flex justify-between font-semibold text-lg">
                     <span>Total</span>
                     <span className="text-orange-600">{formatPrice(total)}</span>
                   </div>
                 </div>
-                
-                <p className="text-xs text-gray-500 text-center mt-2">
-                  By placing this order, you agree to our Terms & Conditions
-                </p>
-                {shipping > 0 && (
-                  <p className="text-xs text-green-600 text-center mt-1">
-                    Free shipping on orders above {formatPrice(999)}
-                  </p>
-                )}
+
+                <Separator className="my-4" />
+
+                <div className="space-y-3">
+                  <div className="flex items-start space-x-2 text-sm text-gray-600">
+                    <span className="text-green-600 mt-0.5">✓</span>
+                    <span>Prices locked for 30 minutes</span>
+                  </div>
+                  <div className="flex items-start space-x-2 text-sm text-gray-600">
+                    <span className="text-green-600 mt-0.5">✓</span>
+                    <span>Free shipping on orders above ₹999</span>
+                  </div>
+                  <div className="flex items-start space-x-2 text-sm text-gray-600">
+                    <span className="text-green-600 mt-0.5">✓</span>
+                    <span>Secure payment with Razorpay</span>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handlePlaceOrder}
+                  disabled={loading || !shippingAddress}
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                  size="lg"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      Proceed to Pay {formatPrice(total)}
+                    </>
+                  )}
+                </Button>
               </CardContent>
             </Card>
           </div>
         </div>
-
-        {/* Fixed Bottom Payment Button for All Devices */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-50">
-          <div className="container mx-auto px-4 py-3 sm:py-4">
-            <div className="flex items-center justify-between">
-              <div className="min-w-0 flex-1">
-                <p className="text-xs sm:text-sm text-gray-600">Total</p>
-                <p className="text-base sm:text-lg font-bold text-orange-600 truncate">{formatPrice(total)}</p>
-              </div>
-              <Button
-                onClick={handlePlaceOrder}
-                disabled={loading || !validateForm()}
-                className="bg-orange-600 hover:bg-orange-700 px-6 sm:px-8 py-2 sm:py-3 text-sm sm:text-base flex-shrink-0"
-                size="lg"
-              >
-                {loading ? 'Processing...' : `Pay ${formatPrice(total)}`}
-              </Button>
-            </div>
-          </div>
-        </div>
       </div>
-      
-      {/* Payment Processing Overlay */}
-      <PaymentLoadingOverlay 
-        isVisible={showPaymentOverlay} 
-        message={paymentProcessing ? 'Processing your payment and creating your order...' : 'Finalizing your order...'}
-      />
+
+      {showPaymentOverlay && <PaymentLoadingOverlay />}
     </MainLayout>
   );
 }

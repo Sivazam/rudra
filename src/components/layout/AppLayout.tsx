@@ -2,7 +2,7 @@
 
 import { ReactNode } from 'react';
 import { Header } from '@/components/store/Header';
-import { Footer } from './Footer';
+import { Footer } from '@/components/store/Footer';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -11,11 +11,11 @@ interface AppLayoutProps {
   onSearch?: (query: string) => void;
 }
 
-export function AppLayout({ 
-  children, 
-  showHeader = true, 
+export function AppLayout({
+  children,
+  showHeader = true,
   showFooter = true,
-  onSearch 
+  onSearch
 }: AppLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#f4f0eb' }}>

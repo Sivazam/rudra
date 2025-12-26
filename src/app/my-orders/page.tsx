@@ -288,13 +288,6 @@ export default function MyOrdersPage() {
                 {formatPrice(order.total)}
               </div>
               <div className="flex gap-2">
-                {order.paymentStatus === 'failed' && order.status !== 'cancelled' && (
-                  <Link href={`/my-orders/${order.orderNumber}`}>
-                    <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
-                      Retry Payment
-                    </Button>
-                  </Link>
-                )}
                 <Link href={`/my-orders/${order.orderNumber}`}>
                   <Button variant="outline" size="sm" className="w-full sm:w-auto">
                     <Eye className="h-4 w-4 mr-1" />
