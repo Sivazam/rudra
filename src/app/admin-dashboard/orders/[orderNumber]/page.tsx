@@ -327,21 +327,19 @@ export default function AdminOrderDetailPage() {
                         <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
+                    {status === 'cancelled' ? (
+                      <span className="text-sm text-gray-500 ml-2">Order Cancelled</span>
+                    ) : (
+                      <Button
+                        onClick={() => status !== 'cancelled' && handleStatusUpdate(status)}
+                        disabled={isUpdating || status === order.status || status === 'cancelled'}
+                        size="sm"
+                        className="ml-2"
+                      >
+                        {isUpdating ? 'Updating...' : 'Update'}
+                      </Button>
+                    )}
                   </div>
-
-                  {status === 'cancelled' ? (
-                    <span className="text-sm text-gray-500 ml-2">Order Cancelled</span>
-                  ) : (
-                    <Button
-                      onClick={() => status !== 'cancelled' && handleStatusUpdate(status)}
-                      disabled={isUpdating || status === order.status || status === 'cancelled'}
-                      size="sm"
-                      className="ml-2"
-                    >
-                      {isUpdating ? 'Updating...' : 'Update'}
-                    </Button>
-                  )}
-                </div>
                 )}
 
                 {order.status === 'pending' && order.paymentStatus === 'failed' && (
@@ -377,29 +375,38 @@ export default function AdminOrderDetailPage() {
               <CardTitle>Order Items ({order.items.length})</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2">
                 {order.items.map((item, index) => (
-                  <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                    <OptimizedImage
-                      src={getProductImage(item)}
-                      alt={item.name}
-                      className="w-16 h-16 object-cover rounded-lg"
-                      width={64}
-                      height={64}
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-gray-600">
-                        Price: {formatPrice(item.price)} | Qty: {item.quantity}
-                      </p>
+                  <div key={index} className="flex flex-col sm:flex-row gap-4 sm:gap-6 p-5 bg-gray-50 border border-gray-200 rounded-xl">
+                    <div className="flex-shrink-0">
+                      <OptimizedImage
+                        src={getProductImage(item)}
+                        alt={item.name}
+                        className="w-28 h-28 object-cover rounded-lg"
+                        width={112}
+                        height={112}
+                      />
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">{formatPrice(item.totalPrice)}</p>
+                    <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
+                      <h3 className="font-semibold text-base mb-3">{item.name}</h3>
+                      <div className="flex flex-wrap gap-6 text-sm text-gray-600">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500">Price:</span>
+                          <span className="font-medium">{formatPrice(item.price)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500">Quantity:</span>
+                          <span className="font-medium">{item.quantity}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end justify-center gap-2 flex-shrink-0 py-1 min-w-[100px]">
                       {item.discount > 0 && (
-                        <p className="text-sm text-gray-500 line-through">
+                        <p className="text-sm text-gray-400 line-through">
                           {formatPrice(item.price * item.quantity)}
                         </p>
                       )}
+                      <p className="font-bold text-xl text-green-700">{formatPrice(item.totalPrice)}</p>
                     </div>
                   </div>
                 ))}

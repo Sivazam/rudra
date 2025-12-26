@@ -6,7 +6,7 @@ import { Package, Clock, CheckCircle, TrendingUp, Search, FileText, ArrowLeft, E
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Link } from 'next/link';
+import Link from 'next/link';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -68,7 +68,18 @@ interface OrderStats {
   totalRevenue: number;
 }
 
+const CANCELLATION_REASONS = [
+  'Out of stock',
+  'Customer request',
+  'Payment issue',
+  'Shipping constraint',
+  'Product unavailable',
+  'Pricing error',
+  'Other'
+];
+
 export default function OrdersPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -82,8 +93,8 @@ export default function OrdersPage() {
     completedOrders: 0,
     totalRevenue: 0
   });
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
   const [cancellationReason, setCancellationReason] = useState('');
   const [customReason, setCustomReason] = useState('');
   const [orderStatusToEdit, setOrderStatusToEdit] = useState<string | null>(null);
@@ -137,32 +148,18 @@ export default function OrdersPage() {
     setStats(newStats);
   };
 
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
-    try {
-      const response = await fetch('/api/admin/orders', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ orderId, status: newStatus }),
-      });
+  const filteredOrders = orders.filter(order => {
+    // Apply search filter
+    const matchesSearch =
+      order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.customerInfo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.customerInfo.email.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const data = await response.json();
-      if (data.success) {
-        fetchOrders();
-      } else {
-        setError(data.error || 'Failed to update order status');
-      }
-    } catch (err) {
-      setError('Network error occurred');
-    }
-  };
+    // Apply status filter
+    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
 
-  const filteredOrders = orders.filter(order =>
-    order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.customerInfo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.customerInfo.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    return matchesSearch && matchesStatus;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -216,6 +213,16 @@ export default function OrdersPage() {
       case 'refunded': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const handleCancelConfirm = () => {
+    if (!editingOrder) return;
+
+    const reason = cancellationReason === 'Other' && customReason.trim()
+      ? customReason.trim()
+      : cancellationReason;
+
+    updateOrderStatus(editingOrder.id!, 'cancelled', reason);
   };
 
   if (loading) {
@@ -387,7 +394,7 @@ export default function OrdersPage() {
                   <tr
                     key={order.id}
                     className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => setSelectedOrder(order)}
+                    onClick={() => router.push(`/admin-dashboard/orders/${order.orderNumber}`)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       {order.orderNumber}
@@ -416,20 +423,13 @@ export default function OrdersPage() {
                       {new Date(order.orderDate).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/admin-dashboard/orders/${order.orderNumber}`}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Link>
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         {order.status !== 'cancelled' && order.status !== 'delivered' && (
                           <>
                             <button
                               onClick={(e) => {
-                                e.preventDefault();
                                 e.stopPropagation();
-                                setSelectedOrder(order);
+                                setEditingOrder(order);
                                 setOrderStatusToEdit(order.status);
                               }}
                               className="text-purple-600 hover:text-purple-900 disabled:opacity-50"
@@ -440,9 +440,8 @@ export default function OrdersPage() {
                             </button>
                             <button
                               onClick={(e) => {
-                                e.preventDefault();
                                 e.stopPropagation();
-                                setSelectedOrder(order);
+                                setEditingOrder(order);
                                 setShowCancelDialog(true);
                               }}
                               className="text-red-600 hover:text-red-900 disabled:opacity-50"
@@ -509,230 +508,26 @@ export default function OrdersPage() {
         )}
       </Card>
 
-      {/* Order Details Dialog */}
-      <Dialog open={!!selectedOrder} onOpenChange={() => setSelectedOrder(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Order Details - {selectedOrder?.orderNumber}</DialogTitle>
-          </DialogHeader>
-          {selectedOrder && (
-            <div className="space-y-6">
-              {/* Order Status */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Order Status</p>
-                  <Badge className={getStatusColor(selectedOrder.status)}>
-                    {selectedOrder.status}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Payment Status</p>
-                  <Badge className={getPaymentStatusColor(selectedOrder.paymentStatus)}>
-                    {selectedOrder.paymentStatus}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Customer Information */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Customer Information
-                </h3>
-                <Card className="p-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-gray-500">Name</p>
-                      <p className="font-medium">{selectedOrder.customerInfo.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Email</p>
-                      <p className="font-medium">{selectedOrder.customerInfo.email}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Phone</p>
-                      <p className="font-medium">{selectedOrder.customerInfo.phone}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">City</p>
-                      <p className="font-medium">{selectedOrder.customerInfo.city}</p>
-                    </div>
-                    <div className="col-span-2">
-                      <p className="text-sm text-gray-500">Address</p>
-                      <p className="font-medium">
-                        {selectedOrder.customerInfo.address}, {selectedOrder.customerInfo.city}, {selectedOrder.customerInfo.state} - {selectedOrder.customerInfo.pincode}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-
-              {/* Order Items */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Order Items</h3>
-                <Card className="overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Discount</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {selectedOrder.items.map((item, index) => (
-                          <tr key={index}>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-3">
-                                {item.image && (
-                                  <img src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded" />
-                                )}
-                                <div>
-                                  <p className="font-medium">{item.name}</p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-sm">{item.quantity}</td>
-                            <td className="px-4 py-3 text-sm">₹{item.price.toLocaleString()}</td>
-                            <td className="px-4 py-3 text-sm">₹{item.discount.toLocaleString()}</td>
-                            <td className="px-4 py-3 text-sm font-medium">₹{item.totalPrice.toLocaleString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </Card>
-              </div>
-
-              {/* Order Totals */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Order Totals</h3>
-                <Card className="p-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Subtotal</span>
-                      <span className="font-medium">₹{selectedOrder.subtotal.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Shipping</span>
-                      <span className="font-medium">₹{selectedOrder.shippingCost.toLocaleString()}</span>
-                    </div>
-                    <div className="border-t pt-2 flex justify-between text-lg font-bold">
-                      <span>Total</span>
-                      <span>₹{selectedOrder.total.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-
-              {/* Payment Information */}
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Payment Information</h3>
-                <Card className="p-4">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Razorpay Order ID</span>
-                      <span className="font-mono">{selectedOrder.razorpayOrderId}</span>
-                    </div>
-                    {selectedOrder.razorpayPaymentId && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Razorpay Payment ID</span>
-                        <span className="font-mono">{selectedOrder.razorpayPaymentId}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Order Date</span>
-                      <span>{new Date(selectedOrder.orderDate).toLocaleString()}</span>
-                    </div>
-                    {selectedOrder.cancellationReason && (
-                      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-800">
-                        <span className="font-medium">Cancellation Reason:</span> {selectedOrder.cancellationReason}
-                      </div>
-                    )}
-                    {selectedOrder.paidAt && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Paid At</span>
-                        <span>{new Date(selectedOrder.paidAt).toLocaleString()}</span>
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2">
-                {selectedOrder.status === 'pending' && (
-                  <>
-                    <Button
-                      onClick={() => {
-                        setSelectedOrder(selectedOrder);
-                        setOrderStatusToEdit('processing');
-                      }}
-                      disabled={isUpdating}
-                    >
-                      Mark as Processing
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => {
-                        setSelectedOrder(selectedOrder);
-                        setShowCancelDialog(true);
-                      }}
-                      disabled={isUpdating}
-                    >
-                      Cancel Order
-                    </Button>
-                  </>
-                )}
-                {selectedOrder.status === 'processing' && (
-                  <Button
-                    onClick={() => {
-                      setSelectedOrder(selectedOrder);
-                        setOrderStatusToEdit('packed');
-                      }}
-                    >
-                    Mark as Packed
-                  </Button>
-                )}
-                {selectedOrder.status === 'packed' && (
-                  <Button
-                    onClick={() => {
-                      setSelectedOrder(selectedOrder);
-                      setOrderStatusToEdit('shipped');
-                    }}
-                  >
-                    Mark as Shipped
-                  </Button>
-                )}
-                {selectedOrder.status === 'shipped' && (
-                  <Button
-                    onClick={() => {
-                      setSelectedOrder(selectedOrder);
-                      setOrderStatusToEdit('delivered');
-                    }}
-                  >
-                    Mark as Delivered
-                  </Button>
-                )}
-              </div>
-
-      </div>
-
       {/* Status Update Dialog */}
-      <Dialog open={orderStatusToEdit !== null} onOpenChange={(open) => !open && setOrderStatusToEdit(null)}>
+      <Dialog
+        open={orderStatusToEdit !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOrderStatusToEdit(null);
+            setEditingOrder(null);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Update Order Status</DialogTitle>
             <DialogDescription>
-              Update the status for order {selectedOrder?.orderNumber}
+              Update the status for order {editingOrder?.orderNumber}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <Select
-              value={orderStatusToEdit || selectedOrder?.status}
+              value={orderStatusToEdit || editingOrder?.status}
               onValueChange={setOrderStatusToEdit}
               disabled={isUpdating}
             >
@@ -752,36 +547,44 @@ export default function OrdersPage() {
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setOrderStatusToEdit(null)}
+              onClick={() => { setOrderStatusToEdit(null); setEditingOrder(null); }}
               disabled={isUpdating}
             >
               Cancel
             </Button>
             <Button
               onClick={() => {
-                if (selectedOrder && orderStatusToEdit) {
-                  if (orderStatusToEdit === cancelled) {
+                if (editingOrder && orderStatusToEdit) {
+                  if (orderStatusToEdit === 'cancelled') {
                     handleCancelConfirm();
                   } else {
-                    updateOrderStatus(selectedOrder.id!, orderStatusToEdit);
+                    updateOrderStatus(editingOrder.id!, orderStatusToEdit);
                   }
                 }
               }}
               disabled={!orderStatusToEdit || isUpdating}
             >
-              {isUpdating ? Updating... : Update}
+              {isUpdating ? 'Updating...' : 'Update'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Cancel Order Dialog */}
-      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+      <Dialog
+        open={showCancelDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowCancelDialog(false);
+            setEditingOrder(null);
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Cancel Order</DialogTitle>
             <DialogDescription>
-              Are you sure you want to cancel order {selectedOrder?.orderNumber}?
+              Are you sure you want to cancel order {editingOrder?.orderNumber}?
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -796,7 +599,7 @@ export default function OrdersPage() {
                   <SelectValue placeholder="Select a reason" />
                 </SelectTrigger>
                 <SelectContent>
-                  {cancellationReasons.map((reason) => (
+                  {CANCELLATION_REASONS.map((reason) => (
                     <SelectItem key={reason} value={reason}>
                       {reason}
                     </SelectItem>
@@ -840,3 +643,5 @@ export default function OrdersPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
