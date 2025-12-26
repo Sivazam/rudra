@@ -39,6 +39,7 @@ export default function CheckoutPage() {
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress | null>(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [showPaymentOverlay, setShowPaymentOverlay] = useState(false);
+  const [currentRazorpayOrderId, setCurrentRazorpayOrderId] = useState<string | null>(null);
 
   // Freeze cart when component mounts and user is on checkout page
   useEffect(() => {
@@ -244,6 +245,29 @@ export default function CheckoutPage() {
     return true;
   }
 
+  const handlePaymentCancellation = async (razorpayOrderId: string, reason: string) => {
+    try {
+      console.log('Cancelling payment for order:', razorpayOrderId, 'reason:', reason);
+
+      // Call payment cancel API
+      await fetch('/api/payment/cancel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          razorpayOrderId,
+          reason
+        }),
+      });
+
+      console.log('Payment cancelled successfully');
+    } catch (error) {
+      console.error('Error cancelling payment:', error);
+      // Don't show error to user - they already see that payment was cancelled
+    }
+  };
+
   const handlePlaceOrder = async () => {
     if (!validateForm()) {
       alert('Please select or add a shipping address');
@@ -321,6 +345,9 @@ export default function CheckoutPage() {
 
       console.log('Razorpay order created:', { orderId, amount, currency, keyId });
 
+      // Store the Razorpay order ID for cancellation handling
+      setCurrentRazorpayOrderId(orderId);
+
       // Initialize Razorpay payment
       const options = {
         key: keyId,
@@ -393,17 +420,25 @@ export default function CheckoutPage() {
           }
         },
         modal: {
-          ondismiss: () => {
+          ondismiss: async () => {
             console.log('Payment modal dismissed');
+            if (currentRazorpayOrderId) {
+              await handlePaymentCancellation(currentRazorpayOrderId, 'Payment modal dismissed by user');
+            }
             setPaymentProcessing(false);
             setShowPaymentOverlay(false);
             setLoading(false);
+            setCurrentRazorpayOrderId(null);
           },
-          onclose: () => {
+          onclose: async () => {
             console.log('Payment modal closed');
+            if (currentRazorpayOrderId) {
+              await handlePaymentCancellation(currentRazorpayOrderId, 'Payment modal closed by user');
+            }
             setPaymentProcessing(false);
             setShowPaymentOverlay(false);
             setLoading(false);
+            setCurrentRazorpayOrderId(null);
           }
         },
         "callback_url": undefined // Prevent automatic redirect

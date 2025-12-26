@@ -407,13 +407,46 @@ export default function OrdersPage() {
                 </div>
 
                 {/* Payment Status */}
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-3">
                   <Badge className={getPaymentStatusColor(order.paymentStatus)}>
                     {order.paymentStatus}
                   </Badge>
                   <div className="text-xs text-gray-500" onClick={(e) => e.stopPropagation()}>
                     Tap for details
                   </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                  {order.status !== 'cancelled' && order.status !== 'delivered' && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingOrder(order);
+                        setShowCancelDialog(true);
+                        setCancellationReason('');
+                        setCustomReason('');
+                      }}
+                      className="flex-1 min-h-[44px]"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Cancel
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/admin-dashboard/orders/${order.orderNumber}`);
+                    }}
+                    className="flex-1 min-h-[44px]"
+                  >
+                    <FileText className="h-3 w-3 mr-1" />
+                    View
+                  </Button>
                 </div>
               </div>
             ))
