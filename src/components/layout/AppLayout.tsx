@@ -3,6 +3,7 @@
 import { ReactNode } from 'react';
 import { Header } from '@/components/store/Header';
 import { Footer } from '@/components/store/Footer';
+import { SlideInCart } from '@/components/store/SlideInCart';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -24,6 +25,7 @@ export function AppLayout({
         {children}
       </main>
       {showFooter && <Footer />}
+      <SlideInCart />
     </div>
   );
 }

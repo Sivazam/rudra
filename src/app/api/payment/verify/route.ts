@@ -35,12 +35,30 @@ const getSecretBuffer = (): Buffer => {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('=== Payment Verify API Called ===');
+
     // Get payment details from request body
-    const { razorpayOrderId, razorpayPaymentId, razorpaySignature, orderData } = await request.json();
+    const body = await request.json();
+    console.log('Request body keys:', Object.keys(body));
+    console.log('Razorpay Order ID:', body.razorpayOrderId);
+    console.log('Razorpay Payment ID:', body.razorpayPaymentId);
+    console.log('Razorpay Signature:', body.razorpaySignature);
+    console.log('Order Data:', body.orderData);
+
+    const { razorpayOrderId, razorpayPaymentId, razorpaySignature, orderData } = body;
 
     if (!razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+      console.error('Missing payment details');
       return NextResponse.json(
         { success: false, error: 'Missing payment details' },
+        { status: 400 }
+      );
+    }
+
+    if (!orderData) {
+      console.error('Missing order data - this is required for order creation');
+      return NextResponse.json(
+        { success: false, error: 'Missing order data' },
         { status: 400 }
       );
     }
@@ -138,16 +156,31 @@ export async function POST(request: NextRequest) {
         // Add shipping address to user's addresses only if it's not already saved
         try {
           const existingUser = await userService.getUserByPhoneNumber(standardizedUserId);
+          console.log('Existing user from DB:', existingUser);
+          
           let addressExists = false;
 
           if (existingUser && existingUser.addresses) {
-            const addressString = `${orderData.customerInfo.address}, ${orderData.customerInfo.city}, ${orderData.customerInfo.state} - ${orderData.customerInfo.pincode}`;
-            addressExists = existingUser.addresses.some((addr: any) =>
-              `${addr.address}, ${addr.city}, ${addr.state} - ${addr.pincode}` === addressString
-            );
+            console.log('Existing addresses count:', existingUser.addresses.length);
+            
+            // Normalize address comparison (trim whitespace, ignore case)
+            const newAddress = orderData.customerInfo;
+            const newAddressString = `${newAddress.address?.trim()}, ${newAddress.city?.trim()}, ${newAddress.state?.trim()} - ${newAddress.pincode?.trim()}`.toLowerCase();
+            console.log('New address string for comparison:', newAddressString);
+            
+            addressExists = existingUser.addresses.some((addr: any, index: number) => {
+              const existingAddressString = `${addr.address?.trim()}, ${addr.city?.trim()}, ${addr.state?.trim()} - ${addr.pincode?.trim()}`.toLowerCase();
+              console.log('Comparing address #' + (index + 1) + ': existing="' + existingAddressString + '" vs new="' + newAddressString + '", match: ' + (existingAddressString === newAddressString));
+              return existingAddressString === newAddressString;
+            });
+            
+            console.log('Address exists check result:', addressExists);
+          } else {
+            console.log('No existing addresses array found');
           }
 
           if (!addressExists) {
+            console.log('Adding new address to user profile...');
             const addressData = {
               name: orderData.customerInfo.name,
               phone: orderData.customerInfo.phone,
@@ -160,6 +193,8 @@ export async function POST(request: NextRequest) {
 
             await userService.addAddress(userIdFromDb, addressData);
             console.log('New address added to user profile successfully');
+          } else {
+            console.log('Address already exists in user profile, skipping...');
           }
         } catch (addressError) {
           console.error('Error checking/adding address to user profile:', addressError);

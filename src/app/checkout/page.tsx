@@ -337,6 +337,9 @@ export default function CheckoutPage() {
 
       const { orderId, amount, currency, keyId, orderData } = apiResponse.data;
 
+      // Log order data to debug
+      console.log('Order data received from API:', orderData);
+
       // Store order data for payment verification
       setStoredOrderData(orderData);
 
@@ -363,14 +366,26 @@ export default function CheckoutPage() {
         },
         handler: async (response: any) => {
           try {
-            console.log('Payment successful:', response);
+            console.log('=== Razorpay Payment Handler Called ===');
+            console.log('Razorpay Response:', response);
+            console.log('Razorpay Order ID:', response.razorpay_order_id);
+            console.log('Razorpay Payment ID:', response.razorpay_payment_id);
+            console.log('Order data (local variable):', orderData);
 
             // Show loading state immediately
             setLoading(true);
             setPaymentProcessing(true);
             setShowPaymentOverlay(true);
 
-            // Verify payment with stored order data
+            // Check if storedOrderData is available
+            if (!orderData) {
+              console.error('CRITICAL ERROR: Order data (local variable) is null/undefined!');
+              console.error('This means create-order did not return orderData properly');
+              throw new Error('Order data not available. Please try checkout again.');
+            }
+
+            console.log('Sending verify request to /api/payment/verify...');
+
             const verifyResponse = await fetch('/api/payment/verify', {
               method: 'POST',
               headers: {
@@ -380,15 +395,17 @@ export default function CheckoutPage() {
                 razorpayOrderId: response.razorpay_order_id,
                 razorpayPaymentId: response.razorpay_payment_id,
                 razorpaySignature: response.razorpay_signature,
-                orderData: storedOrderData
+                orderData: orderData
               }),
             });
 
-            console.log('Payment verification response status:', verifyResponse.status);
+            console.log('Verify response status:', verifyResponse.status);
 
             if (verifyResponse.ok) {
               const verifyData = await verifyResponse.json();
-              console.log('Payment verified:', verifyData);
+              console.log('Payment verified successfully:', verifyData);
+              console.log('Order created:', verifyData.data?.orderId);
+              console.log('Payment status:', verifyData.data?.paymentStatus);
 
               // Set sessionStorage flag before redirecting
               sessionStorage.setItem('fromCheckout', 'true');
@@ -399,29 +416,36 @@ export default function CheckoutPage() {
 
               // Add a small delay to ensure that cart clearing completes
               setTimeout(() => {
+                console.log('Redirecting to /order-success...');
                 router.push('/order-success');
               }, 500);
             } else {
               const verifyError = await verifyResponse.json();
               console.error('Payment verification failed:', verifyError);
+              console.error('Verification error details:', {
+                error: verifyError.error,
+                details: verifyError.details
+              });
               setPaymentProcessing(false);
               setShowPaymentOverlay(false);
               setLoading(false);
 
               // Redirect to payment failure page
+              console.log('Redirecting to /order-failed due to verify failure...');
               router.push('/order-failed');
             }
           } catch (error) {
             console.error('Payment verification error:', error);
+            console.error('Error stack:', (error as Error).stack);
             setPaymentProcessing(false);
             setShowPaymentOverlay(false);
             setLoading(false);
 
             // Redirect to payment failure page
+            console.log('Redirecting to /order-failed due to exception...');
             router.push('/order-failed');
           }
-        },
-        modal: {
+        },        modal: {
           ondismiss: async () => {
             console.log('Payment modal dismissed');
             setPaymentProcessing(false);
