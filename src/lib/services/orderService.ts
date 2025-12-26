@@ -35,10 +35,11 @@ export interface IOrder {
   razorpayOrderId: string;
   razorpayPaymentId?: string;
   razorpaySignature?: string;
-  status: 'pending' | 'paid' | 'failed' | 'cancelled' | 'processing' | 'shipped' | 'delivered';
+  status: 'pending' | 'processing' | 'packed' | 'shipped' | 'delivered' | 'cancelled';
   paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded';
   orderDate: Date;
   paidAt?: Date;
+  cancellationReason?: string;
   createdAt?: any;
   updatedAt?: any;
 }
@@ -220,7 +221,8 @@ class OrderService {
       const updateData: Partial<IOrder> = {
         razorpayPaymentId: paymentData.razorpayPaymentId,
         razorpaySignature: paymentData.razorpaySignature,
-        status: paymentData.status,
+        // Don't change 'status' field - only admin can change it for fulfillment
+        // Only update paymentStatus based on payment result
         paymentStatus: paymentData.status === 'paid' ? 'completed' : 'failed',
         paidAt: paymentData.status === 'paid' ? new Date().toISOString() : undefined
       };

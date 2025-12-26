@@ -38,7 +38,7 @@ interface Order {
   subtotal: number;
   shippingCost: number;
   total: number;
-  status: 'pending' | 'paid' | 'failed' | 'cancelled' | 'processing' | 'shipped' | 'delivered';
+  status: 'pending' | 'processing' | 'packed' | 'shipped' | 'delivered' | 'cancelled';
   paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded';
   orderDate: string;
   paidAt?: string;
@@ -186,18 +186,31 @@ export default function MyOrdersPage() {
     switch (status) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
-      case 'paid':
-      case 'completed':
-        return 'bg-green-100 text-green-800';
       case 'processing':
         return 'bg-blue-100 text-blue-800';
-      case 'shipped':
+      case 'packed':
         return 'bg-purple-100 text-purple-800';
+      case 'shipped':
+        return 'bg-indigo-100 text-indigo-800';
       case 'delivered':
         return 'bg-green-100 text-green-800';
-      case 'failed':
       case 'cancelled':
         return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'failed':
+        return 'bg-red-100 text-red-800';
+      case 'refunded':
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -245,6 +258,12 @@ export default function MyOrdersPage() {
                 <Badge className={getStatusColor(order.status)}>
                   {(order.status || 'pending').charAt(0).toUpperCase() + (order.status || 'pending').slice(1)}
                 </Badge>
+                <Badge className={getPaymentStatusColor(order.paymentStatus)}>
+                  {order.paymentStatus === 'completed' ? 'Paid' :
+                   order.paymentStatus === 'failed' ? 'Failed' :
+                   order.paymentStatus === 'refunded' ? 'Refunded' :
+                   'Pending'}
+                </Badge>
               </div>
             </div>
             
@@ -268,10 +287,21 @@ export default function MyOrdersPage() {
               <div className="text-lg font-semibold text-orange-600">
                 {formatPrice(order.total)}
               </div>
-              <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                <Eye className="h-4 w-4 mr-1" />
-                View Details
-              </Button>
+              <div className="flex gap-2">
+                {order.paymentStatus === 'failed' && order.status !== 'cancelled' && (
+                  <Link href={`/my-orders/${order.orderNumber}`}>
+                    <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
+                      Retry Payment
+                    </Button>
+                  </Link>
+                )}
+                <Link href={`/my-orders/${order.orderNumber}`}>
+                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                    <Eye className="h-4 w-4 mr-1" />
+                    View Details
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
           
@@ -435,7 +465,7 @@ export default function MyOrdersPage() {
 
   return (
     <AppLayout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 pb-20">
         <div className="mb-6">
           <Button
             variant="ghost"
@@ -467,19 +497,11 @@ export default function MyOrdersPage() {
         ) : (
           <div className="space-y-4">
             {orders.map((order) => (
-              <Dialog key={order.id}>
-                <DialogTrigger asChild>
-                  <div onClick={() => setSelectedOrder(order)}>
-                    <OrderOverviewCard order={order} />
-                  </div>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Order Details</DialogTitle>
-                  </DialogHeader>
-                  {selectedOrder && <OrderDetailsModal order={selectedOrder} />}
-                </DialogContent>
-              </Dialog>
+              <Link key={order.id} href={`/my-orders/${order.orderNumber}`}>
+                <div>
+                  <OrderOverviewCard order={order} />
+                </div>
+              </Link>
             ))}
           </div>
         )}

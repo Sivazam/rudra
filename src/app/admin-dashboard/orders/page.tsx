@@ -1,13 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Package, Clock, CheckCircle, TrendingUp, Search, FileText } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Package, Clock, CheckCircle, TrendingUp, Search, FileText, ArrowLeft, Edit, X, Plus, Play, Truck } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Link } from 'next/link';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -45,12 +52,13 @@ interface Order {
   razorpayOrderId: string;
   razorpayPaymentId?: string;
   razorpaySignature?: string;
-  status: 'pending' | 'paid' | 'failed' | 'cancelled' | 'processing' | 'shipped' | 'delivered';
+  status: 'pending' | 'processing' | 'packed' | 'shipped' | 'delivered' | 'cancelled';
   paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded';
   orderDate: string;
   paidAt?: string;
   createdAt?: any;
   updatedAt?: any;
+  cancellationReason?: string;
 }
 
 interface OrderStats {
@@ -75,6 +83,11 @@ export default function OrdersPage() {
     totalRevenue: 0
   });
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState('');
+  const [customReason, setCustomReason] = useState('');
+  const [orderStatusToEdit, setOrderStatusToEdit] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -155,12 +168,43 @@ export default function OrdersPage() {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'processing': return 'bg-blue-100 text-blue-800';
-      case 'shipped': return 'bg-purple-100 text-purple-800';
+      case 'packed': return 'bg-purple-100 text-purple-800';
+      case 'shipped': return 'bg-indigo-100 text-indigo-800';
       case 'delivered': return 'bg-green-100 text-green-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
-      case 'paid': return 'bg-green-100 text-green-800';
-      case 'failed': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const updateOrderStatus = async (orderId: string, newStatus: string, cancelReason?: string) => {
+    try {
+      setIsUpdating(true);
+      const response = await fetch('/api/admin/orders', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId,
+          status: newStatus,
+          cancellationReason: newStatus === 'cancelled' ? cancelReason : undefined
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        fetchOrders();
+        setShowCancelDialog(false);
+        setCancellationReason('');
+        setCustomReason('');
+        setOrderStatusToEdit(null);
+      } else {
+        setError(data.error || 'Failed to update order status');
+      }
+    } catch (err) {
+      setError('Network error occurred');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -277,18 +321,24 @@ export default function OrdersPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <select
+            <Select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onValueChange={setStatusFilter}
+              disabled={isUpdating}
             >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="processing">Processing</option>
-              <option value="shipped">Shipped</option>
-              <option value="delivered">Delivered</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="processing">Processing</SelectItem>
+                <SelectItem value="packed">Packed</SelectItem>
+                <SelectItem value="shipped">Shipped</SelectItem>
+                <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </Card>
@@ -339,7 +389,7 @@ export default function OrdersPage() {
                     className="hover:bg-gray-50 cursor-pointer"
                     onClick={() => setSelectedOrder(order)}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       {order.orderNumber}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -366,44 +416,44 @@ export default function OrdersPage() {
                       {new Date(order.orderDate).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {order.status === 'pending' && (
-                        <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => updateOrderStatus(order.id!, 'processing')}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            Process
-                          </button>
-                          <button
-                            onClick={() => updateOrderStatus(order.id!, 'cancelled')}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      )}
-                      {order.status === 'processing' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateOrderStatus(order.id!, 'shipped');
-                          }}
-                          className="text-purple-600 hover:text-purple-900"
+                      <div className="flex items-center gap-2">
+                        <Link
+                          href={`/admin-dashboard/orders/${order.orderNumber}`}
+                          className="text-blue-600 hover:text-blue-900"
                         >
-                          Ship
-                        </button>
-                      )}
-                      {order.status === 'shipped' && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateOrderStatus(order.id!, 'delivered');
-                          }}
-                          className="text-green-600 hover:text-green-900"
-                        >
-                          Deliver
-                        </button>
-                      )}
+                          <FileText className="h-4 w-4" />
+                        </Link>
+                        {order.status !== 'cancelled' && order.status !== 'delivered' && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setSelectedOrder(order);
+                                setOrderStatusToEdit(order.status);
+                              }}
+                              className="text-purple-600 hover:text-purple-900 disabled:opacity-50"
+                              disabled={isUpdating}
+                              title="Edit Status"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setSelectedOrder(order);
+                                setShowCancelDialog(true);
+                              }}
+                              className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                              disabled={isUpdating}
+                              title="Cancel Order"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -597,6 +647,11 @@ export default function OrdersPage() {
                       <span className="text-gray-600">Order Date</span>
                       <span>{new Date(selectedOrder.orderDate).toLocaleString()}</span>
                     </div>
+                    {selectedOrder.cancellationReason && (
+                      <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-800">
+                        <span className="font-medium">Cancellation Reason:</span> {selectedOrder.cancellationReason}
+                      </div>
+                    )}
                     {selectedOrder.paidAt && (
                       <div className="flex justify-between">
                         <span className="text-gray-600">Paid At</span>
@@ -611,29 +666,177 @@ export default function OrdersPage() {
               <div className="flex gap-2">
                 {selectedOrder.status === 'pending' && (
                   <>
-                    <Button onClick={() => updateOrderStatus(selectedOrder.id!, 'processing')}>
+                    <Button
+                      onClick={() => {
+                        setSelectedOrder(selectedOrder);
+                        setOrderStatusToEdit('processing');
+                      }}
+                      disabled={isUpdating}
+                    >
                       Mark as Processing
                     </Button>
-                    <Button variant="destructive" onClick={() => updateOrderStatus(selectedOrder.id!, 'cancelled')}>
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        setSelectedOrder(selectedOrder);
+                        setShowCancelDialog(true);
+                      }}
+                      disabled={isUpdating}
+                    >
                       Cancel Order
                     </Button>
                   </>
                 )}
                 {selectedOrder.status === 'processing' && (
-                  <Button onClick={() => updateOrderStatus(selectedOrder.id!, 'shipped')}>
+                  <Button
+                    onClick={() => {
+                      setSelectedOrder(selectedOrder);
+                        setOrderStatusToEdit('packed');
+                      }}
+                    >
+                    Mark as Packed
+                  </Button>
+                )}
+                {selectedOrder.status === 'packed' && (
+                  <Button
+                    onClick={() => {
+                      setSelectedOrder(selectedOrder);
+                      setOrderStatusToEdit('shipped');
+                    }}
+                  >
                     Mark as Shipped
                   </Button>
                 )}
                 {selectedOrder.status === 'shipped' && (
-                  <Button onClick={() => updateOrderStatus(selectedOrder.id!, 'delivered')}>
+                  <Button
+                    onClick={() => {
+                      setSelectedOrder(selectedOrder);
+                      setOrderStatusToEdit('delivered');
+                    }}
+                  >
                     Mark as Delivered
                   </Button>
                 )}
               </div>
+
+      </div>
+
+      {/* Status Update Dialog */}
+      <Dialog open={orderStatusToEdit !== null} onOpenChange={(open) => !open && setOrderStatusToEdit(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Order Status</DialogTitle>
+            <DialogDescription>
+              Update the status for order {selectedOrder?.orderNumber}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Select
+              value={orderStatusToEdit || selectedOrder?.status}
+              onValueChange={setOrderStatusToEdit}
+              disabled={isUpdating}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select new status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="processing">Processing</SelectItem>
+                <SelectItem value="packed">Packed</SelectItem>
+                <SelectItem value="shipped">Shipped</SelectItem>
+                <SelectItem value="delivered">Delivered</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setOrderStatusToEdit(null)}
+              disabled={isUpdating}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (selectedOrder && orderStatusToEdit) {
+                  if (orderStatusToEdit === cancelled) {
+                    handleCancelConfirm();
+                  } else {
+                    updateOrderStatus(selectedOrder.id!, orderStatusToEdit);
+                  }
+                }
+              }}
+              disabled={!orderStatusToEdit || isUpdating}
+            >
+              {isUpdating ? Updating... : Update}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Order Dialog */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel Order</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel order {selectedOrder?.orderNumber}?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="cancel-reason">Reason for cancellation</Label>
+              <Select
+                id="cancel-reason"
+                value={cancellationReason}
+                onValueChange={setCancellationReason}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a reason" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cancellationReasons.map((reason) => (
+                    <SelectItem key={reason} value={reason}>
+                      {reason}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
+            {cancellationReason === "Other" && (
+              <div className="space-y-2">
+                <Label htmlFor="custom-reason">Please specify</Label>
+                <Textarea
+                  id="custom-reason"
+                  value={customReason}
+                  onChange={(e) => setCustomReason(e.target.value)}
+                  placeholder="Enter reason for cancellation..."
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCancelDialog(false);
+                setCancellationReason("");
+                setCustomReason("");
+              }}
+            >
+              No, Go Back
+            </Button>
+            <Button
+              onClick={handleCancelConfirm}
+              disabled={!cancellationReason || (cancellationReason === "Other" && !customReason.trim()) || isUpdating}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isUpdating ? "Cancelling..." : "Cancel Order"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
-  );
-}

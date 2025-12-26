@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "bun run server.ts",
-    "dev:with-log": "bun run server.ts 2>&1 | tee dev.log",
+    "dev": "bunx run server.ts",
+    "dev:with-log": "bunx run server.ts 2>&1 | tee dev.log",
     "build": "next build",
-    "start": "NODE_ENV=production bun run server.ts 2>&1 | tee server.log",
+    "start": "NODE_ENV=production bunx run server.ts 2>&1 | tee server.log",
     "lint": "next lint",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",

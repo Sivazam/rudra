@@ -54,7 +54,7 @@ export async function PUT(request: NextRequest) {
   try {
     // Skip admin verification for admin dashboard
     const body = await request.json();
-    const { orderId, status } = body;
+    const { orderId, status, cancellationReason } = body;
 
     if (!orderId || !status) {
       return NextResponse.json(
@@ -72,12 +72,20 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Prepare update data
+    const updateData: any = { status };
+
+    // Add cancellation reason if status is 'cancelled'
+    if (status === 'cancelled' && cancellationReason) {
+      updateData.cancellationReason = cancellationReason;
+    }
+
     // Update order status
-    await orderService.updateOrder(orderId, { status });
+    await orderService.updateOrder(orderId, updateData);
 
     // Create notification for order status update
     try {
-      const orderWithStatus = { ...order, status };
+      const orderWithStatus = { ...order, ...updateData };
       await notificationService.createOrderNotification(orderWithStatus, 'status');
       
       // Send real-time notification to customer if supported
@@ -149,6 +157,53 @@ async function sendCustomerNotification(order: any, newStatus: string) {
   }
 }
 
+// Check for abandoned orders (7-day logic)
+async function checkAndProcessAbandonedOrders() {
+  try {
+    console.log('Checking for abandoned orders...');
+
+    const allOrders = await orderService.getAllOrders();
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    let updatedCount = 0;
+
+    for (const order of allOrders) {
+      const orderDate = new Date(order.orderDate);
+
+      // Rule 1: Orders with paymentStatus: 'pending' for more than 7 days
+      // Change to paymentStatus: 'failed', keep status: 'pending'
+      if (order.paymentStatus === 'pending' && orderDate < sevenDaysAgo) {
+        console.log(`Found abandoned pending order: ${order.orderNumber}, updating paymentStatus to failed`);
+        await orderService.updateOrder(order.id!, {
+          paymentStatus: 'failed'
+        });
+        updatedCount++;
+      }
+
+      // Rule 2: Orders with paymentStatus: 'failed' for more than 14 days (7 days after failed)
+      // Change status: 'cancelled' (customer can no longer retry)
+      if (order.paymentStatus === 'failed' && orderDate < fourteenDaysAgo && order.status !== 'cancelled') {
+        console.log(`Found expired failed order: ${order.orderNumber}, updating status to cancelled`);
+        await orderService.updateOrder(order.id!, {
+          status: 'cancelled'
+        });
+        updatedCount++;
+      }
+    }
+
+    if (updatedCount > 0) {
+      console.log(`Processed ${updatedCount} abandoned orders`);
+    } else {
+      console.log('No abandoned orders found');
+    }
+  } catch (error) {
+    console.error('Error checking abandoned orders:', error);
+    // Don't fail the request if abandoned order check fails
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Skip admin verification for admin dashboard
@@ -158,6 +213,10 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
 
     console.log('Admin API: Fetching orders from Firestore...');
+
+    // Check for abandoned orders (7-day logic)
+    await checkAndProcessAbandonedOrders();
+
     let orders = await orderService.getAllOrders();
     console.log('Admin API: Found', orders.length, 'orders');
 
