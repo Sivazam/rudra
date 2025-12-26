@@ -386,114 +386,115 @@ export default function OrderDetailPage() {
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Order Timeline */}
-              <div>
+            {/* 3-Column Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Column 1: Order Timeline */}
+              <div className="md:col-span-1">
                 <OrderTimeline status={order.status} />
               </div>
 
-              {/* Order Items */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Order Items</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    {order.items.map((item, index) => (
-                      <div key={index} className="flex flex-col sm:flex-row gap-4 sm:gap-6 p-5 bg-gray-50 border border-gray-200 rounded-xl">
-                        <div className="flex-shrink-0">
-                          <OptimizedImage
-                            src={getProductImage(item)}
-                            alt={item.name}
-                            className="w-28 h-28 object-cover rounded-lg"
-                            width={112}
-                            height={112}
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
-                          <h3 className="font-semibold text-base mb-3">{item.name}</h3>
-                          <div className="flex flex-wrap gap-6 text-sm text-gray-600">
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-500">Price:</span>
-                              <span className="font-medium">{formatPrice(item.price)}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-500">Quantity:</span>
-                              <span className="font-medium">{item.quantity}</span>
+              {/* Column 2: Order Items - Compact Log Style */}
+              <div className="md:col-span-1">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Order Items ({order.items.length})</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
+                      {order.items.map((item, index) => (
+                        <div key={index} className="flex items-center gap-3 p-2 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
+                          <div className="flex-shrink-0">
+                            <OptimizedImage
+                              src={getProductImage(item)}
+                              alt={item.name}
+                              className="w-16 h-16 object-cover rounded-md"
+                              width={64}
+                              height={64}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-sm truncate mb-1">{item.name}</h3>
+                            <div className="flex items-center gap-3 text-xs text-gray-600">
+                              <span>Qty: {item.quantity}</span>
+                              <span className="text-gray-300">|</span>
+                              <span>{formatPrice(item.price)}</span>
                             </div>
                           </div>
+                          <div className="flex flex-col items-end justify-center flex-shrink-0">
+                            {item.discount > 0 && (
+                              <p className="text-xs text-gray-400 line-through">
+                                {formatPrice(item.price * item.quantity)}
+                              </p>
+                            )}
+                            <p className="font-semibold text-sm text-green-700">{formatPrice(item.totalPrice)}</p>
+                          </div>
                         </div>
-                        <div className="flex flex-col items-end justify-center gap-2 flex-shrink-0 py-1 min-w-[100px]">
-                          {item.discount > 0 && (
-                            <p className="text-sm text-gray-400 line-through">
-                              {formatPrice(item.price * item.quantity)}
-                            </p>
-                          )}
-                          <p className="font-bold text-xl text-green-700">{formatPrice(item.totalPrice)}</p>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Column 3: Order Summary and Shipping Address */}
+              <div className="md:col-span-1 space-y-6">
+                {/* Order Summary */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Order Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Subtotal</span>
+                        <span>{formatPrice(order.subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Shipping</span>
+                        <span>{order.shippingCost === 0 ? 'Free' : formatPrice(order.shippingCost)}</span>
+                      </div>
+                      <Separator />
+                      <div className="flex justify-between font-semibold">
+                        <span>Total</span>
+                        <span className="text-lg" style={{ color: '#A36922' }}>
+                          {formatPrice(order.total)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {order.paidAt && (
+                      <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center gap-2 text-sm text-green-800">
+                          <CheckCircle className="h-4 w-4" />
+                          <span>
+                            Paid on {formatDate(order.paidAt)}
+                          </span>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-            {/* Order Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Order Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Subtotal</span>
-                    <span>{formatPrice(order.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Shipping</span>
-                    <span>{order.shippingCost === 0 ? 'Free' : formatPrice(order.shippingCost)}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between font-semibold">
-                    <span>Total</span>
-                    <span className="text-lg" style={{ color: '#A36922' }}>
-                      {formatPrice(order.total)}
-                    </span>
-                  </div>
-                </div>
-
-                {order.paidAt && (
-                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center gap-2 text-sm text-green-800">
-                      <CheckCircle className="h-4 w-4" />
-                      <span>
-                        Paid on {formatDate(order.paidAt)}
-                      </span>
+                {/* Shipping Address */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Shipping Address</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
+                      <p className="font-medium">{order.customerInfo.name}</p>
+                      <div className="flex items-center mt-2">
+                        <Phone className="h-4 w-4 mr-2" />
+                        <span>{order.customerInfo.phone}</span>
+                      </div>
+                      <p className="mt-2">{order.customerInfo.address}</p>
+                      <p>
+                        {order.customerInfo.city}, {order.customerInfo.state} {order.customerInfo.pincode}
+                      </p>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Shipping Address */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Shipping Address</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
-                  <p className="font-medium">{order.customerInfo.name}</p>
-                  <div className="flex items-center mt-2">
-                    <Phone className="h-4 w-4 mr-2" />
-                    <span>{order.customerInfo.phone}</span>
-                  </div>
-                  <p className="mt-2">{order.customerInfo.address}</p>
-                  <p>
-                    {order.customerInfo.city}, {order.customerInfo.state} {order.customerInfo.pincode}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </div>
         </div>
       </div>

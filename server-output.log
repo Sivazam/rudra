@@ -1,0 +1,47 @@
+$ bunx run server.ts 2>&1 | tee dev.log
+Watching /home/z/my-project and all sub-directories not excluded by your .gitignore. Will not monitor dotfiles.
+Found & ignored ./prisma ; is listed in .gitignore
+Found & ignored ./skills ; is listed in .gitignore
+Found & ignored ./src ; is listed in .gitignore
+Found & ignored ./public ; is listed in .gitignore
+Found & ignored ./upload ; is listed in .gitignore
+Found & ignored ./examples ; is listed in .gitignore
+Found & ignored ./node_modules ; is listed in .gitignore
+Found & ignored ./.next ; is listed in .gitignore
+Found & ignored ./.git ; is listed in .gitignore
+Found & ignored ./db ; is listed in .gitignore
+Found & ignored ./eslint.config.mjs ; is listed in .gitignore
+Found & ignored ./tailwind.config.ts ; is listed in .gitignore
+Found & ignored ./components.json ; is listed in .gitignore
+Found & ignored ./README.md ; is listed in .gitignore
+Found & ignored ./next.config.ts ; is listed in .gitignore
+Found & ignored ./package.json ; is listed in .gitignore
+Found & ignored ./bun.lock ; is listed in .gitignore
+Found & ignored ./tsconfig.json ; is listed in .gitignore
+Found & ignored ./postcss.config.mjs ; is listed in .gitignore
+Found & ignored ./next-env.d.ts ; is listed in .gitignore
+Found & ignored ./next.log ; is listed in .gitignore
+Found & ignored ./dev.log ; is listed in .gitignore
+Found & ignored ./FIREBASE_MIGRATION.md ; is listed in .gitignore
+Found & ignored ./package-lock.json ; is listed in .gitignore
+Found & ignored ./server.ts ; is listed in .gitignore
+Found & ignored ./SECURITY.md ; is listed in .gitignore
+Found & ignored ./CUSTOMER_ORDERS_POLLING_EXAMPLE.tsx ; is listed in .gitignore
+Found & ignored ./server-output.log ; is listed in .gitignore
+
+Starting: server.ts
+ ⚠ Runtime config is deprecated and the `serverRuntimeConfig` configuration option will be removed in Next.js 16.
+> Ready on http://0.0.0.0:3000
+> Socket.IO server running at ws://0.0.0.0:3000/api/socketio
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 809ms (114 modules)
+ ○ Compiling / ...
+ ✓ Compiled / in 12.8s (1381 modules)
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ GET / 200 in 14235ms
+ GET / 200 in 134ms
+ ⚠ Cross origin request detected from preview-chat-91ec4cc2-0acb-4b54-934e-a1e2353c234d.space.z.ai to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ GET / 200 in 130ms
+ GET / 200 in 117ms
+ GET / 200 in 134ms
