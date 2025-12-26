@@ -329,22 +329,101 @@ export default function AdminOrderDetailPage() {
                           <SelectItem value="packed">Packed</SelectItem>
                           <SelectItem value="shipped">Shipped</SelectItem>
                           <SelectItem value="delivered">Delivered</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    {status === 'cancelled' ? (
-                      <span className="text-xs sm:text-sm text-gray-500">Order Cancelled</span>
-                    ) : (
-                      <Button
-                        onClick={() => status !== 'cancelled' && handleStatusUpdate(status)}
-                        disabled={isUpdating || status === order.status || status === 'cancelled'}
-                        size="sm"
-                        className="w-full sm:w-auto min-h-[44px]"
-                      >
-                        {isUpdating ? 'Updating...' : 'Update'}
-                      </Button>
-                    )}
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      {status === 'cancelled' ? (
+                        <span className="text-xs sm:text-sm text-gray-500">Order Cancelled</span>
+                      ) : (
+                        <>
+                          <Button
+                            onClick={() => status !== 'cancelled' && handleStatusUpdate(status)}
+                            disabled={isUpdating || status === order.status || status === 'cancelled'}
+                            size="sm"
+                            className="w-full sm:w-auto min-h-[44px]"
+                          >
+                            {isUpdating ? 'Updating...' : 'Update'}
+                          </Button>
+                          <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={handleCancelClick}
+                                disabled={isUpdating}
+                                className="w-full sm:w-auto min-h-[44px]"
+                              >
+                                <X className="h-4 w-4 mr-2" />
+                                Cancel Order
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md w-[95vw] sm:w-auto">
+                              <DialogHeader>
+                                <DialogTitle>Cancel Order</DialogTitle>
+                                <DialogDescription>
+                                  Are you sure you want to cancel order {order.orderNumber}?
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4 py-4">
+                                <div>
+                                  <Label htmlFor="cancel-reason">Reason for cancellation</Label>
+                                  <Select
+                                    id="cancel-reason"
+                                    value={cancellationReason}
+                                    onValueChange={setCancellationReason}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select a reason" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {CANCELLATION_REASONS.map((reason) => (
+                                        <SelectItem key={reason} value={reason}>
+                                          {reason}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                {cancellationReason === 'Other' && (
+                                  <div className="space-y-2">
+                                    <Label htmlFor="custom-reason">Please specify</Label>
+                                    <Textarea
+                                      id="custom-reason"
+                                      value={customReason}
+                                      onChange={(e) => setCustomReason(e.target.value)}
+                                      placeholder="Enter reason for cancellation..."
+                                      className="resize-none"
+                                      rows={3}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                              <DialogFooter>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => {
+                                    setShowCancelDialog(false);
+                                    setCancellationReason("");
+                                    setCustomReason("");
+                                  }}
+                                  disabled={isUpdating}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  onClick={handleCancelConfirm}
+                                  disabled={!cancellationReason || (cancellationReason === "Other" && !customReason.trim()) || isUpdating}
+                                >
+                                  {isUpdating ? "Cancelling..." : "Cancel Order"}
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        </>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -495,69 +574,6 @@ export default function AdminOrderDetailPage() {
           </div>
         </div>
       </div>
-
-      {/* Cancel Order Dialog */}
-      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent className="sm:max-w-md w-[95vw] sm:w-auto">
-          <DialogHeader>
-            <DialogTitle>Cancel Order</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to cancel order {order.orderNumber}?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div>
-              <Label htmlFor="cancel-reason">Reason for cancellation</Label>
-              <Select
-                id="cancel-reason"
-                value={cancellationReason}
-                onValueChange={setCancellationReason}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a reason" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CANCELLATION_REASONS.map((reason) => (
-                    <SelectItem key={reason} value={reason}>
-                      {reason}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {cancellationReason === 'Other' && (
-              <div className="space-y-2">
-                <Label htmlFor="custom-reason">Please specify</Label>
-                <Textarea
-                  id="custom-reason"
-                  value={customReason}
-                  onChange={(e) => setCustomReason(e.target.value)}
-                  placeholder="Enter reason for cancellation..."
-                  rows={3}
-                  className="resize-none"
-                />
-              </div>
-            )}
-          </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowCancelDialog(false)}
-              className="w-full sm:w-auto min-h-[44px]"
-            >
-              No, Go Back
-            </Button>
-            <Button
-              onClick={handleCancelConfirm}
-              disabled={!cancellationReason || (cancellationReason === 'Other' && !customReason.trim())}
-              className="bg-red-600 hover:bg-red-700 w-full sm:w-auto min-h-[44px]"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Cancel Order
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

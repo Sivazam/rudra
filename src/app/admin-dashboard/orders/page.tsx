@@ -494,9 +494,33 @@ export default function OrdersPage() {
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         {order.status !== 'cancelled' && order.status !== 'delivered' && (
-                          <>
-                          </>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingOrder(order);
+                              setShowCancelDialog(true);
+                              setCancellationReason('');
+                              setCustomReason('');
+                            }}
+                            className="min-h-[32px]"
+                          >
+                            <X className="h-3 w-3 mr-1" />
+                            Cancel
+                          </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/admin-dashboard/orders/${order.orderNumber}`);
+                          }}
+                          className="min-h-[32px]"
+                        >
+                          <FileText className="h-3 w-3" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
