@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Package, Clock, CheckCircle, TrendingUp, Search, FileText, ArrowLeft, Edit, X, Plus, Play, Truck } from 'lucide-react';
+import { Package, Clock, CheckCircle, TrendingUp, Search, FileText, ArrowLeft, Edit, X, Plus, Play, Truck, MoreHorizontal } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -225,12 +225,28 @@ export default function OrdersPage() {
     updateOrderStatus(editingOrder.id!, 'cancelled', reason);
   };
 
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   if (loading) {
     return (
-      <div className="space-y-6 p-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Orders</h1>
             <p className="text-gray-600">Loading orders...</p>
           </div>
         </div>
@@ -240,10 +256,10 @@ export default function OrdersPage() {
 
   if (error) {
     return (
-      <div className="space-y-6 p-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Orders</h1>
             <p className="text-red-600">Error: {error}</p>
           </div>
           <Button onClick={fetchOrders} variant="outline">Retry</Button>
@@ -253,11 +269,11 @@ export default function OrdersPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Orders</h1>
-          <p className="text-gray-600">Manage and track all orders from Firestore</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Orders</h1>
+          <p className="text-gray-600 text-sm sm:text-base">Manage and track all orders from Firestore</p>
         </div>
       </div>
 
@@ -325,7 +341,7 @@ export default function OrdersPage() {
               className="pl-10 w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Select
               value={statusFilter}
               onValueChange={setStatusFilter}
@@ -348,19 +364,74 @@ export default function OrdersPage() {
         </div>
       </Card>
 
-      {/* Orders Table */}
+      {/* Orders List - Card Layout for Mobile, Table for Desktop */}
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile Card Layout */}
+        <div className="md:hidden space-y-3 p-4">
+          {filteredOrders.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              No orders found
+            </div>
+          ) : (
+            filteredOrders.map((order) => (
+              <div
+                key={order.id}
+                className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => router.push(`/admin-dashboard/orders/${order.orderNumber}`)}
+              >
+                {/* Order Number and Date */}
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <p className="font-semibold text-gray-900">{order.orderNumber}</p>
+                    <p className="text-xs text-gray-500 mt-1">{formatDate(order.orderDate)}</p>
+                  </div>
+                  <Badge className={getStatusColor(order.status)}>
+                    {order.status}
+                  </Badge>
+                </div>
+
+                {/* Customer Info */}
+                <div className="mb-3 pb-3 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-900">{order.customerInfo.name}</p>
+                  <p className="text-xs text-gray-500">{order.customerInfo.email}</p>
+                </div>
+
+                {/* Items and Total */}
+                <div className="flex justify-between items-center mb-3">
+                  <div className="text-sm text-gray-600">
+                    {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                  </div>
+                  <div className="text-lg font-semibold text-gray-900">
+                    {formatPrice(order.total)}
+                  </div>
+                </div>
+
+                {/* Payment Status */}
+                <div className="flex justify-between items-center">
+                  <Badge className={getPaymentStatusColor(order.paymentStatus)}>
+                    {order.paymentStatus}
+                  </Badge>
+                  <div className="text-xs text-gray-500" onClick={(e) => e.stopPropagation()}>
+                    Tap for details
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Table Layout */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Order #
                 </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Customer
                 </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Items
                 </th>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -369,10 +440,10 @@ export default function OrdersPage() {
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Payment
                 </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Date
                 </th>
                 <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -397,28 +468,28 @@ export default function OrdersPage() {
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                       {order.orderNumber}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm hidden sm:table-cell">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
                       <div className="text-sm font-medium text-gray-900">{order.customerInfo.name}</div>
                       <div className="text-xs text-gray-500">{order.customerInfo.email}</div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                       {order.items.length} item{order.items.length !== 1 ? 's' : ''}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                      ₹{order.total.toLocaleString()}
+                      {formatPrice(order.total)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <Badge className={getStatusColor(order.status)}>
                         {order.status}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap hidden sm:table-cell">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <Badge className={getPaymentStatusColor(order.paymentStatus)}>
                         {order.paymentStatus}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500 hidden md:table-cell">
-                      {new Date(order.orderDate).toLocaleDateString()}
+                    <td className="px-4 py-3 whitespace-nowrap text-xs text-gray-500">
+                      {formatDate(order.orderDate)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -442,14 +513,14 @@ export default function OrdersPage() {
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Next
               </button>
@@ -496,7 +567,7 @@ export default function OrdersPage() {
           <DialogHeader>
             <DialogTitle>Update Order Status</DialogTitle>
             <DialogDescription>
-              Update the status for order {editingOrder?.orderNumber}
+              Update status for order {editingOrder?.orderNumber}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">

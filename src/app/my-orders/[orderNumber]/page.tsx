@@ -107,7 +107,7 @@ export default function OrderDetailPage() {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-IN', {
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
@@ -257,8 +257,8 @@ export default function OrderDetailPage() {
       <AppLayout>
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center">
-            <Package className="h-16 w-16 text-gray-400 mx-auto mb-4 animate-pulse" />
-            <p className="text-gray-600">Loading order details...</p>
+            <Package className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-4 animate-pulse" />
+            <p className="text-gray-600 text-sm sm:text-base">Loading order details...</p>
           </div>
         </div>
       </AppLayout>
@@ -269,11 +269,11 @@ export default function OrderDetailPage() {
     return (
       <AppLayout>
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <AlertCircle className="h-16 w-16 text-red-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Error</h2>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <Button onClick={() => router.push('/my-orders')}>
+          <div className="text-center max-w-md">
+            <AlertCircle className="h-12 w-12 sm:h-16 sm:w-16 text-red-400 mx-auto mb-4" />
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">Error</h2>
+            <p className="text-gray-600 mb-4 text-sm">{error}</p>
+            <Button onClick={() => router.push('/my-orders')} className="w-full sm:w-auto">
               Back to Orders
             </Button>
           </div>
@@ -286,11 +286,11 @@ export default function OrderDetailPage() {
     return (
       <AppLayout>
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">Order Not Found</h2>
-            <p className="text-gray-600 mb-4">The order you're looking for does not exist.</p>
-            <Button onClick={() => router.push('/my-orders')}>
+          <div className="text-center max-w-md">
+            <Package className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">Order Not Found</h2>
+            <p className="text-gray-600 mb-4 text-sm">The order you're looking for does not exist.</p>
+            <Button onClick={() => router.push('/my-orders')} className="w-full sm:w-auto">
               Back to Orders
             </Button>
           </div>
@@ -302,27 +302,30 @@ export default function OrderDetailPage() {
   return (
     <AppLayout>
       <div className="min-h-screen bg-gray-50 pb-20">
-        <div className="container mx-auto px-4 py-8">
+        <div className="mx-auto max-w-7xl px-4 py-8">
           {/* Back button */}
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/my-orders')}
-            className="mb-6"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Orders
-          </Button>
+          <div className="mb-4 sm:mb-6">
+            <Button
+              variant="ghost"
+              onClick={() => router.push('/my-orders')}
+              className="w-full sm:w-auto"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Orders
+            </Button>
+          </div>
 
-          <div className="space-y-6">
-            {/* Order Header */}
+          <div className="space-y-4 sm:space-y-6">
+            {/* Order Header Card */}
             <Card>
-              <CardContent className="p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900">
+              <CardContent className="p-4 sm:p-6">
+                <div className="space-y-4">
+                  {/* Order Number and Date */}
+                  <div className="flex flex-col gap-2">
+                    <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
                       Order #{order.orderNumber}
                     </h1>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-gray-500" />
                       <p className="text-sm text-gray-600">
                         {formatDate(order.orderDate)}
@@ -330,10 +333,11 @@ export default function OrderDetailPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2">
+                  {/* Status Badges - Responsive Layout */}
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                       <CreditCard className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm text-gray-600">Payment:</span>
+                      <span className="text-xs sm:text-sm text-gray-600">Payment:</span>
                       <Badge className={getPaymentStatusColor(order.paymentStatus)}>
                         {order.paymentStatus === 'completed' ? 'Completed' :
                          order.paymentStatus === 'failed' ? 'Failed' :
@@ -342,9 +346,9 @@ export default function OrderDetailPage() {
                       </Badge>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                       <Package className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm text-gray-600">Order:</span>
+                      <span className="text-xs sm:text-sm text-gray-600">Order:</span>
                       <Badge className={getOrderStatusColor(order.status)}>
                         {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                       </Badge>
@@ -352,20 +356,20 @@ export default function OrderDetailPage() {
                   </div>
                 </div>
 
-                {/* Retry Payment Button */}
+                {/* Retry Payment Button - Full width on mobile */}
                 {order.paymentStatus === 'failed' && order.status !== 'cancelled' && (
-                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-start gap-3">
+                  <div className="w-full p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                       <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <p className="font-medium text-red-900">Payment Failed</p>
-                        <p className="text-sm text-red-700 mt-1 mb-3">
+                      <div className="flex-1 space-y-3">
+                        <p className="font-medium text-sm sm:text-base text-red-900">Payment Failed</p>
+                        <p className="text-xs sm:text-sm text-red-700">
                           Your payment could not be processed. You can retry payment within 7 days.
                         </p>
                         <Button
                           onClick={handleRetryPayment}
                           disabled={paymentProcessing || !razorpayLoaded}
-                          className="w-full sm:w-auto"
+                          className="w-full sm:w-auto min-h-[48px]"
                           style={{ backgroundColor: '#A36922', color: 'white' }}
                         >
                           <RefreshCw className="h-4 w-4 mr-2" />
@@ -377,7 +381,7 @@ export default function OrderDetailPage() {
                 )}
 
                 {order.status === 'cancelled' && order.cancellationReason && (
-                  <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="w-full p-4 bg-gray-50 border border-gray-200 rounded-lg">
                     <p className="text-sm text-gray-700">
                       <span className="font-medium">Cancellation Reason:</span> {order.cancellationReason}
                     </p>
@@ -386,114 +390,124 @@ export default function OrderDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Three Separate Rows Layout */}
-            <div className="space-y-6">
-              {/* Row 1: Order Timeline */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Order Progress</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <OrderTimeline status={order.status} />
-                </CardContent>
-              </Card>
+            {/* Responsive Layout - Stack everything on mobile, grid on desktop */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+              
+              {/* Order Timeline - Always full width on mobile, half on desktop */}
+              <div className="xl:col-span-1">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">Order Progress</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <OrderTimeline status={order.status} />
+                  </CardContent>
+                </Card>
+              </div>
 
-              {/* Row 2: Order Items - Compact Log Style */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle>Order Items ({order.items.length})</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-2">
-                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
-                    {order.items.map((item, index) => (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
-                        <div className="flex-shrink-0">
-                          <OptimizedImage
-                            src={getProductImage(item)}
-                            alt={item.name}
-                            className="w-[200px] h-[200px] object-cover rounded-md"
-                            width={200}
-                            height={200}
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-sm truncate mb-1">{item.name}</h3>
-                          <div className="flex items-center gap-3 text-xs text-gray-600">
-                            <span>Qty: {item.quantity}</span>
-                            <span className="text-gray-300">|</span>
-                            <span>{formatPrice(item.price)}</span>
+              {/* Order Items - Always full width on mobile, half on desktop */}
+              <div className="xl:col-span-1">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">Order Items ({order.items.length})</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <div className="space-y-2 sm:space-y-3 max-h-[350px] sm:max-h-[500px] overflow-y-auto pr-2">
+                      {order.items.map((item, index) => (
+                        <div key={index} className="flex items-center gap-2 sm:gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
+                          <div className="w-14 h-14 sm:w-20 sm:h-20 flex-shrink-0">
+                            <OptimizedImage
+                              src={getProductImage(item)}
+                              alt={item.name}
+                              className="w-full h-full object-cover rounded-md"
+                              width={80}
+                              height={80}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-xs sm:text-sm truncate mb-1">{item.name}</h3>
+                            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                              <span>Qty: {item.quantity}</span>
+                              <span className="text-gray-300">|</span>
+                              <span className="text-xs sm:text-sm">{formatPrice(item.price)}</span>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end justify-center flex-shrink-0">
+                            {item.discount > 0 && (
+                              <p className="text-xs text-gray-400 line-through">
+                                {formatPrice(item.price * item.quantity)}
+                              </p>
+                            )}
+                            <p className="font-semibold text-xs sm:text-sm text-green-700">{formatPrice(item.totalPrice)}</p>
                           </div>
                         </div>
-                        <div className="flex flex-col items-end justify-center flex-shrink-0">
-                          {item.discount > 0 && (
-                            <p className="text-xs text-gray-400 line-through">
-                              {formatPrice(item.price * item.quantity)}
-                            </p>
-                          )}
-                          <p className="font-semibold text-sm text-green-700">{formatPrice(item.totalPrice)}</p>
-                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Order Summary - Full width mobile */}
+              <div className="xl:col-span-1">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">Order Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Subtotal</span>
+                        <span>{formatPrice(order.subtotal)}</span>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Row 3: Order Summary */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle>Order Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-2">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Subtotal</span>
-                      <span>{formatPrice(order.subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Shipping</span>
-                      <span>{order.shippingCost === 0 ? 'Free' : formatPrice(order.shippingCost)}</span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between font-semibold">
-                      <span>Total</span>
-                      <span className="text-lg" style={{ color: '#A36922' }}>
-                        {formatPrice(order.total)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {order.paidAt && (
-                    <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-center gap-2 text-sm text-green-800">
-                        <CheckCircle className="h-4 w-4" />
-                        <span>
-                          Paid on {formatDate(order.paidAt)}
+                      <div className="flex justify-between text-sm">
+                        <span>Shipping</span>
+                        <span>{order.shippingCost === 0 ? 'Free' : formatPrice(order.shippingCost)}</span>
+                      </div>
+                      <Separator />
+                      <div className="flex justify-between font-semibold text-sm sm:text-base">
+                        <span>Total</span>
+                        <span className="text-base sm:text-lg" style={{ color: '#A36922' }}>
+                          {formatPrice(order.total)}
                         </span>
                       </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
 
-              {/* Row 4: Shipping Address */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle>Shipping Address</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-2">
-                  <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-lg">
-                    <p className="font-medium">{order.customerInfo.name}</p>
-                    <div className="flex items-center mt-2">
-                      <Phone className="h-4 w-4 mr-2" />
-                      <span>{order.customerInfo.phone}</span>
+                    {order.paidAt && (
+                      <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center gap-2 text-sm text-green-800">
+                          <CheckCircle className="h-4 w-4" />
+                          <span>
+                            Paid on {formatDate(order.paidAt)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Shipping Address - Full width mobile */}
+              <div className="xl:col-span-1">
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">Shipping Address</CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-2">
+                    <div className="text-sm text-gray-600 bg-gray-50 p-3 sm:p-4 rounded-lg">
+                      <p className="font-medium text-sm sm:text-base mb-1">{order.customerInfo.name}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Phone className="h-4 w-4" />
+                        <span className="break-words">{order.customerInfo.phone}</span>
+                      </div>
+                      <p className="break-words mb-1">{order.customerInfo.email}</p>
+                      <p className="break-words mb-1">{order.customerInfo.address}</p>
+                      <p className="break-words">
+                        {order.customerInfo.city}, {order.customerInfo.state} {order.customerInfo.pincode}
+                      </p>
                     </div>
-                    <p className="mt-2">{order.customerInfo.address}</p>
-                    <p>
-                      {order.customerInfo.city}, {order.customerInfo.state} {order.customerInfo.pincode}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           </div>
         </div>
