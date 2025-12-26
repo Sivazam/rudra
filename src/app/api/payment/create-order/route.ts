@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import jwt from 'jsonwebtoken';
-import type { IOrderItem, type ICustomerInfo } from '@/lib/services';
+import type { IOrderItem, ICustomerInfo } from '@/lib/services';
 import { getUserIdentifier, getGuestUserIdentifier, standardizeUserId } from '@/lib/userUtils';
 
 // Razorpay Configuration
