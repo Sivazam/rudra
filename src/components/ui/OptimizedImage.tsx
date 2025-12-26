@@ -109,7 +109,7 @@ export function OptimizedImage({
   // If there's an error, show a placeholder
   if (hasError) {
     return (
-      <div 
+      <div
         className={`${className} flex items-center justify-center bg-gray-100 border border-gray-200`}
         style={{ width, height }}
       >
@@ -125,11 +125,16 @@ export function OptimizedImage({
     );
   }
 
+  // Check if explicit width/height is set in className
+  const hasExplicitSize = className?.includes('w-[') || className?.includes('h-[');
+
   return (
-    <div className="relative overflow-hidden w-full h-full">
-      {/* Placeholder/Blur effect */}
+    // <div className={`relative overflow-hidden ${hasExplicitSize ? '' : 'w-full h-full'}`} style={{ width: hasExplicitSize ? width : undefined, height: hasExplicitSize ? height : undefined }}>
+
+  <div className="relative overflow-hidden w-full h-full">
+    {/* Placeholder/Blur effect */}
       {!imageLoaded && (
-        <div 
+        <div
           className="absolute inset-0 bg-gray-100 animate-pulse"
           style={{
             backgroundImage: blurDataURL ? `url(${blurDataURL})` : undefined,
@@ -139,14 +144,15 @@ export function OptimizedImage({
           }}
         />
       )}
-      
+
       {/* Actual image */}
       <img
         ref={imgRef}
         src={isInView ? src : placeholder}
         srcSet={isInView ? generateSrcSet() : undefined}
         alt={alt}
-        className={`${className} transition-transform duration-500 ease-in-out w-full h-full`}
+        // className={`${className} transition-transform duration-500 ease-in-out ${hasExplicitSize ? '' : 'w-full h-full'}`}
+        className={`w-full h-full object-cover transition-transform duration-300 hover:scale-105 ${className}`}
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? 'high' : 'auto'}
         decoding="async"
@@ -157,7 +163,11 @@ export function OptimizedImage({
           transform: imageLoaded ? 'scale(1)' : 'scale(1)',
           objectFit: objectFit,
           objectPosition: 'center center',
-          display: 'block'
+          display: 'block',
+          width: hasExplicitSize ? width : undefined,
+          height: hasExplicitSize ? height : undefined,
+          maxWidth: hasExplicitSize ? undefined : '100%',
+          maxHeight: hasExplicitSize ? undefined : '100%'
         }}
         onLoad={() => {
           setImageLoaded(true);

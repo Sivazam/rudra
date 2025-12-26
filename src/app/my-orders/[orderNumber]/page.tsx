@@ -411,9 +411,9 @@ export default function OrderDetailPage() {
                           <OptimizedImage
                             src={getProductImage(item)}
                             alt={item.name}
-                            className="w-40 h-40 object-cover rounded-md"
-                            width={160}
-                            height={160}
+                            className="w-[200px] h-[200px] object-cover rounded-md"
+                            width={200}
+                            height={200}
                           />
                         </div>
                         <div className="flex-1 min-w-0">

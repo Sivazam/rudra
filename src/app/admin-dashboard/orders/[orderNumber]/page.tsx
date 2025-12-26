@@ -384,13 +384,11 @@ export default function AdminOrderDetailPage() {
               <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
                 {order.items.map((item, index) => (
                   <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
-                    <div className="flex-shrink-0">
+                    <div className="w-[200px] h-[200px] flex-shrink-0">
                       <OptimizedImage
                         src={getProductImage(item)}
                         alt={item.name}
-                        className="w-40 h-40 object-cover rounded-md"
-                        width={160}
-                        height={160}
+                        className="object-cover rounded-md"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
