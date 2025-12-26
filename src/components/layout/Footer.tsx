@@ -42,8 +42,8 @@ export function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Contact Info</h3>
             <ul className="space-y-2 text-sm">
-              <li>info@sanathanrudraksha.com</li>
-              <li>+91 9533777726</li>
+              <li>sanathanrudraksha@gmail.com</li>
+              <li>+91 9177227726</li>
               <li>No Return | No Exchange</li>
             </ul>
           </div>

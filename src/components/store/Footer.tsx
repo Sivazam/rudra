@@ -66,11 +66,11 @@ export function Footer() {
             <ul className="space-y-2 text-sm">
               <li className="flex items-start space-x-2">
                 <span className="text-amber-400">📧</span>
-                <span>info@sanathanrudraksha.com</span>
+                <span>sanathanrudraksha@gmail.com</span>
               </li>
               <li className="flex items-start space-x-2">
                 <span className="text-amber-400">📞</span>
-                <span>+91 9533777726</span>
+                <span>+91 9177227726</span>
               </li>
               <li className="flex items-start space-x-2">
                 <span>No Return | No Exchange</span>

@@ -16,11 +16,11 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/admin-dashboard', icon: LayoutDashboard },
-  { name: 'Banners', href: '/admin-dashboard/banners', icon: Image },
+  // { name: 'Banners', href: '/admin-dashboard/banners', icon: Image },
   { name: 'Categories', href: '/admin-dashboard/categories', icon: Tags },
   { name: 'Products', href: '/admin-dashboard/products', icon: Package },
-  { name: 'Variants', href: '/admin-dashboard/variants', icon: Layers },
-  { name: 'Discounts', href: '/admin-dashboard/discounts', icon: Percent },
+  // { name: 'Variants', href: '/admin-dashboard/variants', icon: Layers },
+  // { name: 'Discounts', href: '/admin-dashboard/discounts', icon: Percent },
   { name: 'Orders', href: '/admin-dashboard/orders', icon: ShoppingCart },
 ];
 
