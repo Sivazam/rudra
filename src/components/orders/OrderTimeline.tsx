@@ -30,12 +30,36 @@ export function OrderTimeline({ status, className, statusHistory, paidAt, delive
     if (!dateString) return '';
     
     try {
-      const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+      // Handle Firestore Timestamp objects converted to string
+      let date: Date;
       
-      if (isNaN(date.getTime())) {
-        return '';
+      if (typeof dateString === 'string') {
+        // Check if it's an ISO date string
+        if (dateString.match(/^\d{4}-\d{2}-\d{2}T/)) {
+          date = new Date(dateString);
+        } else {
+          // Try to parse various formats
+          const parsedDate = new Date(dateString);
+          if (!isNaN(parsedDate.getTime())) {
+            date = parsedDate;
+          } else {
+            return '';
+          }
+        }
+      } else if (dateString instanceof Date) {
+        date = dateString;
+      } else {
+        // Handle Firestore Timestamp
+        const timestamp = dateString as any;
+        if (timestamp && typeof timestamp.toDate === 'function') {
+          date = timestamp.toDate();
+        } else if (timestamp && timestamp.seconds) {
+          date = new Date(timestamp.seconds * 1000);
+        } else {
+          return '';
+        }
       }
-
+      
       return date.toLocaleString('en-IN', {
         year: 'numeric',
         month: 'short',
@@ -55,10 +79,34 @@ export function OrderTimeline({ status, className, statusHistory, paidAt, delive
     if (!dateString) return 'Not Available';
     
     try {
-      const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+      // Handle Firestore Timestamp objects converted to string
+      let date: Date;
       
-      if (isNaN(date.getTime())) {
-        return 'Not Available';
+      if (typeof dateString === 'string') {
+        // Check if it's an ISO date string
+        if (dateString.match(/^\d{4}-\d{2}-\d{2}T/)) {
+          date = new Date(dateString);
+        } else {
+          // Try to parse various formats
+          const parsedDate = new Date(dateString);
+          if (!isNaN(parsedDate.getTime())) {
+            date = parsedDate;
+          } else {
+            return 'Not Available';
+          }
+        }
+      } else if (dateString instanceof Date) {
+        date = dateString;
+      } else {
+        // Handle Firestore Timestamp
+        const timestamp = dateString as any;
+        if (timestamp && typeof timestamp.toDate === 'function') {
+          date = timestamp.toDate();
+        } else if (timestamp && timestamp.seconds) {
+          date = new Date(timestamp.seconds * 1000);
+        } else {
+          return 'Not Available';
+        }
       }
 
       return date.toLocaleDateString('en-IN', {

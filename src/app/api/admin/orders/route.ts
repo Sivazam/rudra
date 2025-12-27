@@ -87,7 +87,7 @@ export async function PUT(request: NextRequest) {
     // Add new status change entry
     statusHistory.push({
       status: status,
-      timestamp: new Date(), // Current IST time (server runs in India or we can specify timezone)
+      timestamp: new Date().toISOString(), // Current IST time (server runs in India)
       updatedBy: 'admin'
     });
 
@@ -95,12 +95,12 @@ export async function PUT(request: NextRequest) {
 
     // Set deliveredAt when order is delivered
     if (status === 'delivered') {
-      updateData.deliveredAt = new Date();
+      updateData.deliveredAt = new Date().toISOString();
     }
 
-    // If payment is completed and paidAt is not set, set it
-    if (order.paymentStatus === 'completed' && !order.paidAt && status === 'processing') {
-      updateData.paidAt = new Date();
+    // If payment is completed and paidAt is not set, set it (for backward compatibility)
+    if (order.paymentStatus === 'completed' && !order.paidAt) {
+      updateData.paidAt = new Date().toISOString();
     }
 
     // Update order status

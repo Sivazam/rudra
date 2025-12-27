@@ -184,8 +184,13 @@ export async function POST(request: NextRequest) {
       razorpaySignature: razorpaySignature,
       status: 'pending', // Order is pending processing
       paymentStatus: 'completed', // Payment is successful
-      orderDate: new Date(),
-      paidAt: new Date()
+      orderDate: new Date().toISOString(),
+      paidAt: new Date().toISOString(), // Store as ISO string
+      statusHistory: [{ // Initialize status history
+        status: 'pending',
+        timestamp: new Date().toISOString(),
+        updatedBy: 'system'
+      }]
     };
 
     const orderId = await orderService.createOrder(newOrderData);

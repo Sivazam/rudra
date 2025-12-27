@@ -129,9 +129,38 @@ export default function AdminOrderDetailPage() {
     if (!dateString) return 'Not Available';
 
     try {
-      const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+      // Handle Firestore Timestamp objects converted to string
+      let date: Date;
       
-      // Check if date is invalid
+      if (typeof dateString === 'string') {
+        // Check if it's an ISO date string
+        if (dateString.match(/^\d{4}-\d{2}-\d{2}T/)) {
+          date = new Date(dateString);
+        } else {
+          // Try to parse various formats
+          const parsedDate = new Date(dateString);
+          if (!isNaN(parsedDate.getTime())) {
+            date = parsedDate;
+          } else {
+            console.warn('Invalid date string:', dateString);
+            return 'Not Available';
+          }
+        }
+      } else if (dateString instanceof Date) {
+        date = dateString;
+      } else {
+        // Handle Firestore Timestamp
+        const timestamp = dateString as any;
+        if (timestamp && typeof timestamp.toDate === 'function') {
+          date = timestamp.toDate();
+        } else if (timestamp && timestamp.seconds) {
+          date = new Date(timestamp.seconds * 1000);
+        } else {
+          return 'Not Available';
+        }
+      }
+      
+      // Check if date is valid
       if (isNaN(date.getTime())) {
         console.warn('Invalid date:', dateString);
         return 'Not Available';
@@ -157,8 +186,37 @@ export default function AdminOrderDetailPage() {
     if (!dateString) return 'Not Available';
 
     try {
-      const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+      // Handle Firestore Timestamp objects converted to string
+      let date: Date;
       
+      if (typeof dateString === 'string') {
+        // Check if it's an ISO date string
+        if (dateString.match(/^\d{4}-\d{2}-\d{2}T/)) {
+          date = new Date(dateString);
+        } else {
+          // Try to parse various formats
+          const parsedDate = new Date(dateString);
+          if (!isNaN(parsedDate.getTime())) {
+            date = parsedDate;
+          } else {
+            return 'Not Available';
+          }
+        }
+      } else if (dateString instanceof Date) {
+        date = dateString;
+      } else {
+        // Handle Firestore Timestamp
+        const timestamp = dateString as any;
+        if (timestamp && typeof timestamp.toDate === 'function') {
+          date = timestamp.toDate();
+        } else if (timestamp && timestamp.seconds) {
+          date = new Date(timestamp.seconds * 1000);
+        } else {
+          return 'Not Available';
+        }
+      }
+      
+      // Check if date is valid
       if (isNaN(date.getTime())) {
         return 'Not Available';
       }
@@ -173,6 +231,7 @@ export default function AdminOrderDetailPage() {
         timeZone: 'Asia/Kolkata'
       });
     } catch (error) {
+      console.error('Error formatting date:', dateString, error);
       return 'Not Available';
     }
   };
