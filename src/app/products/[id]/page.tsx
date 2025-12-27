@@ -72,9 +72,35 @@ export default function ProductDetailPage() {
   const [shakeVariants, setShakeVariants] = useState(false);
   const [isInCart, setIsInCart] = useState(false);
   const [isImageZoomed, setIsImageZoomed] = useState(false);
+  const [imageLoadingStates, setImageLoadingStates] = useState<Record<number, boolean>>({});
   
   const { addItem, items } = useCartStore();
   const { toast } = useToast();
+
+  // Image loading helper functions
+  const handleImageLoadStart = (index: number) => {
+    setImageLoadingStates(prev => ({ ...prev, [index]: true }));
+  };
+
+  const handleImageLoadComplete = (index: number) => {
+    setImageLoadingStates(prev => ({ ...prev, [index]: false }));
+  };
+
+  const handleImageLoadError = (index: number) => {
+    setImageLoadingStates(prev => ({ ...prev, [index]: false }));
+    console.error(`Failed to load image at index ${index}`);
+  };
+
+  // Preload images in background
+  useEffect(() => {
+    if (product && product.images && product.images.length > 0) {
+      // Preload all images when product loads
+      product.images.forEach((image, index) => {
+        const img = new Image();
+        img.src = image;
+      });
+    }
+  }, [product]);
 
   // Fetch product data
   useEffect(() => {
@@ -290,27 +316,44 @@ export default function ProductDetailPage() {
               {/* Main Image Slider */}
               <div className="relative">
                 <div className="aspect-[16/9] bg-white rounded-2xl shadow-lg overflow-hidden">
-                  <OptimizedImage
-                    src={product.images[selectedImage]}
-                    alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-300"
-                    priority={true}
-                    objectFit="cover"
-                  />
+                  {imageLoadingStates[selectedImage] ? (
+                    // Loading skeleton for main image
+                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                      <div className="animate-pulse w-8 h-8 bg-gray-200 rounded-full"></div>
+                    </div>
+                  ) : (
+                    <OptimizedImage
+                      src={product.images[selectedImage]}
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-300"
+                      priority={true}
+                      objectFit="cover"
+                      onLoadingComplete={() => handleImageLoadComplete(selectedImage)}
+                      onError={() => handleImageLoadError(selectedImage)}
+                    />
+                  )}
                 </div>
                 
                 {/* Slider Navigation */}
                 <button
-                  onClick={() => setSelectedImage((prev) => (prev - 1 + product.images.length) % product.images.length)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-all duration-200 z-10"
+                  onClick={() => {
+                    const newIndex = (selectedImage - 1 + product.images.length) % product.images.length;
+                    setSelectedImage(newIndex);
+                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-all duration-200 z-10 disabled:opacity-50"
+                  disabled={imageLoadingStates[(selectedImage - 1 + product.images.length) % product.images.length]}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7 7" />
                   </svg>
                 </button>
                 <button
-                  onClick={() => setSelectedImage((prev) => (prev + 1) % product.images.length)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-all duration-200 z-10"
+                  onClick={() => {
+                    const newIndex = (selectedImage + 1) % product.images.length;
+                    setSelectedImage(newIndex);
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white transition-all duration-200 z-10 disabled:opacity-50"
+                  disabled={imageLoadingStates[(selectedImage + 1) % product.images.length]}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -320,25 +363,40 @@ export default function ProductDetailPage() {
               
               {/* Thumbnail Strip */}
               <div className="flex gap-2 mt-4 pb-2">
-                {product.images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`flex-shrink-0 w-20 h-20 bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105 ${
-                      selectedImage === index 
-                        ? 'ring-2 ring-amber-500 ring-offset-2' 
-                        : ''
-                    }`}
-                  >
-                    <OptimizedImage
-                      src={image}
-                      alt={`${product.name} view ${index + 1}`}
-                      className="w-full h-full object-cover"
-                      objectFit="cover"
-                      priority={index === 0}
-                    />
-                  </button>
-                ))}
+                {product.images.map((image, index) => {
+                  const isLoading = imageLoadingStates[index];
+                  const isSelected = selectedImage === index;
+
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedImage(index)}
+                      disabled={isLoading}
+                      className={`flex-shrink-0 w-20 h-20 bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+                        isSelected 
+                          ? 'ring-2 ring-amber-500 ring-offset-2' 
+                          : ''
+                      } ${isLoading ? 'cursor-wait' : ''}`}
+                    >
+                      {isLoading ? (
+                        // Loading skeleton state
+                        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                          <div className="animate-pulse w-4 h-4 bg-gray-200 rounded-full"></div>
+                        </div>
+                      ) : (
+                        <OptimizedImage
+                          src={image}
+                          alt={`${product.name} view ${index + 1}`}
+                          className="w-full h-full object-cover"
+                          objectFit="cover"
+                          priority={index === 0}
+                          onLoadingComplete={() => handleImageLoadComplete(index)}
+                          onError={() => handleImageLoadError(index)}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
