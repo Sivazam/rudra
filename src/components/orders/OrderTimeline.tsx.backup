@@ -85,7 +85,6 @@ export function OrderTimeline({ status, className, statusHistory, paidAt, delive
   };
 
   const getTimelineSteps = (): TimelineStep[] => {
-    const steps: TimelineStep[] = [
       {
         key: 'pending',
         label: 'Order Placed',
@@ -118,7 +117,7 @@ export function OrderTimeline({ status, className, statusHistory, paidAt, delive
       }
     ];
 
-    // Map status to timeline with timestamps
+    // Map status to timeline
     if (status === 'cancelled') {
       steps[0].status = 'completed';
       steps[1].status = 'skipped';
@@ -153,9 +152,6 @@ export function OrderTimeline({ status, className, statusHistory, paidAt, delive
       steps[4].status = 'pending';
     }
 
-    // Add timestamps to steps
-    steps[0].timestamp = statusHistory?.[0]?.timestamp; // Order placed timestamp
-    
     return steps;
   };
 
@@ -246,7 +242,7 @@ export function OrderTimeline({ status, className, statusHistory, paidAt, delive
                 {/* Display timestamp if available */}
                 {stepTimestamp && step.status === 'completed' && (
                   <p className="text-xs text-gray-500 mt-1">
-                    {formatDateTime(stepTimestamp)}
+                    {formatDateTime(step.timestamp)}
                   </p>
                 )}
 
