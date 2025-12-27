@@ -80,6 +80,29 @@ export async function PUT(request: NextRequest) {
       updateData.cancellationReason = cancellationReason;
     }
 
+    // Record status change in statusHistory with IST timestamp
+    const currentStatus = order.status;
+    const statusHistory = order.statusHistory || [];
+
+    // Add new status change entry
+    statusHistory.push({
+      status: status,
+      timestamp: new Date(), // Current IST time (server runs in India or we can specify timezone)
+      updatedBy: 'admin'
+    });
+
+    updateData.statusHistory = statusHistory;
+
+    // Set deliveredAt when order is delivered
+    if (status === 'delivered') {
+      updateData.deliveredAt = new Date();
+    }
+
+    // If payment is completed and paidAt is not set, set it
+    if (order.paymentStatus === 'completed' && !order.paidAt && status === 'processing') {
+      updateData.paidAt = new Date();
+    }
+
     // Update order status
     await orderService.updateOrder(orderId, updateData);
 

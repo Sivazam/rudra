@@ -8,6 +8,12 @@ export type OrderStatus = 'pending' | 'processing' | 'packed' | 'shipped' | 'del
 interface OrderTimelineProps {
   status: OrderStatus;
   className?: string;
+  statusHistory?: Array<{
+    status: OrderStatus;
+    timestamp: string | Date;
+  }>;
+  paidAt?: string | Date;
+  deliveredAt?: string | Date;
 }
 
 interface TimelineStep {
@@ -15,11 +21,70 @@ interface TimelineStep {
   label: string;
   icon: React.ReactNode;
   status: 'completed' | 'current' | 'pending' | 'skipped';
+  timestamp?: string | Date;
 }
 
-export function OrderTimeline({ status, className }: OrderTimelineProps) {
+export function OrderTimeline({ status, className, statusHistory, paidAt, deliveredAt }: OrderTimelineProps) {
+  
+  const formatDateTime = (dateString?: string | Date) => {
+    if (!dateString) return '';
+    
+    try {
+      const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+      
+      if (isNaN(date.getTime())) {
+        return '';
+      }
+
+      return date.toLocaleString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Kolkata'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return '';
+    }
+  };
+
+  const formatDate = (dateString?: string | Date) => {
+    if (!dateString) return 'Not Available';
+    
+    try {
+      const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+      
+      if (isNaN(date.getTime())) {
+        return 'Not Available';
+      }
+
+      return date.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        timeZone: 'Asia/Kolkata'
+      });
+    } catch (error) {
+      return 'Not Available';
+    }
+  };
+
+  const getTimestampForStatus = (stepStatus: string) => {
+    // If status history is provided, use it
+    if (statusHistory && statusHistory.length > 0) {
+      const historyEntry = statusHistory.find(entry => entry.status === stepStatus);
+      if (historyEntry && historyEntry.timestamp) {
+        return formatDateTime(historyEntry.timestamp);
+      }
+    }
+    
+    return '';
+  };
+
   const getTimelineSteps = (): TimelineStep[] => {
-    const steps: TimelineStep[] = [
       {
         key: 'pending',
         label: 'Order Placed',
@@ -109,50 +174,87 @@ export function OrderTimeline({ status, className }: OrderTimelineProps) {
     <div className={cn('space-y-4', className)}>
       <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Progress</h3>
 
+      {/* Payment Status Display */}
+      {paidAt && status !== 'cancelled' && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-gray-600">Payment:</span>
+            <span className="font-medium text-green-900">Paid</span>
+            <span className="text-gray-500">on</span>
+            <span className="font-semibold text-green-900">{formatDate(paidAt)}</span>
+            <span className="text-gray-400 text-xs">at {formatDateTime(paidAt)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Delivery Status Display */}
+      {deliveredAt && status === 'delivered' && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-gray-600">Delivered:</span>
+            <span className="font-medium text-green-900">Delivered</span>
+            <span className="text-gray-500">on</span>
+            <span className="font-semibold text-green-900">{formatDate(deliveredAt)}</span>
+            <span className="text-gray-400 text-xs">at {formatDateTime(deliveredAt)}</span>
+          </div>
+        </div>
+      )}
+
       <div className="relative">
         {/* Vertical line */}
         <div className="absolute left-5 top-8 bottom-8 w-0.5 bg-gray-200 -z-10" />
 
-        {steps.map((step, index) => (
-          <div key={step.key} className="relative flex items-start gap-4">
-            {/* Step icon circle */}
-            <div
-              className={cn(
-                'w-10 h-10 rounded-full border-2 flex items-center justify-center z-10',
-                getStepStyles(step.status)
-              )}
-            >
-              {step.icon}
-            </div>
-
-            {/* Step content */}
-            <div className="flex-1 pt-1">
-              <div className="flex items-center gap-2">
-                <p
-                  className={cn(
-                    'font-medium',
-                    step.status === 'completed' || step.status === 'current'
-                      ? 'text-gray-900'
-                      : 'text-gray-400'
-                  )}
-                >
-                  {step.label}
-                </p>
-                {step.status === 'current' && (
-                  <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
-                    In Progress
-                  </span>
+        {steps.map((step, index) => {
+          const stepTimestamp = getTimestampForStatus(step.key);
+          
+          return (
+            <div key={step.key} className="relative flex items-start gap-4">
+              {/* Step icon circle */}
+              <div
+                className={cn(
+                  'w-10 h-10 rounded-full border-2 flex items-center justify-center z-10',
+                  getStepStyles(step.status)
                 )}
+              >
+                {step.icon}
               </div>
 
-              {step.status === 'completed' && index < steps.length - 1 && (
-                <p className="text-sm text-gray-500 mt-1">
-                  ✓ Step completed
-                </p>
-              )}
+              {/* Step content */}
+              <div className="flex-1 pt-1">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                  <p
+                    className={cn(
+                      'font-medium',
+                      step.status === 'completed' || step.status === 'current'
+                        ? 'text-gray-900'
+                        : 'text-gray-400'
+                    )}
+                  >
+                    {step.label}
+                  </p>
+                  {step.status === 'current' && (
+                    <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+                      In Progress
+                    </span>
+                  )}
+                </div>
+
+                {/* Display timestamp if available */}
+                {stepTimestamp && step.status === 'completed' && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formatDateTime(step.timestamp)}
+                  </p>
+                )}
+
+                {step.status === 'completed' && index < steps.length - 1 && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    ✓ Step completed
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Status-specific messages */}

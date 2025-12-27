@@ -13,6 +13,12 @@ import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import { loadRazorpayScript, initializeRazorpay } from '@/lib/razorpay';
 import { isUserAuthenticated } from '@/lib/auth';
 
+interface OrderStatusHistory {
+  status: OrderStatus;
+  timestamp: string;
+  updatedBy: string;
+}
+
 interface Order {
   id: string;
   orderNumber: string;
@@ -38,8 +44,10 @@ interface Order {
   total: number;
   status: OrderStatus;
   paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded';
-  orderDate: string;
-  paidAt?: string;
+  orderDate: string | Date;
+  paidAt?: string | Date;
+  deliveredAt?: string | Date;
+  statusHistory: OrderStatusHistory[];
   cancellationReason?: string;
   razorpayOrderId?: string;
 }
@@ -104,14 +112,56 @@ export default function OrderDetailPage() {
     }).format(price);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const formatDate = (dateString?: string | Date) => {
+    if (!dateString) return 'Not Available';
+
+    try {
+      const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+      
+      // Check if date is invalid
+      if (isNaN(date.getTime())) {
+        console.warn('Invalid date:', dateString);
+        return 'Not Available';
+      }
+
+      // Format in Indian Standard Time (IST)
+      return date.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Kolkata'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return 'Not Available';
+    }
+  };
+
+  const formatDateTime = (dateString?: string | Date) => {
+    if (!dateString) return 'Not Available';
+
+    try {
+      const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+      
+      if (isNaN(date.getTime())) {
+        return 'Not Available';
+      }
+
+      return date.toLocaleString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Kolkata'
+      });
+    } catch (error) {
+      return 'Not Available';
+    }
   };
 
   const getPaymentStatusColor = (status: string) => {
@@ -400,7 +450,12 @@ export default function OrderDetailPage() {
                     <CardTitle className="text-base sm:text-lg">Order Progress</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <OrderTimeline status={order.status} />
+                    <OrderTimeline
+                      status={order.status}
+                      statusHistory={order.statusHistory}
+                      paidAt={order.paidAt}
+                      deliveredAt={order.deliveredAt}
+                    />
                   </CardContent>
                 </Card>
               </div>

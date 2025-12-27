@@ -35,6 +35,12 @@ export interface IOrder extends Document {
   paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded';
   orderDate: Date;
   paidAt?: Date;
+  deliveredAt?: Date;
+  statusHistory: Array<{
+    status: string;
+    timestamp: Date;
+    updatedBy?: string;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -165,7 +171,25 @@ const orderSchema = new Schema<IOrder>({
   },
   paidAt: {
     type: Date
-  }
+  },
+  deliveredAt: {
+    type: Date
+  },
+  statusHistory: [{
+    status: {
+      type: String,
+      required: true
+    },
+    timestamp: {
+      type: Date,
+      required: true,
+      default: Date.now
+    },
+    updatedBy: {
+      type: String,
+      default: 'admin'
+    }
+  }]
 }, {
   timestamps: true
 });
